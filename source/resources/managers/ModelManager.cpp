@@ -39,12 +39,13 @@ entt::entity ModelManager::loadModel(
     entt::registry& registry,
     const ModelLoadConfig& config)
 {
-    // Already loaded?
+    
+    ModelComponent component;
     if (auto it = loadedModels.find(name); it != loadedModels.end()) {
         std::cout << "Model already loaded: " << name << "\n";
         return it->second;
     }
-
+    
     std::cout << "Loading model: " << name << " from " << path << "\n";
 
     ModelLoader loader(path);

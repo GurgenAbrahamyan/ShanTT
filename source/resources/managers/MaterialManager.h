@@ -25,7 +25,7 @@ public:
 
     Material* getMaterial(int id);
     int getMaterialID(const std::string& name);
-
+    Material* getRectangleMaterial();
 private:
     TextureManager* textureManager;
     EventBus* bus;

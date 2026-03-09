@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <string>
 
+class Vector2;
 class Vector3;
 class Mat4;
 
@@ -17,6 +18,7 @@ public:
     void Activate() const;
     void setFloat(const char* name, float value);
     void setInt(const char* name, int value);
+	void setVec2(const char* name, Vector2 value);
     void setVec3(const char* name, Vector3 value);
     void setVec4(const char* name, Vector3 value, float t);
     void setMat4(const char* name, Mat4 value);

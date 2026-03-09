@@ -14,6 +14,7 @@ class MouseInput;
 class KeyboardInput;
 class GLFWwindow;
 class CameraSystem;
+class ShadowSystem;
 struct RenderContext;
 
 class Engine {
@@ -35,7 +36,7 @@ private:
     MouseInput* mouseInput;
     KeyboardInput* keyboardInput;
     CameraSystem* cameraSystem;
-
+	ShadowSystem* shadowSystem;
 	RenderContext* renderContext;
     GLFWwindow* window;
 
@@ -46,4 +47,6 @@ private:
     int framecount;
     int framesThisSecond;
     float timeSinceLastFpsPrint;
+
+    
 };

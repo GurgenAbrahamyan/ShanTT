@@ -44,6 +44,11 @@ public:
         glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo);
     }
 
+    void unbind() const
+    {
+        glBindBufferBase(GL_UNIFORM_BUFFER, binding, 0);
+	}
+
     GLuint getID() const { return ubo; }
 
 private:

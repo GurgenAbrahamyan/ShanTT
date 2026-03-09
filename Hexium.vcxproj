@@ -155,6 +155,7 @@
     <ClCompile Include="source\physics\dynamics\GeneralIntegrators.cpp" />
     <ClCompile Include="source\physics\ecs_systems\RigidBodyIntegrator.cpp" />
     <ClCompile Include="source\physics\PhysicsEngine.cpp" />
+    <ClCompile Include="source\render\backend\containers\RenderBuffer.cpp" />
     <ClCompile Include="source\render\backend\Shader.cpp" />
     <ClCompile Include="source\render\backend\ShaderManager.cpp" />
     <ClCompile Include="source\render\Renderer.cpp" />
@@ -177,7 +178,6 @@
     <ClInclude Include="source\core\EngineContext.h" />
     <ClInclude Include="source\core\Event.h" />
     <ClInclude Include="source\core\EventBus.h" />
-    <ClInclude Include="source\dynamics\colider\Header.h" />
     <ClInclude Include="source\ecs\components\core\ParentComponent.h" />
     <ClInclude Include="source\ecs\components\core\TagComponent.h" />
     <ClInclude Include="source\ecs\components\core\TransformComponent.h" />
@@ -209,7 +209,9 @@
     <ClInclude Include="source\physics\ecs_systems\RigidBodyIntegrator.h" />
     <ClInclude Include="source\physics\PhysicsEngine.h" />
     <ClInclude Include="source\render\backend\containers\EBO.h" />
+    <ClInclude Include="source\render\backend\containers\FrameBuffer.h" />
     <ClInclude Include="source\render\backend\containers\GlobalUniformBuffer.h" />
+    <ClInclude Include="source\render\backend\containers\RenderBuffer.h" />
     <ClInclude Include="source\render\backend\containers\VAO.h" />
     <ClInclude Include="source\render\backend\containers\VBO.h" />
     <ClInclude Include="source\render\backend\Shader.h" />
@@ -218,10 +220,13 @@
     <ClInclude Include="source\render\data\GPULight.h" />
     <ClInclude Include="source\render\data\MeshBatch.h" />
     <ClInclude Include="source\render\data\RenderContext.h" />
+    <ClInclude Include="source\render\data\RenderResource.h" />
     <ClInclude Include="source\render\data\ShaderType.h" />
-    <ClInclude Include="source\render\handlers\RenderHandler.h" />
+    <ClInclude Include="source\render\ecs_systems\ShadowSystem.h" />
+    <ClInclude Include="source\render\handlers\RenderPass.h" />
     <ClInclude Include="source\render\handlers\UIRender.h" />
     <ClInclude Include="source\render\Renderer.h" />
+    <ClInclude Include="source\render\RenderGraph.h" />
     <ClInclude Include="source\resources\assets\CubeMap.h" />
     <ClInclude Include="source\resources\assets\Material.h" />
     <ClInclude Include="source\resources\assets\Model.h" />
@@ -253,11 +258,17 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resource\shaders\cubemap_shader\default.fragment" />
-    <None Include="resource\shaders\cubemap_shader\default.vertex" />
-    <None Include="resource\shaders\object_shader\default.fragment" />
+    <None Include="resource\shaders\camera_effects\blur_pass.frag" />
+    <None Include="resource\shaders\camera_effects\blur_pass.vert" />
+    <None Include="resource\shaders\cubemap_shader\default.frag" />
+    <None Include="resource\shaders\cubemap_shader\default.vert" />
+    <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.frag" />
+    <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.vert" />
+    <None Include="resource\shaders\object_shader\default.frag" />
     <None Include="resource\shaders\object_shader\default.geom" />
-    <None Include="resource\shaders\object_shader\default.vertex" />
+    <None Include="resource\shaders\object_shader\default.vert" />
+    <None Include="resource\shaders\shadow_shader\shadow_pass.frag" />
+    <None Include="resource\shaders\shadow_shader\shadow_pass.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

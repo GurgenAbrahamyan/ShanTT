@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "../../math_custom/Vector3.h"
+#include "../../math_custom/Vector2.h"
 #include "../../math_custom/Mat4.h"
 
 
@@ -24,7 +25,9 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geo
     std::string geometryCode = get_file_contents(geometryFile);
 
     GLuint vertexShader = compileShader(vertexCode.c_str(), GL_VERTEX_SHADER);
+	std::cout << "Vertex shader compiled successfully: " << vertexFile << "\n";
     GLuint fragmentShader = compileShader(fragmentCode.c_str(), GL_FRAGMENT_SHADER);
+	std::cout << "Fragment shader compiled successfully: " << fragmentFile << "\n";
 //	GLuint geometryShader = compileShader(geometryCode.c_str(), GL_GEOMETRY_SHADER);
 
     ID = glCreateProgram();
@@ -57,6 +60,7 @@ GLuint Shader::compileShader(const char* source, GLenum type) {
     if (!success) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cout << "Shader compilation error: " + std::string(infoLog);
         throw std::runtime_error("Shader compilation error: " + std::string(infoLog));
     }
 
@@ -83,6 +87,9 @@ void Shader::setInt(const char* name, int value) {
 
     glUniform1i(texUni, value);
    
+}
+void Shader::setVec2(const char* name, Vector2 value) {
+    glUniform2f(glGetUniformLocation(ID, name), value.x, value.y);
 }
 void Shader::setVec3(const char* name, Vector3 value) {
     glUniform3f(glGetUniformLocation(ID, name), value.x, value.y, value.z);

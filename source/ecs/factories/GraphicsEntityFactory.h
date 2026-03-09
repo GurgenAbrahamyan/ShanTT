@@ -2,9 +2,11 @@
 #include "../../include/EnTT/entt.hpp"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
-
+#include "../../ecs/components/graphics/CameraComponent.h"
+#include "../../ecs/components/graphics/LightComponent.h"
 class CubeMap;
 class MeshManager;
+class MaterialManager;
 enum class LightType;
 
 namespace GraphicsEntityFactory {
@@ -14,20 +16,16 @@ namespace GraphicsEntityFactory {
     entt::entity createRectangle(
         entt::registry& registry,
         MeshManager& meshManager,
+        MaterialManager& textureManager,
         const std::string& tag,
-        Vector3 position = Vector3(0, 0, 0),
+        Vector3 pos = Vector3(0, 0, 0),
         Vector3 scale = Vector3(1, 1, 1)
     );
 
     entt::entity createLight(
         entt::registry& registry,
-        LightType type,
-        Vector3 color,
-        float intensity,
         Vector3 position,
-        Vector3 direction = Vector3(0, 0, -1),
-        float innerConeAngle = 12.5f,
-        float outerConeAngle = 17.5f,
+		LightComponent type,
         const std::string& tag = "light"
     );
 
@@ -39,10 +37,7 @@ namespace GraphicsEntityFactory {
     entt::entity createCamera(
         entt::registry& registry,
         Vector3 position = Vector3(0, 0, 0),
-        float fov = 45.0f,
-        float aspectRatio = 16.0f / 9.0f,
-        float nearPlane = 0.1f,
-        float farPlane = 1000.0f,
+        CameraComponent camComp = CameraComponent(),
         bool  makeActive = true,
         const std::string& tag = "camera"
     );

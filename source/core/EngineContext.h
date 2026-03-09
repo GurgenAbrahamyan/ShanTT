@@ -8,9 +8,7 @@ public:
     int windowWidth = 1280;
     int windowHeight = 720;
 
-	float nearPlane = 0.1f;
-	float farPlane = 1700.0f;
-	float fov = 45.0f;
+	
     static EngineContext& get() {
         static EngineContext instance;
         return instance;

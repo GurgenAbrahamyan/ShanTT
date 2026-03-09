@@ -95,6 +95,20 @@ int MaterialManager::addMaterial(const MaterialData& materialData)
     return id;
 }
 
+Material* MaterialManager::getRectangleMaterial() {
+    MaterialData matData;
+
+    matData.name = "Cube_-1";
+    MaterialTextureInfo texInfo;
+    texInfo.path = "resource/textures/brick_wall.jpg";
+    texInfo.type = TextureType::Albedo;
+    matData.textureInfo.push_back(texInfo);
+    texInfo.path = "resource/textures/brick_wall_specular.png";
+    texInfo.type = TextureType::Normal;
+    matData.textureInfo.push_back(texInfo);
+    return getMaterial(addMaterial(matData));
+}
+
 
 Material* MaterialManager::getMaterial(int id) {
     if (auto it = idMap.find(id); it != idMap.end())

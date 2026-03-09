@@ -15,5 +15,4 @@ struct ModelComponent {
    
 
     std::vector<MeshEntry> meshes; // all submeshes of this model
-    Mat4 worldTransform;           // global transform applied to the whole model
-};
+ };

@@ -9,9 +9,10 @@
 #include "../input/UIInput.h"
 #include "../input/KeyboardInput.h"
 #include "ecs_systems/CameraSystem.h"
-
+#include "../render/ecs_systems/ShadowSystem.h"
 #include "../input/MouseInput.h"
 #include "EngineContext.h"
+
 
 
 Engine::Engine()
@@ -29,13 +30,15 @@ Engine::Engine()
     framecount(0),
     framesThisSecond(0),
     timeSinceLastFpsPrint(0.0f),
-    cameraSystem(new CameraSystem (bus, scene->getRegistry()))
+    cameraSystem(new CameraSystem (bus, scene->getRegistry())),
+	shadowSystem(new ShadowSystem())
 {
     window = EngineContext::get().getWindow();
 	
+	
     scene->initObjects();
 	renderContext->registry = &scene->getRegistry();
-    
+
 
     
     
@@ -77,8 +80,9 @@ void Engine::run() {
         cameraSystem->update(scene->getRegistry(), frameTime);
         mouseInput->proccessInput();
         ui->processInput();
+        renderer->rebuildContext(renderContext);
+		shadowSystem->update(renderContext);
         renderer->render(renderContext);
-
         glfwPollEvents();
 
         framesThisSecond++;

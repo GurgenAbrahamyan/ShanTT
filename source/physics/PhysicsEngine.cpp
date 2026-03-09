@@ -4,7 +4,10 @@
 #include "../ecs/components/core/TransformComponent.h"
 #include "../ecs/components/physics/RigidBodyComponent.h"
 
-PhysicsEngine::PhysicsEngine() {}
+PhysicsEngine::PhysicsEngine() {
+	Vector3 gravity(0,0, -9.81f);
+   // addForceGenerator(std::make_unique<GravityGenerator>(gravity));
+}
 
 void PhysicsEngine::addForceGenerator(std::unique_ptr<ForceGenerator> gen) {
     generators.push_back(std::move(gen));
@@ -14,7 +17,6 @@ void PhysicsEngine::update(entt::registry& registry, float dt) {
     integrateBodies(registry, dt);
 }
 
-// PhysicsEngine.cpp
 
 
 void PhysicsEngine::applyForces(entt::registry& registry) {

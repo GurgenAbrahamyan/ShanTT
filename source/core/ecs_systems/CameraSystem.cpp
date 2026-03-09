@@ -10,8 +10,8 @@
 #include "../../math_custom/Mat4.h"
 #include "../../math_custom/GLAdapter.h"
 
-CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(registry) {
 
+CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(registry) {
     bus->subscribe<PressedKey>([this](PressedKey& event) {
         this->processKeyboard(this->registry, event.key, EngineContext::get().deltaTime);
         });
@@ -19,22 +19,21 @@ CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(r
     bus->subscribe<CameraMode>([this](CameraMode& event) {
         camMode = event.key;
         });
+
     bus->subscribe<MouseDragged>([this](MouseDragged& event) {
         processMouse(this->registry, event.x, event.y);
         });
 }
 
+// --- Update loop ---
 void CameraSystem::update(entt::registry& registry, float dt) {
+    updateVectors(registry);
     updateMatrices(registry);
 }
 
-
+// --- Input ---
 void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt) {
-    entt::entity camEntity = entt::null;
-    for (auto entity : registry.view<ActiveCameraTag>())
-    {
-        camEntity = entity; break;
-    }
+    auto camEntity = getActiveCamera();
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
@@ -42,28 +41,18 @@ void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt)
     if (!cam || !transform) return;
 
     float velocity = movementSpeed * dt;
-
-    if (key == 'W') transform->position = transform->position + cam->front * velocity;
-    if (key == 'S') transform->position = transform->position - cam->front * velocity;
-    if (key == 'A') transform->position = transform->position - cam->right * velocity;
-    if (key == 'D') transform->position = transform->position + cam->right * velocity;
-    if (key == 'Q') transform->position = transform->position - cam->up * velocity;
-    if (key == 'E') transform->position = transform->position + cam->up * velocity;
-
-    std::cout << "Camera Position: ("
-        << transform->position.x << ", "
-        << transform->position.y << ", "
-        << transform->position.z << ")\n";
+    if (key == 'W') transform->position += cam->front * velocity;
+    if (key == 'S') transform->position -= cam->front * velocity;
+    if (key == 'A') transform->position += cam->right * velocity;
+    if (key == 'D') transform->position -= cam->right * velocity;
+    if (key == 'Q') transform->position -= cam->up * velocity;
+    if (key == 'E') transform->position += cam->up * velocity;
 }
 
 void CameraSystem::processMouse(entt::registry& registry, float xoffset, float yoffset) {
     if (!camMode) return;
 
-    entt::entity camEntity = entt::null;
-    for (auto entity : registry.view<ActiveCameraTag>())
-    {
-        camEntity = entity; break;
-    }
+    auto camEntity = getActiveCamera();
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
@@ -72,63 +61,57 @@ void CameraSystem::processMouse(entt::registry& registry, float xoffset, float y
     xoffset *= mouseSensitivity;
     yoffset *= mouseSensitivity;
 
-    cam->yaw += xoffset;
+    cam->yaw -= xoffset;
     cam->pitch += yoffset;
 
-    if (cam->pitch > 89.0f) cam->pitch = 89.0f;
-    if (cam->pitch < -89.0f) cam->pitch = -89.0f;
-    if (cam->yaw > 360.f) cam->yaw -= 360.0f;
-    if (cam->yaw < -360.f) cam->yaw += 360.0f;
-
-    std::cout << "Mouse offset (pixels): x=" << xoffset / mouseSensitivity
-        << ", y=" << yoffset / mouseSensitivity;
-
-    updateVectors(registry);
+    cam->pitch = std::clamp(cam->pitch, -89.0f, 89.0f);
+    if (cam->yaw > 360.f) cam->yaw -= 360.f;
+    if (cam->yaw < -360.f) cam->yaw += 360.f;
 }
 
+// --- Vector updates in engine coordinates ---
 void CameraSystem::updateVectors(entt::registry& registry) {
-    entt::entity camEntity = entt::null;
-    for (auto entity : registry.view<ActiveCameraTag>())
-    {
-        camEntity = entity; break;
-    }
+    auto camEntity = getActiveCamera();
     if (camEntity == entt::null) return;
-
     auto* cam = registry.try_get<CameraComponent>(camEntity);
     if (!cam) return;
 
-    float yaw = Mat4::radians(cam->yaw);
-    float pitch = Mat4::radians(cam->pitch);
+    // Convert yaw/pitch to radians
+    float yawRad = Mat4::radians(cam->yaw);
+    float pitchRad = Mat4::radians(cam->pitch);
 
-    cam->front.x = cos(yaw) * cos(pitch);
-    cam->front.y = sin(pitch);
-    cam->front.z = sin(yaw) * cos(pitch);
+    // Recompute front vector for Z-up / Y-forward
+    cam->front.x = sin(yawRad) * cos(pitchRad);   // left-right
+    cam->front.y = cos(yawRad) * cos(pitchRad);   // forward-back
+    cam->front.z = sin(pitchRad);                 // up-down
     cam->front = cam->front.normalized();
-    cam->right = cam->front.cross(Vector3(0, 1, 0)).normalized();
+
+    // Right and up
+    cam->right = cam->front.cross(Vector3(0, 0, 1)).normalized(); // right perpendicular to up
     cam->up = cam->right.cross(cam->front).normalized();
 }
 
+// --- Matrices for OpenGL ---
 void CameraSystem::updateMatrices(entt::registry& registry) {
-    entt::entity camEntity = entt::null;
-    for (auto entity : registry.view<ActiveCameraTag>())
-    {
-        camEntity = entity; break;
-    }
+    auto camEntity = getActiveCamera();
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
     auto* transform = registry.try_get<TransformComponent>(camEntity);
     if (!cam || !transform) return;
 
-    cam->viewMatrix = Mat4::lookAt(
-        transform->position,
-        transform->position + cam->front,
-        cam->up
-    );
-    cam->projectionMatrix = Mat4::perspective(
-        cam->fov,
-        cam->aspectRatio,
-        cam->nearPlane,
-        cam->farPlane
-    );
+    // Convert engine Z-up -> OpenGL Y-up
+    
+    Vector3 posGL = GLAdapter::toGL(transform->position);
+    Vector3 frontGL= GLAdapter::toGL(cam->front);
+    Vector3 upGL = GLAdapter::toGL(cam->up);
+
+    cam->viewMatrix = Mat4::lookAt(posGL, posGL + frontGL, upGL);
+    cam->projectionMatrix = Mat4::perspective(cam->fov, cam->aspectRatio, cam->nearPlane, cam->farPlane);
+}
+
+// --- Helper ---
+entt::entity CameraSystem::getActiveCamera() {
+    for (auto entity : registry.view<ActiveCameraTag>()) return entity;
+    return entt::null;
 }

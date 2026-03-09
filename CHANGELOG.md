@@ -1,11 +1,11 @@
 # Changelog
 
-## [0.3.0] - 2026-02-17
+## [0.4.0] - 2026-03-10
 
 ### Added
-- Integration of Entity-Component-System (ECS) architecture (future enhancements planned)
-- General architectural improvements
-- Updated project file structure
+- Shadow mapping with support for multiple shadow-casting lights
+- Depth of Field (DOF) camera effect
+- Flexible rendering pipeline based on a RenderGraph
 
 ### Known Issues
-- Collision detection not yet implemented
+- Debug UI not yet implemented

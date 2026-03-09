@@ -7,11 +7,13 @@ physics, and engine architecture.
 - OpenGL renderer
 - GLTF models support
 - Rigid body physics (WIP)
+- Physically Based Rendering (PBR)
+- Engine-wide math & unit conventions documentation
 - Cross-platform (Windows/Linux planned)
+
 
 ## Roadmap / Future Plans
 - Collision detection system (AABB, Sphere, later OBB)
 - Broad-phase & narrow-phase collision pipeline
-- Physically Based Rendering (PBR)
 - Debug rendering (collision shapes, forces)
-- Engine-wide math & unit conventions documentation
+

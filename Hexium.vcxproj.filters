@@ -115,6 +115,15 @@
     <Filter Include="Source Files\Engine\scene\loaders">
       <UniqueIdentifier>{dca16145-f2e0-451e-908f-d9ea9d0d7086}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\camera_effects">
+      <UniqueIdentifier>{20b795eb-9436-4382-9655-1776fb05c920}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\shadow_shader">
+      <UniqueIdentifier>{d888f62f-8763-4718-a38e-071a7ba8104b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\final_blit_shader">
+      <UniqueIdentifier>{e3ad7a58-ad5b-4082-ad04-60ce3ab92aae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\libraries\glad.c">
@@ -195,6 +204,9 @@
     <ClCompile Include="source\physics\ecs_systems\RigidBodyIntegrator.cpp">
       <Filter>Source Files\Engine\physics\ecs_systems</Filter>
     </ClCompile>
+    <ClCompile Include="source\render\backend\containers\RenderBuffer.cpp">
+      <Filter>Source Files\Engine\render\backend\containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\render\Renderer.h">
@@ -217,9 +229,6 @@
     </ClInclude>
     <ClInclude Include="source\input\MouseInput.h">
       <Filter>Source Files\Engine\input</Filter>
-    </ClInclude>
-    <ClInclude Include="source\dynamics\colider\Header.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\math_custom\Quat.h">
       <Filter>Source Files\Engine\math</Filter>
@@ -293,7 +302,7 @@
     <ClInclude Include="source\render\backend\containers\VBO.h">
       <Filter>Source Files\Engine\render\backend\containers</Filter>
     </ClInclude>
-    <ClInclude Include="source\render\handlers\RenderHandler.h">
+    <ClInclude Include="source\render\handlers\RenderPass.h">
       <Filter>Source Files\Engine\render\handlers</Filter>
     </ClInclude>
     <ClInclude Include="source\render\handlers\UIRender.h">
@@ -419,6 +428,21 @@
     <ClInclude Include="source\ecs\components\core\WorldMatrixComponent.h">
       <Filter>Source Files\Engine\ecs\components\core</Filter>
     </ClInclude>
+    <ClInclude Include="source\render\backend\containers\FrameBuffer.h">
+      <Filter>Source Files\Engine\render\backend\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\backend\containers\RenderBuffer.h">
+      <Filter>Source Files\Engine\render\backend\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\data\RenderResource.h">
+      <Filter>Source Files\Engine\render\data</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\RenderGraph.h">
+      <Filter>Source Files\Engine\render</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\ecs_systems\ShadowSystem.h">
+      <Filter>Source Files\Engine\render\ecs_systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\textures\crate.jpg">
@@ -426,20 +450,38 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resource\shaders\object_shader\default.fragment">
+    <None Include="resource\shaders\object_shader\default.frag">
       <Filter>Resource Files\shaders\object_shader</Filter>
     </None>
     <None Include="resource\shaders\object_shader\default.geom">
       <Filter>Resource Files\shaders\object_shader</Filter>
     </None>
-    <None Include="resource\shaders\object_shader\default.vertex">
+    <None Include="resource\shaders\object_shader\default.vert">
       <Filter>Resource Files\shaders\object_shader</Filter>
     </None>
-    <None Include="resource\shaders\cubemap_shader\default.fragment">
+    <None Include="resource\shaders\cubemap_shader\default.frag">
       <Filter>Resource Files\shaders\cubemap_shader</Filter>
     </None>
-    <None Include="resource\shaders\cubemap_shader\default.vertex">
+    <None Include="resource\shaders\cubemap_shader\default.vert">
       <Filter>Resource Files\shaders\cubemap_shader</Filter>
+    </None>
+    <None Include="resource\shaders\camera_effects\blur_pass.vert">
+      <Filter>Resource Files\shaders\camera_effects</Filter>
+    </None>
+    <None Include="resource\shaders\camera_effects\blur_pass.frag">
+      <Filter>Resource Files\shaders\camera_effects</Filter>
+    </None>
+    <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.frag">
+      <Filter>Resource Files\shaders\final_blit_shader</Filter>
+    </None>
+    <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.vert">
+      <Filter>Resource Files\shaders\final_blit_shader</Filter>
+    </None>
+    <None Include="resource\shaders\shadow_shader\shadow_pass.frag">
+      <Filter>Resource Files\shaders\shadow_shader</Filter>
+    </None>
+    <None Include="resource\shaders\shadow_shader\shadow_pass.vert">
+      <Filter>Resource Files\shaders\shadow_shader</Filter>
     </None>
   </ItemGroup>
 </Project>

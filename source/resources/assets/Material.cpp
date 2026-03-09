@@ -2,7 +2,7 @@
 #include "Material.h"
 #include "Texture.h"
 #include <iostream>
-#include "../../render/RenderHelpers/Shader.h"
+#include "../../render/backend/Shader.h"
 
 
 void Material::SetTexture(int slot, Texture* texture) {
@@ -28,7 +28,7 @@ void Material::Bind(Shader* shader) const {
 
        
         textures[i]->Bind(i);
-
+     
         std::string uniformName = "tex" + std::to_string(i);
 
        
