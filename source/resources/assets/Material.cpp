@@ -21,29 +21,23 @@ Texture* Material::GetTexture(int slot) const {
 
 void Material::Bind(Shader* shader) const {
     if (!shader) return;
-
-    shader->Activate(); 
-    for (int i = 0; i < textures.size(); i++) {
+    static const char* slotNames[] = {
+        "albedoMap",    // 0 BASE_COLOR
+        "armMap",       // 1 ARM
+        "normalMap",    // 2 NORMAL_MAP
+        "emissiveMap",  // 3 EMISSIVE
+        "heightMap",    // 4 HEIGHT
+    };
+    for (int i = 0; i < (int)textures.size(); i++) {
         if (!textures[i]) continue;
-
-       
         textures[i]->Bind(i);
-     
-        std::string uniformName = "tex" + std::to_string(i);
-
-       
-        GLint loc = glGetUniformLocation(shader->ID, uniformName.c_str());
-        if (loc >= 0)
-            glUniform1i(loc, i);
+        shader->setInt(slotNames[i], i);
     }
 
-  
- /*   GLint metallicLoc = glGetUniformLocation(shader->ID, "metallic");
-    if (metallicLoc >= 0) glUniform1f(metallicLoc, metallic);
-
-    GLint roughnessLoc = glGetUniformLocation(shader->ID, "roughness");
-    if (roughnessLoc >= 0) glUniform1f(roughnessLoc, roughness);
-
-    GLint aoLoc = glGetUniformLocation(shader->ID, "ao");
-    if (aoLoc >= 0) glUniform1f(aoLoc, ao);*/
+    shader->setFloat("metallicFactor", metallic);
+    shader->setFloat("roughnessFactor", roughness);
+    shader->setFloat("aoFactor", ao);
+    shader->setFloat("heightScale", heightScale);
+    shader->setVec4("baseColorFactor", baseColorFactor);
+    shader->setVec3("emissiveFactor", emissiveFactor);
 }

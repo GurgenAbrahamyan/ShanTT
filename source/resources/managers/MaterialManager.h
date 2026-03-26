@@ -10,11 +10,11 @@ struct MaterialData;
 // Define standard texture slot indices
 enum class TextureSlot {
     BASE_COLOR = 0,
-    NORMAL_MAP = 1,
-    METALLIC_ROUGHNESS = 2,
-    OCCLUSION = 3,
-    EMISSIVE = 4,
-    MAX_SLOTS = 5
+    ARM = 1,
+    NORMAL_MAP = 2,
+    EMISSIVE = 3,
+    HEIGHT = 4,
+    MAX_SLOTS = 5  
 };
 
 class MaterialManager {

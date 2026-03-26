@@ -1,11 +1,16 @@
 # Changelog
 
-## [0.4.0] - 2026-03-10
+## [0.5.0] - 2026-03-26
 
 ### Added
-- Shadow mapping with support for multiple shadow-casting lights
-- Depth of Field (DOF) camera effect
-- Flexible rendering pipeline based on a RenderGraph
+- Deferred shading
+- Metallic and roughness maps
+- Soft Shadows
+- Post-processing Bloom
+- Post-processing Tone Mapping
+- Debug UI
 
 ### Known Issues
-- Debug UI not yet implemented
+- Parallax Occlusion Mapping not yet implemented
+- PBR not yet implemented
+- Debug UI should be improved

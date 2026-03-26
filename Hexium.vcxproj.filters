@@ -124,6 +124,18 @@
     <Filter Include="Resource Files\shaders\final_blit_shader">
       <UniqueIdentifier>{e3ad7a58-ad5b-4082-ad04-60ce3ab92aae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\bloom_shader">
+      <UniqueIdentifier>{cc08b232-f5b0-44c0-9bbe-71ab90d94f80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{46a6f7ed-2762-4944-8566-20fdb8254ed9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\libraries\imgui">
+      <UniqueIdentifier>{4e523886-0051-4dc0-ada3-478f3307b306}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\lighting_shader">
+      <UniqueIdentifier>{5a9f3399-256e-4950-99d9-632bc16afd39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\libraries\glad.c">
@@ -206,6 +218,27 @@
     </ClCompile>
     <ClCompile Include="source\render\backend\containers\RenderBuffer.cpp">
       <Filter>Source Files\Engine\render\backend\containers</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_draw.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_tables.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_widgets.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_demo.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files\Engine\libraries\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -303,9 +336,6 @@
       <Filter>Source Files\Engine\render\backend\containers</Filter>
     </ClInclude>
     <ClInclude Include="source\render\handlers\RenderPass.h">
-      <Filter>Source Files\Engine\render\handlers</Filter>
-    </ClInclude>
-    <ClInclude Include="source\render\handlers\UIRender.h">
       <Filter>Source Files\Engine\render\handlers</Filter>
     </ClInclude>
     <ClInclude Include="source\resources\assets\CubeMap.h">
@@ -443,6 +473,15 @@
     <ClInclude Include="source\render\ecs_systems\ShadowSystem.h">
       <Filter>Source Files\Engine\render\ecs_systems</Filter>
     </ClInclude>
+    <ClInclude Include="source\render\ecs_systems\ShadowAtlas.h">
+      <Filter>Source Files\Engine\render\ecs_systems</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\data\ShadowData.h">
+      <Filter>Source Files\Engine\render\data</Filter>
+    </ClInclude>
+    <ClInclude Include="source\math_custom\Vector4.h">
+      <Filter>Source Files\Engine\math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\textures\crate.jpg">
@@ -482,6 +521,24 @@
     </None>
     <None Include="resource\shaders\shadow_shader\shadow_pass.vert">
       <Filter>Resource Files\shaders\shadow_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom.frag">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom.vert">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom_extract.vert">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom_extract.frag">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\lighting_shader\lighting_pass.frag">
+      <Filter>Resource Files\shaders\lighting_shader</Filter>
+    </None>
+    <None Include="resource\shaders\lighting_shader\lighting_pass.vert">
+      <Filter>Resource Files\shaders\lighting_shader</Filter>
     </None>
   </ItemGroup>
 </Project>

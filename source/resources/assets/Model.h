@@ -4,7 +4,7 @@
 #include "../../math_custom/Mat4.h"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
-#include "../../utils/ModelLoader.h"
+
 #include "RenderMesh.h"
 #include "Material.h"
 

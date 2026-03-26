@@ -20,6 +20,7 @@ public:
     void setColor(const Vector3& col) override;
    
     void setupInstanceVBO(size_t maxInstances) override;
+	void calculateTangents();
     GLuint getInstanceVBO() override;
     
 private:

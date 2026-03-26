@@ -5,6 +5,7 @@
 StaticMesh::StaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& ind)
     : vertices(vertices), indices(ind), instanceVBO(0), instanceVBOCapacity(0)
 {
+	calculateTangents();
 }
 
 StaticMesh::~StaticMesh() {
@@ -27,6 +28,49 @@ int StaticMesh::indexCount() const {
     return static_cast<int>(indices.size());
 }
 
+void StaticMesh::calculateTangents()
+{
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        int i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+
+        Vector3 edge1 = vertices[i1].position - vertices[i0].position;
+        Vector3 edge2 = vertices[i2].position - vertices[i0].position;
+        Vector2 duv1 = vertices[i1].uv - vertices[i0].uv;
+        Vector2 duv2 = vertices[i2].uv - vertices[i0].uv;
+
+        float denom = duv1.x * duv2.y - duv2.x * duv1.y;
+        if (fabs(denom) < 1e-6f) continue; 
+        float f = 1.0f / denom;
+
+        Vector3 tangent;
+        tangent.x = f * (duv2.y * edge1.x - duv1.y * edge2.x);
+        tangent.y = f * (duv2.y * edge1.y - duv1.y * edge2.y);
+        tangent.z = f * (duv2.y * edge1.z - duv1.y * edge2.z);
+
+        vertices[i0].tangent += tangent;
+        vertices[i1].tangent += tangent;
+        vertices[i2].tangent += tangent;
+    }
+
+    for (auto& v : vertices)
+    {
+        Vector3 N = v.normal;
+        Vector3 T = v.tangent;
+
+        // Gram-Schmidt orthogonalize
+        Vector3 orthoT = (T - N * N.dot(T)).normalized();
+
+        // Handedness
+        Vector3 B = N.cross(orthoT);
+        Vector3 computedB = N.cross(T);
+        v.tangentW = (B.dot(computedB) < 0.0f) ? -1.0f : 1.0f;
+
+        v.tangent = orthoT;
+    }
+}
+
+
 void StaticMesh::setupBuffers() {
     if (VAO1) return; // Already initialized
 
@@ -43,7 +87,8 @@ void StaticMesh::setupBuffers() {
     VAO1->LinkAttrib(*VBO1, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, color));        // color
     VAO1->LinkAttrib(*VBO1, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, uv));           // uv
     VAO1->LinkAttrib(*VBO1, 3, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, normal));       // normal
-
+	VAO1->LinkAttrib(*VBO1, 4, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, tangent));     // tangent
+	VAO1->LinkAttrib(*VBO1, 5, 1, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, tangentW));    // tangent handedness
     VAO1->Unbind();
 }
 
@@ -78,16 +123,16 @@ void StaticMesh::setupInstanceVBO(size_t instanceCount) {
 
 
     for (int i = 0; i < 4; i++) {
-        glEnableVertexAttribArray(4 + i);
+        glEnableVertexAttribArray(6 + i);
         glVertexAttribPointer(
-            4 + i,
+            6 + i,
             4,
             GL_FLOAT,
             GL_FALSE,
             sizeof(Mat4),
             (void*)(sizeof(float) * 4 * i)
         );
-        glVertexAttribDivisor(4 + i, 1);
+        glVertexAttribDivisor(6 + i, 1);
     }
 
     VAO1->Unbind();

@@ -27,10 +27,10 @@ class Camera;
 
 class Renderer {
 public:
-    Renderer(EventBus* bus);
+    Renderer(EventBus* bus, RenderContext* ctx);
     ~Renderer();
 
-    void render(RenderContext* ctx);
+    void render();
 	FrameBuffer* getMainFrameBuffer() const { return m_MainFrameBuffer.get(); }
 	FrameBuffer* getBlurFrameBuffer() const { return m_BlurFrameBuffer.get(); }
 	FrameBuffer* getShadowFrameBuffer() const { return m_ShadowFrameBuffer.get(); }
@@ -54,12 +54,15 @@ private:
     std::unique_ptr<FrameBuffer> m_MainFrameBuffer;
 	std::unique_ptr<FrameBuffer> m_BlurFrameBuffer;
 	std::unique_ptr<FrameBuffer> m_ShadowFrameBuffer;
-    std::vector<std::unique_ptr<RenderPass>> renderHandlers;
+    std::unique_ptr<FrameBuffer> m_LightFrameBuffer;
 
     RenderGraph* graph;
 
     RenderResource* shadowResource;
     RenderResource* sceneResource;
     RenderResource* blurResource;
+	RenderResource* lightResource;
+
+    RenderContext* ctx;
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 };

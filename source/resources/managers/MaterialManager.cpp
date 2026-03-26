@@ -37,56 +37,77 @@ int MaterialManager::addMaterial(const MaterialData& materialData)
     std::cout << "Creating material: " << name << " (ID: " << id << ")\n";
     std::cout << "  Textures provided: " << textures.size() << "\n";
 
+    const MaterialTextureInfo* armInfo = nullptr;
+    const MaterialTextureInfo* aoInfo = nullptr;
+
     for (const auto& texInfo : textures)
     {
-        if (texInfo.path.empty()) {
-            std::cout << "  Texture " << static_cast<int>(texInfo.type) << ": EMPTY (skipped)\n";
-            continue;
-        }
+        if (texInfo.path.empty()) continue;
 
-       
-        uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
-        if (texID == UINT32_MAX) {
-            std::cerr << "  Failed to load texture: " << texInfo.path << "\n";
-            continue;
-        }
+        int slot = static_cast<int>(TextureSlot::MAX_SLOTS);
 
-        Texture* tex = textureManager->getTexture(texID);
-        if (!tex) {
-            std::cerr << "  Retrieved null texture for ID " << texID << "\n";
-            continue;
-        }
-
-        
-        int slot = static_cast<int>(TextureSlot::MAX_SLOTS); // default invalid
-        switch (texInfo.type) {
-        case TextureType::Albedo:         slot = static_cast<int>(TextureSlot::BASE_COLOR); break;
-        case TextureType::Normal:         slot = static_cast<int>(TextureSlot::NORMAL_MAP); break;
-        case TextureType::Metallic:  slot = static_cast<int>(TextureSlot::METALLIC_ROUGHNESS); break;
-        case TextureType::AO:             slot = static_cast<int>(TextureSlot::OCCLUSION); break;
-        case TextureType::Emissive:       slot = static_cast<int>(TextureSlot::EMISSIVE); break;
-        }
-
-        if (slot >= 0 && slot < static_cast<int>(TextureSlot::MAX_SLOTS))
+        switch (texInfo.type)
         {
-            mat->SetTexture(slot, tex);
-            std::cout << "  Slot " << slot << " (" << texInfo.path << ") assigned\n";
-        }
-        else
+        case TextureType::Albedo:
         {
-            std::cerr << "  Unknown texture type for path: " << texInfo.path << "\n";
+            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
+            Texture* tex = textureManager->getTexture(texID);
+            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), tex);
+            break;
+        }
+        case TextureType::Normal:
+        {
+            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
+            Texture* tex = textureManager->getTexture(texID);
+            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), tex);
+            break;
+        }
+        case TextureType::Emissive:
+        {
+            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
+            Texture* tex = textureManager->getTexture(texID);
+            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), tex);
+            break;
+        }
+        case TextureType::Height:
+        {
+            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
+            Texture* tex = textureManager->getTexture(texID);
+            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), tex);
+            break;
+        }
+        case TextureType::ORM: armInfo = &texInfo; break;
+        case TextureType::AO:  aoInfo = &texInfo; break;
+        default: break;
         }
     }
 
-    
+    // Pack ARM — always goes through loadARM so AO gets baked into R if present
+    if (armInfo) {
+        std::string aoPath = aoInfo ? aoInfo->path : "";
+        Texture* tex = textureManager->loadARM(aoPath, armInfo->path);
+        if (tex)
+            mat->SetTexture(static_cast<int>(TextureSlot::ARM), tex);
+    }
+
+    // Fallbacks
+    if (!mat->GetTexture(static_cast<int>(TextureSlot::BASE_COLOR)))
+        mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), textureManager->getDefaultAlbedo());
+    if (!mat->GetTexture(static_cast<int>(TextureSlot::NORMAL_MAP)))
+        mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), textureManager->getDefaultNormal());
+    if (!mat->GetTexture(static_cast<int>(TextureSlot::ARM)))
+        mat->SetTexture(static_cast<int>(TextureSlot::ARM), textureManager->getDefaultWhite());
+    if (!mat->GetTexture(static_cast<int>(TextureSlot::EMISSIVE)))
+        mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), textureManager->getDefaultBlack());
+    if (!mat->GetTexture(static_cast<int>(TextureSlot::HEIGHT)))
+        mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), textureManager->getDefaultBlack());
+
     mat->metallic = materialData.metallic;
     mat->roughness = materialData.roughness;
     mat->ao = materialData.ao;
+    mat->baseColorFactor = materialData.baseColorFactor;
+    mat->emissiveFactor = materialData.emissiveFactor;
     mat->setID(id);
-
-    std::cout << "  Properties: Metallic=" << mat->metallic
-        << ", Roughness=" << mat->roughness
-        << ", AO=" << mat->ao << "\n";
 
     idMap[id] = std::move(mat);
     nameToIDMap[name] = id;
@@ -102,9 +123,6 @@ Material* MaterialManager::getRectangleMaterial() {
     MaterialTextureInfo texInfo;
     texInfo.path = "resource/textures/brick_wall.jpg";
     texInfo.type = TextureType::Albedo;
-    matData.textureInfo.push_back(texInfo);
-    texInfo.path = "resource/textures/brick_wall_specular.png";
-    texInfo.type = TextureType::Normal;
     matData.textureInfo.push_back(texInfo);
     return getMaterial(addMaterial(matData));
 }

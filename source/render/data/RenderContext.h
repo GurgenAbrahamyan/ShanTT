@@ -5,6 +5,7 @@
 #include "../../ecs/components/core/TransformComponent.h"
 #include "../data/BatchMap.h"
 #include "GPULight.h"
+#include "ShadowData.h"
 struct RenderContext {
 
  
@@ -18,12 +19,11 @@ struct RenderContext {
 
     std::vector<GPULight> lights;
     std::vector<GPULight*> shadowCasters; 
-	int windowWidth = 1280;
-    int windowHeight = 720;
+	int windowWidth = 1920;
+    int windowHeight = 1200;
   
 
     int shadowSlots;
 
-    Mat4 lightProjection;
-	Mat4 lightView;
+    std::vector<ShadowData> shadowData;
 };

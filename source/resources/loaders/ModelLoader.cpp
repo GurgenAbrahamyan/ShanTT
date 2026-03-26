@@ -60,8 +60,7 @@ void ModelLoader::traverseNode(unsigned int nextNode, const Mat4& parentMat)
 
     if (node.find("matrix") != node.end())
     {
-        for (unsigned int i = 0; i < node["matrix"].size(); i++)
-            matNode.data[i] = (node["matrix"][i]);
+        matNode = fromArray(node["matrix"]);
     }
     else
     {
@@ -102,12 +101,19 @@ void ModelLoader::traverseNode(unsigned int nextNode, const Mat4& parentMat)
         }
 
         matNode =
-            Mat4::scale(localScale) *
-            Mat4::fromQuat(localRotation) *
-            Mat4::translate(localTranslation);
+
+
+           
+            
+            
+            
+            Mat4::translate(localTranslation)*
+            GLAdapter::toGL(Mat4::fromQuat(localRotation))*
+            Mat4::scale(localScale)
+            ;
     }
 
-    Mat4 worldMat = parentMat * matNode;
+    Mat4 worldMat = parentMat* matNode;
 
     if (node.contains("mesh"))
     {
@@ -193,7 +199,10 @@ void ModelLoader::parseMaterial(unsigned int materialIndex)
         const json& pbr = matJSON["pbrMetallicRoughness"];
         mat.metallic = pbr.value("metallicFactor", 1.0f);
         mat.roughness = pbr.value("roughnessFactor", 1.0f);
-
+        if (pbr.contains("baseColorFactor")) {
+            auto& c = pbr["baseColorFactor"];
+            mat.baseColorFactor = { c[0], c[1], c[2], c[3] };
+        }
         std::cout << "  Metallic: " << mat.metallic << ", Roughness: " << mat.roughness << "\n";
 
         // Parse base color texture
@@ -213,7 +222,7 @@ void ModelLoader::parseMaterial(unsigned int materialIndex)
             unsigned int imgIndex = JSON["textures"][texIndex]["source"];
             std::string uri = JSON["images"][imgIndex]["uri"];
             std::cout << "  Metallic/Roughness Texture (ARM): " << uri << "\n";
-            mat.textureInfo.push_back({ directory + uri, TextureType::Metallic });
+            mat.textureInfo.push_back({ directory + uri, TextureType::ORM });
         }
     }
 
@@ -237,14 +246,42 @@ void ModelLoader::parseMaterial(unsigned int materialIndex)
         mat.textureInfo.push_back({ directory + uri, TextureType::AO });
     }
 
+
+    if (matJSON.contains("emissiveFactor")) {
+        auto& e = matJSON["emissiveFactor"];
+        mat.emissiveFactor = { e[0], e[1], e[2] };
+    }
     // Optional: Parse emissive texture
     if (matJSON.contains("emissiveTexture"))
+
+        
     {
+        
         unsigned int texIndex = matJSON["emissiveTexture"]["index"];
         unsigned int imgIndex = JSON["textures"][texIndex]["source"];
         std::string uri = JSON["images"][imgIndex]["uri"];
         std::cout << "  Emissive Texture: " << uri << "\n";
         mat.textureInfo.push_back({ directory + uri, TextureType::Emissive });
+    }
+
+    // Optional: Parse height/displacement texture from extras
+    if (matJSON.contains("extras"))
+    {
+        const json& extras = matJSON["extras"];
+
+        if (extras.contains("heightTexture"))
+        {
+            unsigned int texIndex = extras["heightTexture"]["index"];
+            unsigned int imgIndex = JSON["textures"][texIndex]["source"];
+            std::string uri = JSON["images"][imgIndex]["uri"];
+            std::cout << "  Height Texture: " << uri << "\n";
+            mat.textureInfo.push_back({ directory + uri, TextureType::Height });
+        }
+
+        if (extras.contains("heightScale"))
+        {
+            mat.heightScale = extras["heightScale"].get<float>();
+        }
     }
 
     model.materials.push_back(mat);
@@ -365,8 +402,11 @@ std::vector<unsigned char> ModelLoader::loadBufferData(const std::string& uri)
 
 Mat4 ModelLoader::fromArray(const json& arr)
 {
-    Mat4 m;
-    for (int i = 0; i < 16; i++)
-        m.data[i] = arr[i];
-    return m;
+    
+        Mat4 m;
+        for (int row = 0; row < 4; ++row)
+            for (int col = 0; col < 4; ++col)
+                m.data[row * 4 + col] = arr[col * 4 + row];
+        return m;
+    
 }

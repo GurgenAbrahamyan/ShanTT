@@ -4,8 +4,8 @@
 
 struct CameraComponent {
     // Projection
-    float fov = 45.0f;
-    float aspectRatio = 16.0f / 9.0f;
+    float fov = 120.0f;
+    float aspectRatio = 1920.0f / 1200.0f;
     float nearPlane = 0.1f;
     float farPlane = 1000.0f;
 
@@ -18,6 +18,7 @@ struct CameraComponent {
     Vector3 up = Vector3(0, 0, 1); // Z-up
 
     // Depth of field / post-processing
+    bool applyBlur = false;
     float focusDistance = 5.0f;
     float aperture = 1.5f;
     float focalLength = 0.05f;

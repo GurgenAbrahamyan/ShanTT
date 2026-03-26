@@ -5,7 +5,6 @@
 #include "../scene/Scene.h"
 #include "../render/Renderer.h"
 #include "../physics/PhysicsEngine.h"
-#include "../render/handlers/UiRender.h"
 #include "../input/UIInput.h"
 #include "../input/KeyboardInput.h"
 #include "ecs_systems/CameraSystem.h"
@@ -17,15 +16,10 @@
 
 Engine::Engine()
     : bus(new EventBus()),
+    
     scene(new Scene(bus)),
-    renderer(new Renderer(bus)),
     physicsEngine(new PhysicsEngine()),
-    ui(new UiInput(bus)),
-    uiRender(new UiRender()),
-    keyboardInput(new KeyboardInput(bus)),
-    mouseInput(new MouseInput(bus)),
     running(true),
-    renderContext ( new RenderContext()),
     accumulator(0.0f),
     framecount(0),
     framesThisSecond(0),
@@ -33,9 +27,13 @@ Engine::Engine()
     cameraSystem(new CameraSystem (bus, scene->getRegistry())),
 	shadowSystem(new ShadowSystem())
 {
+    renderContext = new RenderContext(),
+    renderer = new Renderer(bus, renderContext);
+
     window = EngineContext::get().getWindow();
-	
-	
+    ui = new UiInput(window, bus);
+    keyboardInput = new KeyboardInput(bus);
+    mouseInput = new MouseInput(bus),
     scene->initObjects();
 	renderContext->registry = &scene->getRegistry();
 
@@ -50,7 +48,6 @@ Engine::~Engine() {
     delete renderer;
     delete physicsEngine;
     delete ui;
-    delete uiRender;
     delete keyboardInput;
     delete mouseInput;
 }
@@ -78,12 +75,22 @@ void Engine::run() {
 
         keyboardInput->processInput();
         cameraSystem->update(scene->getRegistry(), frameTime);
-        mouseInput->proccessInput();
-        ui->processInput();
+        mouseInput->proccessInput(renderContext->windowWidth, renderContext->windowHeight);
+        
+        glfwPollEvents();          
+
+        ui->startNewFrame();      
+
+        ui->buildUI(renderContext);
+
         renderer->rebuildContext(renderContext);
-		shadowSystem->update(renderContext);
-        renderer->render(renderContext);
-        glfwPollEvents();
+        shadowSystem->update(renderContext);
+        renderer->render();       
+
+        ui->render();            
+
+        glfwSwapBuffers(window);
+     
 
         framesThisSecond++;
         timeSinceLastFpsPrint += frameTime;

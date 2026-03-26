@@ -34,7 +34,7 @@ struct TextureRecord {
 
 class TextureManager {
 public:
-    TextureManager() = default;
+    TextureManager();
 
     TextureID addTexture(const std::string& path,const TextureType& type);
     Texture* getTexture(TextureID id);
@@ -49,9 +49,23 @@ public:
     CubeMap* loadCubeMapDebug();
 	bool isSRGB(TextureType type) const;
 
+    // Default texture accessors
+    Texture* getDefaultWhite()   const { return defaultWhite.get(); }
+    Texture* getDefaultAlbedo()  const { return defaultWhite.get(); }
+    Texture* getDefaultNormal()  const { return defaultFlatNormal.get(); }
+    Texture* getDefaultBlack()   const { return defaultBlack.get(); }
+
+    Texture* loadARM(const std::string& aoPath, const std::string& armPath);
+    void initDefaults();
 private:
     std::vector<TextureRecord> textures;
     std::unordered_map<TextureKey, TextureID, TextureKeyHash> lookup;
-
 	std::unique_ptr<CubeMap> cubeMap;
+
+    std::unique_ptr<Texture> defaultWhite;
+    std::unique_ptr<Texture> defaultFlatNormal;
+    std::unique_ptr<Texture> defaultBlack;
+
+    Texture* createSinglePixel(unsigned char* data, int channels, GLenum internal);
+
 };

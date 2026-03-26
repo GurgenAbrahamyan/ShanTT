@@ -6,6 +6,7 @@
 
 class Vector2;
 class Vector3;
+struct Vector4;
 class Mat4;
 
 class Shader {
@@ -20,7 +21,7 @@ public:
     void setInt(const char* name, int value);
 	void setVec2(const char* name, Vector2 value);
     void setVec3(const char* name, Vector3 value);
-    void setVec4(const char* name, Vector3 value, float t);
+    void setVec4(const char* name, Vector4 value);
     void setMat4(const char* name, Mat4 value);
 
 private:

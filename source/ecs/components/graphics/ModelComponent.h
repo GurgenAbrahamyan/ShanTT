@@ -6,13 +6,13 @@
 
 
 struct MeshEntry {
-    RenderMesh* mesh;           // pointer to the mesh
-    Material* material;         // pointer to material
-    Mat4 localTransform;        // transform relative to model origin
+    RenderMesh* mesh;          
+    Material* material;        
+    Mat4 localTransform;        
 };
 
 struct ModelComponent {
    
 
-    std::vector<MeshEntry> meshes; // all submeshes of this model
+    std::vector<MeshEntry> meshes; 
  };

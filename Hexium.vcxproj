@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>$(ProjectDir)libs;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
-    <IncludePath>$(ProjectDir)include</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(ProjectDir)include\imgui</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LibraryPath>$(ProjectDir)libs;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
@@ -110,7 +110,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\GLFW</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\GLFW;$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -130,8 +130,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\GLFW</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\GLFW;$(ProjectDir)include;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>
  %(AdditionalOptions)</AdditionalOptions>
@@ -139,8 +139,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;GLFW\glfw3.lib;user32.lib;shell32.lib;gdi32.lib;msvcrtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs;$(ProjectDir)libs\GLFW;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;GLFW\glfw3.lib;user32.lib;shell32.lib;gdi32.lib;msvcrtd.lib;glfw3.lib;glfw3_mt.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -150,6 +150,15 @@
     <ClCompile Include="source\Hexium.cpp" />
     <ClCompile Include="source\input\MouseInput.cpp" />
     <ClCompile Include="source\libraries\glad.c" />
+    <ClCompile Include="source\libraries\imgui\imgui.cpp" />
+    <ClCompile Include="source\libraries\imgui\imgui_demo.cpp" />
+    <ClCompile Include="source\libraries\imgui\imgui_draw.cpp" />
+    <ClCompile Include="source\libraries\imgui\imgui_impl_glfw.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="source\libraries\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="source\libraries\imgui\imgui_tables.cpp" />
+    <ClCompile Include="source\libraries\imgui\imgui_widgets.cpp" />
     <ClCompile Include="source\libraries\stb.cpp" />
     <ClCompile Include="source\physics\dynamics\ForceGenerator.cpp" />
     <ClCompile Include="source\physics\dynamics\GeneralIntegrators.cpp" />
@@ -203,6 +212,7 @@
     <ClInclude Include="source\math_custom\Quat.h" />
     <ClInclude Include="source\math_custom\Vector2.h" />
     <ClInclude Include="source\math_custom\Vector3.h" />
+    <ClInclude Include="source\math_custom\Vector4.h" />
     <ClInclude Include="source\physics\dynamics\colider\Header.h" />
     <ClInclude Include="source\physics\dynamics\ForceGenerator.h" />
     <ClInclude Include="source\physics\dynamics\GeneralIntegrators.h" />
@@ -222,9 +232,10 @@
     <ClInclude Include="source\render\data\RenderContext.h" />
     <ClInclude Include="source\render\data\RenderResource.h" />
     <ClInclude Include="source\render\data\ShaderType.h" />
+    <ClInclude Include="source\render\data\ShadowData.h" />
+    <ClInclude Include="source\render\ecs_systems\ShadowAtlas.h" />
     <ClInclude Include="source\render\ecs_systems\ShadowSystem.h" />
     <ClInclude Include="source\render\handlers\RenderPass.h" />
-    <ClInclude Include="source\render\handlers\UIRender.h" />
     <ClInclude Include="source\render\Renderer.h" />
     <ClInclude Include="source\render\RenderGraph.h" />
     <ClInclude Include="source\resources\assets\CubeMap.h" />
@@ -258,12 +269,18 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <None Include="resource\shaders\bloom_shader\bloom.frag" />
+    <None Include="resource\shaders\bloom_shader\bloom.vert" />
+    <None Include="resource\shaders\bloom_shader\bloom_extract.frag" />
+    <None Include="resource\shaders\bloom_shader\bloom_extract.vert" />
     <None Include="resource\shaders\camera_effects\blur_pass.frag" />
     <None Include="resource\shaders\camera_effects\blur_pass.vert" />
     <None Include="resource\shaders\cubemap_shader\default.frag" />
     <None Include="resource\shaders\cubemap_shader\default.vert" />
     <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.frag" />
     <None Include="resource\shaders\final_blit_shader\default_final_blit_shader.vert" />
+    <None Include="resource\shaders\lighting_shader\lighting_pass.frag" />
+    <None Include="resource\shaders\lighting_shader\lighting_pass.vert" />
     <None Include="resource\shaders\object_shader\default.frag" />
     <None Include="resource\shaders\object_shader\default.geom" />
     <None Include="resource\shaders\object_shader\default.vert" />

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include "../../math_custom/Vector4.h"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Vector2.h"
 #include "../../math_custom/Mat4.h"
@@ -95,15 +96,18 @@ void Shader::setVec3(const char* name, Vector3 value) {
     glUniform3f(glGetUniformLocation(ID, name), value.x, value.y, value.z);
 }
 
-void Shader::setVec4(const char* name, Vector3 value, float t) {
-    glUniform4f(glGetUniformLocation(ID, name), value.x, value.y, value.z, t);
+void Shader::setVec4(const char* name, Vector4 data) {
+    glUniform4f(glGetUniformLocation(ID, name), data.x, data.y, data.z, data.w);
 }
 void Shader::setMat4(const char* name, const Mat4 mat) {
 
     GLint loc = glGetUniformLocation(ID, name);
     if (loc == -1) return;
 
+   
     glUniformMatrix4fv(loc, 1, GL_FALSE, mat.data);
+     
+
 }
 
 

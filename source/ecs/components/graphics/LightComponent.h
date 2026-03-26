@@ -17,6 +17,6 @@ struct LightComponent {
     float outerConeAngle = 0.95f;
 
 	Mat4 lightProjection = Mat4();
-    bool castsShadow = false; 
+    bool castsShadow = false;
 };
 

@@ -5,8 +5,7 @@ class EngineContext {
 public:
     float deltaTime = 0.0f;
     float totalTime = 0.0f;
-    int windowWidth = 1280;
-    int windowHeight = 720;
+   
 
 	
     static EngineContext& get() {

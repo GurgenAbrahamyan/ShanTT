@@ -1,11 +1,22 @@
-#version 330 core
-
+#version 420 core
 
 out vec4 FragColor;
 in vec2 texCoords;
-uniform sampler2D screenTexture;
+layout( binding= 0) uniform sampler2D screenTexture;
+layout( binding= 1) uniform sampler2D bloomTexture;
+uniform float exposure; 
+uniform bool isBloom = true;
 
 void main()
-{    
-    FragColor = texture(screenTexture, texCoords);
+{
+    vec3 hdrColor = texture(screenTexture, texCoords).rgb;
+   
+    vec3 combined = hdrColor;
+    if(isBloom){
+     vec3 bloom    = texture(bloomTexture, texCoords).rgb;
+     combined += bloom;
+    }
+    vec3 mapped   = vec3(1.0) - exp(-combined * exposure);
+  //  mapped = pow(mapped, vec3(1.0 / 2.2));
+    FragColor = vec4(mapped, 1.0);
 }

@@ -3,6 +3,31 @@
 #include <iostream>
 #include "../../core/Event.h"
 #include "../../core/EventBus.h"
+#include <memory>
+
+
+TextureManager::TextureManager() {} // empty, no GL calls
+
+void TextureManager::initDefaults()
+{
+    unsigned char white[] = { 255, 255, 255 };
+    unsigned char flatN[] = { 128, 128, 255 };
+    unsigned char black[] = { 0,   0,   0 };
+
+    defaultWhite = std::unique_ptr<Texture>(createSinglePixel(white, 3, GL_SRGB8));
+    defaultFlatNormal = std::unique_ptr<Texture>(createSinglePixel(flatN, 3, GL_RGB8));
+    defaultBlack = std::unique_ptr<Texture>(createSinglePixel(black, 3, GL_RGB8));
+
+}
+
+Texture* TextureManager::createSinglePixel(unsigned char* data, int channels, GLenum internal)
+{
+    GLenum format = (channels == 1) ? GL_RED : (channels == 3) ? GL_RGB : GL_RGBA;
+    TextureDesc desc;
+    desc.internalFormat = internal;
+    desc.format = format;
+    return new Texture(1, 1, data, desc);
+}
 
 TextureID TextureManager::addTexture(const std::string& path,const TextureType& type)
 {
@@ -72,6 +97,94 @@ TextureID TextureManager::addTexture(const std::string& path,const TextureType& 
 
     std::cout << "Texture loaded successfully (ID: " << id << ")\n";
     return id;
+}
+
+
+Texture* TextureManager::loadARM(const std::string& aoPath, const std::string& armPath)
+{
+    int w = 0, h = 0, ch = 0;
+    unsigned char* armData = nullptr;
+
+    stbi_set_flip_vertically_on_load(false);
+
+    // 1. Load ARM if present
+    if (!armPath.empty()) {
+        armData = stbi_load(armPath.c_str(), &w, &h, &ch, 4); // force RGBA
+        if (!armData) {
+            std::cerr << "Failed to load ARM texture: " << armPath << "\n";
+        }
+    }
+
+    // 2. If ARM not loaded, but AO exists, need dimensions
+    if (!armData && !aoPath.empty()) {
+        int aoW, aoH, aoCh;
+        unsigned char* aoDataTmp = stbi_load(aoPath.c_str(), &aoW, &aoH, &aoCh, 1);
+        if (!aoDataTmp) {
+            std::cerr << "Failed to load AO texture: " << aoPath << "\n";
+        }
+        else {
+            w = aoW;
+            h = aoH;
+            stbi_image_free(aoDataTmp); // will reload later
+        }
+    }
+
+    // 3. If still no ARM and no AO, create 1x1 default
+    if (!armData && w == 0) w = 1;
+    if (!armData && h == 0) h = 1;
+
+    // 4. Allocate ARM buffer
+    if (!armData) {
+        armData = new unsigned char[w * h * 4];
+        for (int i = 0; i < w * h; i++) {
+            armData[i * 4 + 0] = 255; // R default
+            armData[i * 4 + 1] = 128; // G default (roughness)
+            armData[i * 4 + 2] = 0;   // B default (metallic)
+            armData[i * 4 + 3] = 255; // A default
+        }
+    }
+    else {
+        // Ensure R is at least 255 if AO missing
+        for (int i = 0; i < w * h; i++)
+            if (armData[i * 4 + 0] == 0) armData[i * 4 + 0] = 255;
+    }
+
+    // 5. Bake AO if exists
+    if (!aoPath.empty()) {
+        int aoW, aoH, aoCh;
+        unsigned char* aoData = stbi_load(aoPath.c_str(), &aoW, &aoH, &aoCh, 1);
+        if (aoData) {
+            if (aoW != w || aoH != h) {
+                std::cerr << "AO texture size mismatch, resizing not implemented\n";
+            }
+            else {
+                for (int i = 0; i < w * h; i++)
+                    armData[i * 4 + 0] = aoData[i]; // overwrite R with AO
+            }
+            stbi_image_free(aoData);
+            std::cout << "AO baked into ARM R channel: " << aoPath << "\n";
+        }
+        else {
+            std::cerr << "Failed to load AO texture: " << aoPath << "\n";
+        }
+    }
+
+    TextureDesc desc;
+    desc.internalFormat = GL_RGBA8;
+    desc.format = GL_RGBA;
+
+    auto tex = std::make_unique<Texture>(w, h, armData, desc);
+
+    // Clean up
+    if (!armPath.empty()) stbi_image_free(armData);
+    else delete[] armData;
+
+    Texture* raw = tex.get();
+    textures.push_back({ std::move(tex), armPath.empty() ? aoPath : armPath, TextureType::ORM });
+    lookup[TextureKey{ armPath.empty() ? aoPath : armPath }] = static_cast<TextureID>(textures.size() - 1);
+
+    std::cout << "ARM texture loaded and packed: " << (armPath.empty() ? aoPath : armPath) << "\n";
+    return raw;
 }
 
 Texture* TextureManager::getTexture(TextureID id) {
