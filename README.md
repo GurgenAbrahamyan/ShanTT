@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 # ShanTT
+=======
+#  ShanTT
+>>>>>>> 9740bae1e3128502358b9428a3418d57712f90cc
 
 A lightweight C++ engine focused on learning graphics,
-physics, and engine architecture.
+and engine architecture.
 
 ## Features
 - OpenGL renderer
@@ -11,7 +15,6 @@ physics, and engine architecture.
 - Engine-wide math & unit conventions documentation
 - Cross-platform (Windows/Linux planned)
 - Clean Debug UI
-
 
 
 ## Roadmap / Future Plans
