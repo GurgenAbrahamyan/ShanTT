@@ -62,7 +62,15 @@ public:
 
 };
 
+class InitModel : Event {
 
+    //std::string path;
+
+    InitModel(/*std::string path*/) {
+      //  this->path = path;
+	}
+
+};
 
 class InitMaterial : Event {
 public:
@@ -111,6 +119,7 @@ public:
 
 
 };
+
 
 
 

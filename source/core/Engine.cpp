@@ -31,13 +31,13 @@ Engine::Engine()
     renderer = new Renderer(bus, renderContext);
 
     window = EngineContext::get().getWindow();
-    ui = new UiInput(window, bus);
+   
     keyboardInput = new KeyboardInput(bus);
     mouseInput = new MouseInput(bus),
     scene->initObjects();
 	renderContext->registry = &scene->getRegistry();
-
-
+    renderContext->brdfTexture = scene->getBRDF();
+    renderContext->modelManager = scene->getModelManager();
     
     
 }
@@ -47,7 +47,7 @@ Engine::~Engine() {
     delete scene;
     delete renderer;
     delete physicsEngine;
-    delete ui;
+   
     delete keyboardInput;
     delete mouseInput;
 }
@@ -79,15 +79,12 @@ void Engine::run() {
         
         glfwPollEvents();          
 
-        ui->startNewFrame();      
-
-        ui->buildUI(renderContext);
-
+       
         renderer->rebuildContext(renderContext);
         shadowSystem->update(renderContext);
         renderer->render();       
 
-        ui->render();            
+        
 
         glfwSwapBuffers(window);
      

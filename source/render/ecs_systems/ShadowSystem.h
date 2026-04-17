@@ -9,9 +9,9 @@
 
 struct ShadowSettings {
     float nearPlane = 0.1f;
-    float farPlane = 50.0f;
-    float orthoWidth = 20.0f;
-    float orthoHeight = 20.0f;
+    float farPlane = 100.0f;
+    float orthoWidth = 2.5f;
+    float orthoHeight = 2.5f;
 };
 
 class ShadowSystem {
@@ -88,7 +88,7 @@ private:
     Mat4 calcDirectional(const GPULight& light) {
         Vector3 lightDir = light.direction.normalized();
         Vector3 lightPos = light.position;
-        Vector3 center = lightPos + lightDir * 10.0f;
+        Vector3 center = Vector3();// lightPos + lightDir * 10.0f;
         Vector3 up = (fabs(lightDir.y) > 0.99f)
             ? Vector3(0, 0, 1) : Vector3(0, 1, 0);
         Mat4 view = Mat4::lookAt(lightPos, center, up);
@@ -96,6 +96,7 @@ private:
             -settings.orthoWidth, settings.orthoWidth,
             -settings.orthoHeight, settings.orthoHeight,
             settings.nearPlane, settings.farPlane);
+       
         return view * proj;
     }
 
@@ -112,6 +113,10 @@ private:
 
 
         Mat4 proj = Mat4::perspective(fovDeg, 1.0f, settings.nearPlane, settings.farPlane);
+        /*Mat4 proj = Mat4::ortho(
+            -settings.orthoWidth, settings.orthoWidth,
+            -settings.orthoHeight, settings.orthoHeight,
+            settings.nearPlane, settings.farPlane);*/
         return view * proj;
     }
 

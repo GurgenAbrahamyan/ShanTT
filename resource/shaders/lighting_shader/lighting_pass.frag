@@ -12,6 +12,12 @@ uniform sampler2D shadowMap;
 uniform bool shadowsEnabled;
 uniform vec3 cameraPos;
 
+uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
+
+uniform float envIntensity;
+
 struct GPULight {
     int   type;           
     float intensity;
@@ -38,6 +44,48 @@ layout(std140) uniform LightBlock {
     int lightCount;
     vec3 pad5;        
 };
+const float PI = 3.14159265359;
+
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}  
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = max(denom, 0.0001);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.001);
+    float NdotL = max(dot(N, L), 0.001);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
 
 layout(std140, binding = 2) uniform LightMatrices {
     ShadowData shadowInfo[32];
@@ -80,7 +128,7 @@ float pcf(sampler2D map, vec2 atlasUV, float currentDepth, float bias, vec2 tile
     return shadow/16.0;
 }
 
-// Shadow calculations (point/directional/spot)
+
 float calcShadowPoint(GPULight light, vec3 normal, vec3 fragPos) {
     if(light.shadowIndex<0) return 0.0;
     vec3 L = fragPos - light.position;
@@ -131,69 +179,137 @@ float calcShadowSpot(GPULight light, vec3 normal, vec3 fragPos) {
     return pcf(shadowMap, atlasUV, projCoords.z, bias, tileSize, 35);
 }
 
+vec3 cookTorrance(vec3 L, vec3 N, vec3 V, vec3 albedo,
+                  float roughness, float metallic,
+                  vec3 lightColor, float lightIntensity, float shadow)
+{
+    vec3 H = normalize(V + L);
+
+    // F0: 0.04 for dielectrics, lerp toward albedo for metals
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+    float NdotL = max(dot(N, L), 0.001);
+    float NdotV = max(dot(N, V), 0.001);
+
+    // Cook-Torrance specular terms
+    float D = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3  num   = D * G * F;
+    float denom = 4.0 * NdotV * NdotL + 0.0001; // epsilon to avoid /0
+    vec3  spec  = num / denom;
+
+    // kS = Fresnel (reflected energy), kD = refracted
+    vec3 kS = F;
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic); // metals have no diffuse
+
+    vec3 diffuse = kD * albedo / PI;
+
+    return (diffuse + spec) * NdotL * lightColor * lightIntensity * (1.0 - shadow);
+}
 // Light calculations
-vec3 calcPointLight(GPULight light, vec3 normal, vec3 viewDir, vec3 albedo, float spec, vec3 fragPos) {
+vec3 calcPointLight(GPULight light, vec3 N, vec3 V,
+                    vec3 albedo, float roughness, float metallic, vec3 fragPos)
+{
     vec3 Lvec = light.position - fragPos;
     float dist = length(Lvec);
-    vec3 L = normalize(Lvec);
-    float attenuation = 1.0/(0.01*dist*dist+0.001*dist+1.0);
-    float diffuse = max(dot(normal,L),0.0);
-    vec3 H = normalize(L+viewDir);
-    float specular = pow(max(dot(normal,H),0.0),32.0)*spec;
-    float shadow=0.0;
-    if(shadowsEnabled) shadow=calcShadowPoint(light, normal, fragPos);
-    return (albedo*diffuse+specular)*(1.0-shadow)*light.color*light.intensity*attenuation;
+    vec3  L    = normalize(Lvec);
+    float attenuation = 1.0 / (0.01*dist*dist + 0.001*dist + 1.0);
+
+    float shadow = shadowsEnabled ? calcShadowPoint(light, N, fragPos) : 0.0;
+
+    return cookTorrance(L, N, V, albedo, roughness, metallic,
+                        light.color, light.intensity * attenuation, shadow);
 }
 
-vec3 calcDirectionalLight(GPULight light, vec3 normal, vec3 viewDir, vec3 albedo, float spec, vec3 fragpos) {
+vec3 calcDirectionalLight(GPULight light, vec3 N, vec3 V,
+                          vec3 albedo, float roughness, float metallic, vec3 fragPos)
+{
     vec3 L = normalize(-light.direction);
-    float diffuse = max(dot(normal,L),0.0);
-    vec3 H = normalize(L+viewDir);
-    float specular = pow(max(dot(normal,H),0.0),32.0)*spec;
-    float shadow=0.0;
-    if(shadowsEnabled) shadow=calcShadowDirectional(light, normal, fragpos); 
-    return (albedo*diffuse+specular)*(1.0-shadow)*light.color*light.intensity;
+    float shadow = shadowsEnabled ? calcShadowDirectional(light, N, fragPos) : 0.0;
+
+    return cookTorrance(L, N, V, albedo, roughness, metallic,
+                        light.color, light.intensity, shadow);
 }
 
-vec3 calcSpotLight(GPULight light, vec3 normal, vec3 viewDir, vec3 albedo, float spec, vec3 fragPos) {
-    vec3 Lvec = light.position - fragPos;
+vec3 calcSpotLight(GPULight light, vec3 N, vec3 V,
+                   vec3 albedo, float roughness, float metallic, vec3 fragPos)
+{
+    vec3  Lvec = light.position - fragPos;
     float dist = length(Lvec);
-    vec3 L = normalize(Lvec);
-    float theta = dot(L, normalize(-light.direction));
-    float epsilon = light.outerCone-light.innerCone;
-    float intensity = clamp((theta-light.innerCone)/epsilon,0.0,1.0);
-    float attenuation = 1.0/(0.01*dist*dist+0.001*dist+1.0);
-    float diffuse = max(dot(normal,L),0.0);
-    vec3 H = normalize(L+viewDir);
-    float specular = pow(max(dot(normal,H),0.0),32.0)*spec;
-    float shadow=0.0;
-    if(shadowsEnabled) shadow=calcShadowSpot(light, normal, fragPos);
-    return (albedo*diffuse+specular)*(1.0-shadow)*light.color*light.intensity*attenuation*intensity;
+    vec3  L    = normalize(Lvec);
+
+    float theta   = dot(L, normalize(-light.direction));
+    float epsilon  = light.outerCone - light.innerCone;
+    float spotMask = clamp((theta - light.innerCone) / epsilon, 0.0, 1.0);
+    float attenuation = spotMask / (0.01*dist*dist + 0.001*dist + 1.0);
+
+    float shadow = shadowsEnabled ? calcShadowSpot(light, N, fragPos) : 0.0;
+
+    return cookTorrance(L, N, V, albedo, roughness, metallic,
+                        light.color, light.intensity * attenuation, shadow);
 }
 
 void main() {
-    vec3 fragPos = texture(gPosition,vUV).xyz;
-    vec3 normal = normalize(texture(gNormal,vUV).xyz);
-    vec3 albedo = texture(gAlbedo,vUV).rgb;
-    vec3 arm = texture(gARM,vUV).rgb;
-    vec3 emissive = texture(gEmissive,vUV).rgb;
+    vec3 fragPos = texture(gPosition, vUV).xyz;
 
-    float ao = arm.r;
-    float roughness = arm.g;
-    float metallic = arm.b;
-    float fakeSpec = 1.0 - roughness;
-
-    vec3 viewDir = normalize(cameraPos - fragPos);
-    vec3 ambient = albedo * ao * 0.10;
-    vec3 result = ambient;
-
-    for(int i=0;i<lightCount;i++){
-        GPULight light = lights[i];
-        if(light.type==0) result += calcPointLight(light,normal,viewDir,albedo,fakeSpec,fragPos);
-        else if(light.type==1) result += calcDirectionalLight(light,normal,viewDir,albedo,fakeSpec, fragPos);
-        else if(light.type==2) result += calcSpotLight(light,normal,viewDir,albedo,fakeSpec,fragPos);
+    vec4 normalSample = texture(gNormal, vUV);
+    
+    if(normalSample.a < 0.5) {
+        FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        return;
     }
 
+    vec3 normal = normalize(normalSample.xyz);
+    vec3  albedo   = texture(gAlbedo, vUV).rgb; // linearize if sRGB
+    vec3  arm      = texture(gARM, vUV).rgb;
+    vec3  emissive = texture(gEmissive, vUV).rgb;
+
+    float ao        = arm.r;
+    float roughness = arm.g;
+    
+    roughness = max(roughness, 0.04);
+    float metallic  = arm.b;
+
+    vec3 V = normalize(cameraPos - fragPos);
+ 
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+    
+    vec3 fresnel = F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - max(dot(normal, V), 0.0), 5.0);
+    vec3 kS = fresnel;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 irradiance = texture(irradianceMap, normal).rgb;
+   
+
+
+    vec3 R = reflect(-V, normal);
+    R = normalize(R);
+    float mipLevel =  roughness * 9.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R, mipLevel).rgb;
+    vec2 brdfSample = texture(brdfLUT, vec2(max(dot(normal,V),0.001), roughness)).rg;
+    vec3 diffuseIBL = irradiance * albedo * envIntensity;
+    vec3 specularIBL = prefilteredColor * (fresnel * brdfSample.x + brdfSample.y) * envIntensity;
+
+    vec3 ambient = (kD * diffuseIBL + specularIBL) * ao;
+    vec3 result = ambient;
+ 
+
+     for (int i = 0; i < lightCount; i++) {
+        GPULight light = lights[i];
+        if      (light.type == 0) result += calcPointLight      (light, normal, V, albedo, roughness, metallic, fragPos);
+        else if (light.type == 1) result += calcDirectionalLight (light, normal, V, albedo, roughness, metallic, fragPos);
+        else if (light.type == 2) result += calcSpotLight        (light, normal, V, albedo, roughness, metallic, fragPos);
+    }
+
+    
+
     result += emissive;
-    FragColor = vec4(result,1.0);
+
+
+   
+    FragColor = vec4(result, 1.0);
 }

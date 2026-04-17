@@ -22,6 +22,7 @@
 #include "backend/ShaderManager.h"
 #include "../render/RenderGraph.h"
 
+#include "../input/UiInput.h"
 class Scene;
 class Camera;
 
@@ -63,6 +64,7 @@ private:
     RenderResource* blurResource;
 	RenderResource* lightResource;
 
+    UiInput* ui;
     RenderContext* ctx;
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 };

@@ -1,16 +1,15 @@
 # Changelog
 
-## [0.5.0] - 2026-03-26
+## [1.0.0] - 2026-04-18
 
 ### Added
-- Deferred shading
-- Metallic and roughness maps
-- Soft Shadows
-- Post-processing Bloom
-- Post-processing Tone Mapping
-- Debug UI
+- PBR!
+- HDR CubeMaps
+- Image Based Lighting
+- Improved Shadow Atlasing!
+- More complex and improved Debug UI
+- Model loading at runtime
+
 
 ### Known Issues
 - Parallax Occlusion Mapping not yet implemented
-- PBR not yet implemented
-- Debug UI should be improved

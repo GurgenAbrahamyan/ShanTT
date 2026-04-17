@@ -136,6 +136,21 @@
     <Filter Include="Resource Files\shaders\lighting_shader">
       <UniqueIdentifier>{5a9f3399-256e-4950-99d9-632bc16afd39}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\texture_generation">
+      <UniqueIdentifier>{9f7f2230-866c-411e-83b5-9b1f1b78dc94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\texture_generation\hdr_to_cubemap">
+      <UniqueIdentifier>{c8b57921-06e9-4031-8bbb-285c5817daac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\texture_generation\cubemap_convultion">
+      <UniqueIdentifier>{68587b4f-9d85-40ed-a0a7-b20ae586eaf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\texture_generation\prefilter_convultion">
+      <UniqueIdentifier>{02bed500-2293-4427-82bb-091dbacb3260}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\texture_generation\brdf">
+      <UniqueIdentifier>{7abdb241-b03a-4089-9c4c-65c0d7a55da1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\libraries\glad.c">
@@ -344,9 +359,6 @@
     <ClInclude Include="source\resources\assets\Material.h">
       <Filter>Source Files\Engine\resources\assets</Filter>
     </ClInclude>
-    <ClInclude Include="source\resources\assets\Model.h">
-      <Filter>Source Files\Engine\resources\assets</Filter>
-    </ClInclude>
     <ClInclude Include="source\resources\assets\RenderMesh.h">
       <Filter>Source Files\Engine\resources\assets</Filter>
     </ClInclude>
@@ -355,9 +367,6 @@
     </ClInclude>
     <ClInclude Include="source\resources\assets\Texture.h">
       <Filter>Source Files\Engine\resources\assets</Filter>
-    </ClInclude>
-    <ClInclude Include="source\resources\data\GlobalUBOData.h">
-      <Filter>Source Files\Engine\resources\data</Filter>
     </ClInclude>
     <ClInclude Include="source\resources\data\MaterialData.h">
       <Filter>Source Files\Engine\resources\data</Filter>
@@ -482,6 +491,9 @@
     <ClInclude Include="source\math_custom\Vector4.h">
       <Filter>Source Files\Engine\math</Filter>
     </ClInclude>
+    <ClInclude Include="source\resources\data\ModelAsset.h">
+      <Filter>Source Files\Engine\resources\data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\textures\crate.jpg">
@@ -539,6 +551,30 @@
     </None>
     <None Include="resource\shaders\lighting_shader\lighting_pass.vert">
       <Filter>Resource Files\shaders\lighting_shader</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\hdr_to_cubemap\equirect.vert">
+      <Filter>Resource Files\shaders\texture_generation\hdr_to_cubemap</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\hdr_to_cubemap\equirect.frag">
+      <Filter>Resource Files\shaders\texture_generation\hdr_to_cubemap</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\cubemap_convultion\convultion.frag">
+      <Filter>Resource Files\shaders\texture_generation\cubemap_convultion</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\cubemap_convultion\convultion.vert">
+      <Filter>Resource Files\shaders\texture_generation\cubemap_convultion</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\prefilter_convultion\prefilter.frag">
+      <Filter>Resource Files\shaders\texture_generation\prefilter_convultion</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\prefilter_convultion\prefilter.vert">
+      <Filter>Resource Files\shaders\texture_generation\prefilter_convultion</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\brdf\brdf.vert">
+      <Filter>Resource Files\shaders\texture_generation\brdf</Filter>
+    </None>
+    <None Include="resource\shaders\texture_generation\brdf\brdf.frag">
+      <Filter>Resource Files\shaders\texture_generation\brdf</Filter>
     </None>
   </ItemGroup>
 </Project>

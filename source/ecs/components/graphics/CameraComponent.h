@@ -3,7 +3,7 @@
 #include "../../../math_custom/Mat4.h"
 
 struct CameraComponent {
-    // Projection
+
     float fov = 120.0f;
     float aspectRatio = 1920.0f / 1200.0f;
     float nearPlane = 0.1f;

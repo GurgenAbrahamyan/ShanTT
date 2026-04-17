@@ -13,6 +13,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     ctx(ctx)
 
 {
+	
     shaderManager = new ShaderManager(bus);
 
     if (!glfwInit()) {
@@ -47,6 +48,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         std::cout << "Failed to initialize GLAD\n";
         return;
     }
+
+    ui = new UiInput(window, bus);
+
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
     EngineContext::get().setWindow(window);
@@ -70,7 +74,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);  // gAlbedo
     m_MainFrameBuffer->addColorBuffer(GL_RGBA32F, GL_RGBA, GL_FLOAT);   // gPos
-    m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);   // gNormal
+    m_MainFrameBuffer->addColorBuffer(GL_RGBA32F, GL_RGBA, GL_FLOAT);   // gNormal
     m_MainFrameBuffer->addColorBuffer(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE); // gARM
     m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);   // gEmissive
     m_MainFrameBuffer->addDepthBuffer();
@@ -270,6 +274,9 @@ void Renderer::render()
     graph->execute(*ctx);
 
    
+
+    ui->render();
+   
 }
 
 
@@ -284,6 +291,10 @@ void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int heig
 
 void Renderer::rebuildContext(RenderContext* ctx)
 {
+
+  
+
+
     if (!ctx || !ctx->registry) return;
 
 
@@ -293,6 +304,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
     ctx->camera = nullptr;
     ctx->cameraTransform = nullptr;
+    ctx->cubeMapComp = nullptr;
 
     // find active camera
     for (auto entity : registry.view<ActiveCameraTag>())
@@ -311,7 +323,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
     for (auto entity : view)
     {
-        for (auto submesh : view.get<ModelComponent>(entity).meshes)
+		for (auto submesh : view.get<ModelComponent>(entity).asset->meshes)
         {
             Mat4 entityWorld = (GLAdapter::toGL(getWorldTransform(entity, registry)).toColumnMajor());
             auto& transform = view.get<TransformComponent>(entity);
@@ -339,7 +351,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
               
                 l.shadowIndex = shadowIndex;
                 if (lc.type == LightType::Point) {
-                    shadowIndex += 6; // reserve 6 matrices in the atlas
+                    shadowIndex += 6; 
                 }
                 else {
                     shadowIndex += 1;
@@ -354,6 +366,29 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
             ctx->lights.push_back(l);
         });
+
+    auto skyView = registry.view<CubeMapComponent>();
+    if (skyView.empty()) return;
+    ctx->cubeMapComp = &registry.get<CubeMapComponent>(skyView.front());
+
+    ctx->debugTextures.clear();
+    if (m_MainFrameBuffer) {
+        ctx->debugTextures.push_back({ "Albedo",    m_MainFrameBuffer->getColorAttachment(0) });
+        ctx->debugTextures.push_back({ "Position",  m_MainFrameBuffer->getColorAttachment(1) });
+        ctx->debugTextures.push_back({ "Normal",    m_MainFrameBuffer->getColorAttachment(2) });
+        ctx->debugTextures.push_back({ "ARM",       m_MainFrameBuffer->getColorAttachment(3) });
+        ctx->debugTextures.push_back({ "Emissive",  m_MainFrameBuffer->getColorAttachment(4) });
+    }
+    if (m_LightFrameBuffer)
+        ctx->debugTextures.push_back({ "Light Pass", m_LightFrameBuffer->getColorAttachment(0) });
+    if (m_BlurFrameBuffer)
+        ctx->debugTextures.push_back({ "Blur / Final", m_BlurFrameBuffer->getColorAttachment(0) });
+    if (m_ShadowFrameBuffer)
+        ctx->debugTextures.push_back({ "Shadow Depth", m_ShadowFrameBuffer->getDepthAttachment() });
+
+    ui->startNewFrame();
+
+    ui->buildUI(ctx);
 };
 
 Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) {
@@ -386,7 +421,7 @@ void Renderer::clearFramebuffers()
     if (m_MainFrameBuffer) {
         m_MainFrameBuffer->bind();
         glViewport(0, 0, m_MainFrameBuffer->getWidth(), m_MainFrameBuffer->getHeight());
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.67f, 0.67f, 0.67f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_MainFrameBuffer->unbind();
     }
@@ -415,7 +450,7 @@ void Renderer::clearFramebuffers()
         m_LightFrameBuffer->bind();
         glViewport(0, 0, m_LightFrameBuffer->getWidth(), m_LightFrameBuffer->getHeight());
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // ? depth never cleared!
 		m_LightFrameBuffer->unbind();
         
         
@@ -424,6 +459,6 @@ void Renderer::clearFramebuffers()
  
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.67f, 0.67f, 0.67f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

@@ -1,4 +1,4 @@
-# Hexium
+# ShanTT
 
 A lightweight C++ engine focused on learning graphics,
 physics, and engine architecture.
@@ -10,10 +10,11 @@ physics, and engine architecture.
 - Physically Based Rendering (PBR)
 - Engine-wide math & unit conventions documentation
 - Cross-platform (Windows/Linux planned)
+- Clean Debug UI
+
 
 
 ## Roadmap / Future Plans
 - Collision detection system (AABB, Sphere, later OBB)
 - Broad-phase & narrow-phase collision pipeline
 - Debug rendering (collision shapes, forces)
-

@@ -30,7 +30,7 @@ private:
     Scene* scene;
     Renderer* renderer;
     PhysicsEngine* physicsEngine;
-    UiInput* ui;
+   
     MouseInput* mouseInput;
     KeyboardInput* keyboardInput;
     CameraSystem* cameraSystem;

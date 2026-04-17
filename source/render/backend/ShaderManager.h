@@ -10,17 +10,16 @@
 #include "../../core/EventBus.h"
 #include "../data/ShaderType.h"
 
-// Forward declare events
-struct InitShader;
-struct GetDefaultShader;
 
-// Enum to classify shaders by usage
+class InitShader;
+class GetDefaultShader;
+
+
 
 class ShaderManager {
 public:
     ShaderManager(EventBus* bus);
 
-    // Shader lifecycle
     Shader* load(
         const std::string& name,
         const std::string& vertexPath,
@@ -32,7 +31,7 @@ public:
     Shader* getShader(const std::string& name);
     Shader* getDefaultShader();
 
-    // Get current shader for a type
+
     Shader* currentShader(ShaderType type);
     Shader* nextShader(ShaderType type);
 
@@ -51,6 +50,6 @@ private:
     // Current index per type for cycling
     std::unordered_map<ShaderType, size_t> currentShaderIndex;
 
-    // Prevent copy
- //   ShaderManager& operator=(const ShaderManager&) = delete;
+    
+   ShaderManager& operator=(const ShaderManager&) = delete;
 };

@@ -4,15 +4,17 @@ out vec4 FragColor;
 
 uniform sampler2D sceneTexture;
 
-void main(){
+// fixed - soft knee, smooth falloff
+void main() {
+    vec3 color = texture(sceneTexture, texCoords).rgb;
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
 
-     FragColor = texture(sceneTexture, texCoords);
+    float threshold = 1.0;
+    float knee = 0.3; // softness around threshold
+    float soft = brightness - threshold + knee;
+    soft = clamp(soft, 0.0, 2.0 * knee);
+    soft = (soft * soft) / (4.0 * knee + 0.00001);
 
-    
-    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > 1.0)
-        FragColor = vec4(FragColor.rgb, 1.0);
-    else
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    
+    float contribution = max(soft, brightness - threshold) / max(brightness, 0.00001);
+    FragColor = vec4(color * contribution, 1.0);
 }

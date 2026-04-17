@@ -22,8 +22,11 @@ ModelLoader::ModelLoader(const std::string& filePath)
 {
     directory = filePath.substr(0, filePath.find_last_of('/') + 1);
     std::ifstream file(filePath);
-    if (!file.is_open())
-        throw std::runtime_error("Failed to open model file");
+    if (!file.is_open()) {
+        std::cout << "Failed to open model file";
+		hasParsed = false;
+        return;
+    }
     file >> JSON;
     file.close();
 
@@ -193,12 +196,12 @@ void ModelLoader::parseMaterial(unsigned int materialIndex)
 
     std::cout << "Parsing material: " << mat.name << "\n";
 
-    // Parse PBR metallic roughness properties
+    
     if (matJSON.contains("pbrMetallicRoughness"))
     {
         const json& pbr = matJSON["pbrMetallicRoughness"];
         mat.metallic = pbr.value("metallicFactor", 1.0f);
-        mat.roughness = pbr.value("roughnessFactor", 1.0f);
+        mat.roughness = pbr.value("roughnessFactor", 0.0f);
         if (pbr.contains("baseColorFactor")) {
             auto& c = pbr["baseColorFactor"];
             mat.baseColorFactor = { c[0], c[1], c[2], c[3] };

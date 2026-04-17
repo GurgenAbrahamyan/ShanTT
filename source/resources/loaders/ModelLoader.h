@@ -21,6 +21,7 @@ struct SubMeshData;
 class ModelLoader {
 public:
     explicit ModelLoader(const std::string& filePath);
+	bool isValid() const { return hasParsed; }
     const ModelData& getModelData() const { return model; }
 
 private:
@@ -30,6 +31,7 @@ private:
     json JSON;
     std::vector<unsigned char> bufferData;
     ModelData model;
+    bool hasParsed = true;
 
 
     void parseGLTF();

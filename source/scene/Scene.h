@@ -2,6 +2,7 @@
 #include <vector>
 #include "../../include/EnTT/entt.hpp"
 
+class Texture;
 class EventBus;
 class ModelManager;
 class TextureManager;
@@ -18,7 +19,8 @@ public:
 
     entt::registry& getRegistry() { return registry; }
     CubeMap* getSkybox() const { return skybox; }
-
+    Texture* getBRDF();
+    ModelManager* getModelManager() const;
 private:
     entt::registry   registry;
     CubeMap* skybox = nullptr;

@@ -14,9 +14,10 @@ void main()
     vec3 combined = hdrColor;
     if(isBloom){
      vec3 bloom    = texture(bloomTexture, texCoords).rgb;
-     combined += bloom;
+     combined += bloom*0.05;
+    
     }
     vec3 mapped   = vec3(1.0) - exp(-combined * exposure);
-  //  mapped = pow(mapped, vec3(1.0 / 2.2));
+    mapped = pow(mapped, vec3(1.0/2.2)); // gamma correction
     FragColor = vec4(mapped, 1.0);
 }

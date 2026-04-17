@@ -9,7 +9,7 @@
 #include "../components/graphics/CameraComponent.h"
 #include "../components/graphics/ActiveCameraTag.h"
 #include "../components/graphics/ModelComponent.h"
-
+#include "../../resources/data/ModelAsset.h"
 namespace GraphicsEntityFactory {
 
     entt::entity createRectangle(
@@ -25,8 +25,10 @@ namespace GraphicsEntityFactory {
         registry.emplace<TagComponent>(entity, tag);
       //  registry.emplace<TransformComponent>(entity, position, Quat(), scale);
         ModelComponent component;
-
-        component.meshes.push_back({ meshManager.getRectangleMesh(),materialManager.getRectangleMaterial(), Mat4()});
+        
+        ModelAsset* asset = new ModelAsset();
+        asset->meshes.push_back({ meshManager.getRectangleMesh(),materialManager.getRectangleMaterial(), Mat4()});
+        component.asset = asset;
         registry.emplace<ModelComponent>(entity, component);
         registry.emplace<TransformComponent>(entity,  position, Quat(), scale );
         return entity;

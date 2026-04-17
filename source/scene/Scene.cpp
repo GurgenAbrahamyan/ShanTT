@@ -15,6 +15,7 @@
 #include "../ecs/components/physics/CollisionShapeComponent.h"
 #include "../ecs/components/graphics/CameraComponent.h"
 #include "../ecs/components/graphics/ModelComponent.h"
+#include "../ecs/components/core/TagComponent.h"
 #include "../core/EngineContext.h"
 #include "../resources/data/ModelLoadConfig.h" 
 Scene::Scene(EventBus* bus) {
@@ -23,7 +24,7 @@ Scene::Scene(EventBus* bus) {
     meshManager = new MeshManager(bus);
     modelManager = new ModelManager(bus, meshManager, materialManager, textureManager);
 
-    bus->subscribe<CreateObject>([this](CreateObject& event) {
+   /* bus->subscribe<CreateObject>([this](CreateObject& event) {
         static int count = 0;
 
         std::string modelPath = "resource/models/duck/Duck.gltf";
@@ -43,12 +44,11 @@ Scene::Scene(EventBus* bus) {
             count++;
             std::cout << "Total Count:" << count;
         }
-        });
+        });*/
 }
 
 Scene::~Scene() {
-    // registry destructor cleans up all entities
-    // managers own their GPU resources
+
     delete modelManager;
     delete meshManager;
     delete materialManager;
@@ -66,104 +66,168 @@ void Scene::initObjects() {
         "resource/textures/skybox/front.jpg",
         "resource/textures/skybox/back.jpg",
     };
-    skybox = textureManager->loadCubeMapArray(faces);
+    //skybox = textureManager->loadCubeMapArray(faces);
+    skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\cedar_bridge_sunset_1_4k.hdr");
+   // skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\warm_restaurant_night_4k.hdr");
     GraphicsEntityFactory::createSkybox(registry, skybox);
 
     CameraComponent cameraComp;
 
-    GraphicsEntityFactory::createCamera(registry, Vector3(0, 10, 0), cameraComp, true, "camera");
+    GraphicsEntityFactory::createCamera(registry, Vector3(0, 7.5f, 4), cameraComp, true, "camera");
 
 
-    auto chess = modelManager->loadModel("chess", "resource/models/chess/chess_set_4k.gltf", registry, { Vector3(5,5,5), Quat(), Vector3(3, 3, 3) });
-    auto map = modelManager->loadModel("map", "resource/models/map/scene.gltf", registry, { Vector3(10,5,5), Quat(), Vector3(0.2,0.2,0.2) });
-    auto duck = modelManager->loadModel("duck", "resource/models/duck/Duck.gltf", registry, { Vector3(15,5,5), Quat(), Vector3(1,1,1) });
-    auto helmet = modelManager->loadModel("helmet", "resource/models/helmet/DamagedHelmet.gltf", registry, { Vector3(20,5,5), Quat(), Vector3(1,1,1) });
-   //auto car = modelManager->loadModel("car", "resource/models/toy car/ToyCar.gltf", registry, { Vector3(25,5,5), Quat(), Vector3(100,100,100) });
-    auto boombox = modelManager->loadModel("boombox", "resource/models/boombox_4k/boombox_4k.gltf", registry, { Vector3(30,5,5), Quat(), Vector3(3,3,3) });
-    auto cannon = modelManager->loadModel("cannon", "resource/models/cannon_4k.gltf/cannon_01_4k.gltf", registry, { Vector3(35,5,5), Quat(), Vector3(3,3,3) });
+    // ??? Load assets (once) ?????????????????????????????
+    modelManager->loadModel("chess", "resource/models/chess/chess_set_4k.gltf");
+    modelManager->loadModel("map", "resource/models/map/scene.gltf");
+    modelManager->loadModel("duck", "resource/models/duck/Duck.gltf");
+    modelManager->loadModel("helmet", "resource/models/helmet/DamagedHelmet.gltf");
+    modelManager->loadModel("car", "resource/models/toy car/ToyCar.gltf");
+    modelManager->loadModel("boombox", "resource/models/boombox_4k/boombox_4k.gltf");
+    modelManager->loadModel("cannon", "resource/models/cannon_4k.gltf/cannon_01_4k.gltf");
+
+
+    // ??? Create entities + assign models ?????????????????
+    auto chess = registry.create();
+	registry.emplace<TagComponent>(chess, "Chess Set");
+    auto map = registry.create();
+	registry.emplace<TagComponent>(map, "Map");
+    auto duck = registry.create();
+	registry.emplace<TagComponent>(duck, "Duck");
+    auto helmet = registry.create();
+	registry.emplace<TagComponent>(helmet, "Helmet");
+    auto car = registry.create();
+	registry.emplace<TagComponent>(car, "Car");
+    auto boombox = registry.create();
+	registry.emplace<TagComponent>(boombox, "Boombox");
+    auto cannon = registry.create();
+	registry.emplace<TagComponent>(cannon, "Cannon");
+
+    modelManager->instantiateModel("chess", registry, chess);
+    modelManager->instantiateModel("map", registry, map);
+    modelManager->instantiateModel("duck", registry, duck);
+    modelManager->instantiateModel("helmet", registry, helmet);
+    modelManager->instantiateModel("car", registry, car);
+    modelManager->instantiateModel("boombox", registry, boombox);
+    modelManager->instantiateModel("cannon", registry, cannon);
 
     auto createRBWithModelTransform = [&](entt::entity e, float mass, const Vector3& pos, const Quat& rot, const Vector3& scale) {
         registry.emplace<RigidBodyComponent>(e, PhysicsComponentFactory::createRigidBody(registry, e, pos, rot, scale, mass));
         };
 
 
-    createRBWithModelTransform(chess, 1.0f, Vector3(5, 5, 5), Quat(), Vector3(6, 6, 6));
+    createRBWithModelTransform(chess, 1.0f, Vector3(-10, -10, 3), Quat(), Vector3(6, 6, 6));
 
     // Map (static)
-    createRBWithModelTransform(map, 1.0f, Vector3(10, 5, 5), Quat(), Vector3(0.2f, 0.2f, 0.2f));
+    createRBWithModelTransform(map, 1.0f, Vector3(0, -10, 3), Quat(), Vector3(0.2f, 0.2f, 0.2f));
 
     // Duck
-    createRBWithModelTransform(duck, 1.0f, Vector3(15, 5, 5), Quat(), Vector3(1, 1, 1));
-
+    createRBWithModelTransform(duck, 1.0f, Vector3(10, -10, 3), Quat(), Vector3(1, 1, 1));
+    
     // Helmet
-    createRBWithModelTransform(helmet, 1.0f, Vector3(20, 5, 5), Quat(), Vector3(1, 1, 1));
+    createRBWithModelTransform(helmet, 1.0f, Vector3(-10, 0, 3), Quat(), Vector3(1, 1, 1));
 
     // Car
-   // createRBWithModelTransform(car, 1.0f, Vector3(25, 5, 5), Quat(), Vector3(100, 100, 100));
+    createRBWithModelTransform(car, 1.0f, Vector3(0, 0, 3), Quat(), Vector3(100, 100, 100));
 
     // Boombox
-    createRBWithModelTransform(boombox, 1.0f, Vector3(30, 5, 5), Quat(), Vector3(3, 3, 3));
+    createRBWithModelTransform(boombox, 1.0f, Vector3(10, 0, 3), Quat(), Vector3(3, 3, 3));
 
     // Cannon
-    createRBWithModelTransform(cannon, 5.0f, Vector3(35, 5, 5), Quat(), Vector3(3, 3, 3));
+    createRBWithModelTransform(cannon, 5.0f, Vector3(-10, 10, 3), Quat(), Vector3(3, 3, 3));
 
 
     registry.emplace<CollisionShapeComponent>(chess, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
     registry.emplace<CollisionShapeComponent>(map, PhysicsComponentFactory::createCubeShape(Vector3(0.2, 0.2, 0.2)));
     registry.emplace<CollisionShapeComponent>(duck, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
     registry.emplace<CollisionShapeComponent>(helmet, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
-    //registry.emplace<CollisionShapeComponent>(car, PhysicsComponentFactory::createCubeShape(Vector3(100, 100, 100)));
+    registry.emplace<CollisionShapeComponent>(car, PhysicsComponentFactory::createCubeShape(Vector3(100, 100, 100)));
     registry.emplace<CollisionShapeComponent>(boombox, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
     registry.emplace<CollisionShapeComponent>(cannon, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
+    
+    auto rect5 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect5", Vector3(0, 0, 0), Vector3(30, 30, 2));
 
-
-    auto rect1 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect1", Vector3(5, 0, 0), Vector3(3, 3, 3));
-    auto rect2 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect2", Vector3(0, 5, 0), Vector3(2, 2, 2));
-    auto rect3 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect3", Vector3(0, 0, 5), Vector3(1, 1, 1));
-    auto rect4 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect4", Vector3(10, 0, 0), Vector3(1, 1, 1));
-    auto rect5 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect5", Vector3(0, 0, 0), Vector3(500, 500, 5));
-
-    registry.emplace<RigidBodyComponent>(rect1, PhysicsComponentFactory::createStaticBody(registry, rect1));
-    registry.emplace<RigidBodyComponent>(rect2, PhysicsComponentFactory::createStaticBody(registry, rect2));
-    registry.emplace<RigidBodyComponent>(rect3, PhysicsComponentFactory::createStaticBody(registry, rect3));
-    registry.emplace<RigidBodyComponent>(rect4, PhysicsComponentFactory::createStaticBody(registry, rect4));
+    
     registry.emplace<RigidBodyComponent>(rect5, PhysicsComponentFactory::createStaticBody(registry, rect5));
 
 
-    registry.emplace<CollisionShapeComponent>(rect1, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
-    registry.emplace<CollisionShapeComponent>(rect2, PhysicsComponentFactory::createCubeShape(Vector3(2, 2, 2)));
-    registry.emplace<CollisionShapeComponent>(rect3, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
-    registry.emplace<CollisionShapeComponent>(rect4, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
     registry.emplace<CollisionShapeComponent>(rect5, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
-
+    
 
     LightComponent dir2;
-  /**/  dir2.type = LightType::Spot;
+    dir2.type = LightType::Spot;
     dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 1.0f;
+    dir2.intensity = 8.0f;
     dir2.direction = Vector3(0, 0, -1);
     dir2.innerConeAngle = 0.85;
     dir2.outerConeAngle = 0.90f;
     dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(20, 5, 8), dir2, "SpotLight1");
+    GraphicsEntityFactory::createLight(registry, Vector3(-10, -10, 6), dir2, "SpotLight1");
 
-
-    dir2;
+ 
     dir2.type = LightType::Spot;
     dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 1.0f;
-    dir2.direction = Vector3(0, -1, -1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
     dir2.innerConeAngle = 0.85;
     dir2.outerConeAngle = 0.90f;
     dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(20, 8, 8), dir2, "SpotLight2");
+    GraphicsEntityFactory::createLight(registry, Vector3(0, -10, 6), dir2, "SpotLight2");
+
+    dir2.type = LightType::Spot;
+    dir2.color = Vector3(1, 1, 1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
+    dir2.innerConeAngle = 0.85;
+    dir2.outerConeAngle = 0.90f;
+    dir2.castsShadow = true;
+    GraphicsEntityFactory::createLight(registry, Vector3(10, -10, 6), dir2, "SpotLight3");
+
+    dir2.type = LightType::Spot;
+    dir2.color = Vector3(1, 1, 1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
+    dir2.innerConeAngle = 0.85;
+    dir2.outerConeAngle = 0.90f;
+    dir2.castsShadow = true;
+    GraphicsEntityFactory::createLight(registry, Vector3(-10, 0, 6), dir2, "SpotLight4");
+
+    
+    dir2.type = LightType::Spot;
+    dir2.color = Vector3(1, 1, 1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
+    dir2.innerConeAngle = 0.85;
+    dir2.outerConeAngle = 0.90f;
+    dir2.castsShadow = true;
+    GraphicsEntityFactory::createLight(registry, Vector3(0, 0, 6), dir2, "SpotLight5");
+
+
+    dir2.type = LightType::Spot;
+    dir2.color = Vector3(1, 1, 1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
+    dir2.innerConeAngle = 0.85;
+    dir2.outerConeAngle = 0.90f;
+    dir2.castsShadow = true;
+    GraphicsEntityFactory::createLight(registry, Vector3(10, 0, 6), dir2, "SpotLight6");
+
+ 
+    dir2.type = LightType::Spot;
+    dir2.color = Vector3(1, 1, 1);
+    dir2.intensity = 8.0f;
+    dir2.direction = Vector3(0, 0, -1);
+    dir2.innerConeAngle = 0.85;
+    dir2.outerConeAngle = 0.90f;
+    dir2.castsShadow = true;
+    GraphicsEntityFactory::createLight(registry, Vector3(-10, 10, 6), dir2, "SpotLight7");
+   
 
      
 
 
 
 
-       dir2;
+      /* dir2;
       dir2.type = LightType::Point;
       dir2.color = Vector3(1, 0, 0);
       dir2.intensity = 3.0f;
@@ -171,7 +235,7 @@ void Scene::initObjects() {
       dir2.innerConeAngle = 0.85;
       dir2.outerConeAngle = 0.90f;
       dir2.castsShadow = true;
-      GraphicsEntityFactory::createLight(registry, Vector3(5, 5, 6), dir2, "PointLight1");
+      GraphicsEntityFactory::createLight(registry, Vector3(5, 5, 6), dir2, "PointLight1");*/
       // Spot light at (5,5,6)
     /*  LightComponent spot1;
       spot1.type = LightType::Spot;
@@ -215,4 +279,12 @@ void Scene::initObjects() {
       point3.intensity = 1.0f;
 
       GraphicsEntityFactory::createLight(registry, Vector3(35, 8, 5), point3, "PointLight4");*/
+}
+
+Texture* Scene::getBRDF(){
+   
+    return textureManager->getBRDF();
+}
+ModelManager* Scene::getModelManager() const{
+    return modelManager;
 }

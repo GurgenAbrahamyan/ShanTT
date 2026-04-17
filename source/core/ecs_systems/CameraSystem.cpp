@@ -108,6 +108,7 @@ void CameraSystem::updateMatrices(entt::registry& registry) {
 
     cam->viewMatrix = Mat4::lookAt(posGL, posGL + frontGL, upGL);
     cam->projectionMatrix = Mat4::perspective(cam->fov, cam->aspectRatio, cam->nearPlane, cam->farPlane);
+	//cam->projectionMatrix = Mat4::ortho(860,-860, 540, -540, cam->nearPlane, cam->farPlane);
 }
 
 // --- Helper ---

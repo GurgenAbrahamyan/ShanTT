@@ -8,6 +8,7 @@
 #include "../../resources/assets/Texture.h"
 #include "../../resources/assets/CubeMap.h"
 #include "../data/TextureType.h"
+#include "../../render/backend/Shader.h"
 using TextureID = uint32_t;
 
 class EventBus;
@@ -44,12 +45,12 @@ public:
 
     size_t getTextureCount() const { return textures.size(); }
 
-    CubeMap* loadCubeMap(std::string filePath);
+    
     CubeMap* loadCubeMapArray(std::vector<std::string> filepaths);
-    CubeMap* loadCubeMapDebug();
+    
 	bool isSRGB(TextureType type) const;
 
-    // Default texture accessors
+   
     Texture* getDefaultWhite()   const { return defaultWhite.get(); }
     Texture* getDefaultAlbedo()  const { return defaultWhite.get(); }
     Texture* getDefaultNormal()  const { return defaultFlatNormal.get(); }
@@ -57,14 +58,31 @@ public:
 
     Texture* loadARM(const std::string& aoPath, const std::string& armPath);
     void initDefaults();
+    CubeMap* loadCubeMapHDR(std::string filepath);
+    Texture* getBRDF();
+
 private:
+
+    void generateBRDF();
+    void renderCube();
+    void renderQuad();
+	void  equirectToCubemap(const std::string& hdrPath);
+    
     std::vector<TextureRecord> textures;
     std::unordered_map<TextureKey, TextureID, TextureKeyHash> lookup;
+
 	std::unique_ptr<CubeMap> cubeMap;
+    std::unique_ptr<Texture> brdfTexture;
 
     std::unique_ptr<Texture> defaultWhite;
     std::unique_ptr<Texture> defaultFlatNormal;
     std::unique_ptr<Texture> defaultBlack;
+
+    std::unique_ptr<Shader> equirectShader;
+    std::unique_ptr<Shader> irradianceShader;
+    std::unique_ptr<Shader> prefilterShader;
+
+    std::unique_ptr<Shader> brdfShader;
 
     Texture* createSinglePixel(unsigned char* data, int channels, GLenum internal);
 

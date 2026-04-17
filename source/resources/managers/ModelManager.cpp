@@ -33,113 +33,83 @@ ModelManager::ModelManager(
     , textureManager(textureManager)
 {
 }
-entt::entity ModelManager::loadModel(
-    const std::string& name,
-    const std::string& path,
-    entt::registry& registry,
-    const ModelLoadConfig& config)
+bool ModelManager::loadModel(const std::string& name, const std::string& path)
 {
-    
-    ModelComponent component;
-    if (auto it = loadedModels.find(name); it != loadedModels.end()) {
+    if (loadedModels.contains(name)) {
         std::cout << "Model already loaded: " << name << "\n";
-        return it->second;
+        return false;
     }
-    
-    std::cout << "Loading model: " << name << " from " << path << "\n";
 
     ModelLoader loader(path);
+    if(loader.isValid()) {
+
+    } else {
+        
+        return false;
+	}
     const ModelData& data = loader.getModelData();
+    
+    ModelAsset asset;
+    asset.name = name;
+    asset.path = path;
 
-    // ?? Create single root entity ??????????????????????????????
-    auto root = registry.create();
-    registry.emplace<TagComponent>(root, name);
-    auto& modelComp = registry.emplace<ModelComponent>(root);
-
-    // ?? Load materials ?????????????????????????????????????????
     std::vector<Material*> materialRefs;
     materialRefs.reserve(data.materials.size());
 
     for (const auto& matData : data.materials) {
-        InitMaterial initEvent(const_cast<MaterialData*>(&matData));
-        bus->publish<InitMaterial>(initEvent);
-
-        Material* mat = initEvent.result;
-        if (mat) {
-            materialRefs.push_back(mat);
-          
-        }
-        else {
-            materialRefs.push_back(nullptr);
-        }
+        InitMaterial ev(const_cast<MaterialData*>(&matData));
+        bus->publish(ev);
+        materialRefs.push_back(ev.result);
     }
 
-    // ?? Load meshes and attach to ModelComponent ??????????????
-    for (size_t i = 0; i < data.submeshes.size(); i++) {
-        const auto& submeshData = data.submeshes[i];
+    for (const auto& sub : data.submeshes)
+    {
+        MeshData meshData = data.meshes[sub.meshIndex];
+        meshData.name = name + "::" + sub.name;
 
-        // Mesh
-        MeshData meshData = data.meshes[submeshData.meshIndex];
-        meshData.name = name + "::" + submeshData.name;
+        InitMesh meshEv(&meshData);
+        bus->publish(meshEv);
 
-        InitMesh meshEvent(&meshData);
-        bus->publish<InitMesh>(meshEvent);
+        if (!meshEv.result) continue;
 
-        RenderMesh* renderMesh = meshEvent.result;
-        if (!renderMesh) continue;
-
-        // Material
-        Material* material = nullptr;
-        if (submeshData.materialIndex != UINT32_MAX &&
-            submeshData.materialIndex < materialRefs.size())
-            material = materialRefs[submeshData.materialIndex];
-
-        // Add to model component
         MeshEntry entry;
-        entry.mesh = renderMesh;
-        entry.material = material;
-        entry.localTransform = submeshData.worldTransform; // store precomputed transform
-        modelComp.meshes.push_back(entry);
+        entry.mesh = meshEv.result;
+        entry.material =
+            (sub.materialIndex < materialRefs.size())
+            ? materialRefs[sub.materialIndex]
+            : nullptr;
 
-     
+        entry.localTransform = sub.worldTransform;
+
+        asset.meshes.push_back(entry);
     }
 
-    loadedModels[name] = root;
-    std::cout << "Model loaded: " << name << "\n";
-    return root;
+    loadedModels[name] = std::move(asset);
+
+    std::cout << "Loaded model asset: " << name << "\n";
+    return true;
 }
 
-void ModelManager::destroyModel(entt::entity root, entt::registry& registry) {
-    if (!registry.valid(root)) return;
-
-    
-    auto& modelComp = registry.get<ModelComponent>(root);
-  //  for (int id : modelComp.meshIDs)     meshManager->unload(id);
-   // for (int id : modelComp.materialIDs) materialManager->unload(id);
-   // for (int id : modelComp.textureIDs)  textureManager->unload(id);
-
-   
-    registry.view<ParentComponent>().each([&](auto entity, auto& parent) {
-        if (parent.parent == root)
-            registry.destroy(entity);
-        });
-
-    for (auto it = loadedModels.begin(); it != loadedModels.end();) {
-        if (it->second == root)
-            it = loadedModels.erase(it);
-        else
-            ++it;
-    }
-
-    
-    registry.destroy(root);
-}
-
-entt::entity ModelManager::getModel(const std::string& name) const {
+void ModelManager::instantiateModel(
+    const std::string& name,
+    entt::registry& registry,
+    entt::entity entity)
+{
     auto it = loadedModels.find(name);
-    return it != loadedModels.end() ? it->second : entt::null;
+    if (it == loadedModels.end()) return;
+
+    const ModelAsset& asset = it->second;
+
+    auto& model = registry.emplace_or_replace<ModelComponent>(entity);
+   
+    model.asset = &asset;
 }
 
 bool ModelManager::isLoaded(const std::string& name) const {
     return loadedModels.find(name) != loadedModels.end();
+}
+
+const std::unordered_map<std::string, ModelAsset>&
+ModelManager::getLoadedModels() const {
+    return loadedModels;
 }

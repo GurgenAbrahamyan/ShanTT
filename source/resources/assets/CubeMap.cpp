@@ -56,6 +56,10 @@ CubeMap::CubeMap() : VBO1( new VBO(cubeVertices, sizeof(cubeVertices), false)), 
 CubeMap::~CubeMap() {
     VBO1->~VBO();
     VAO1->~VAO();
+
+    glDeleteTextures(1, &EnvTexID);
+    glDeleteTextures(1, &IrrTexID);
+    glDeleteTextures(1, &PreFilterTexId);
 }
 
 void CubeMap::bind() const {

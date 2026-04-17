@@ -240,14 +240,13 @@
     <ClInclude Include="source\render\RenderGraph.h" />
     <ClInclude Include="source\resources\assets\CubeMap.h" />
     <ClInclude Include="source\resources\assets\Material.h" />
-    <ClInclude Include="source\resources\assets\Model.h" />
     <ClInclude Include="source\resources\assets\RenderMesh.h" />
     <ClInclude Include="source\resources\assets\StaticMesh.h" />
     <ClInclude Include="source\resources\assets\Texture.h" />
-    <ClInclude Include="source\resources\data\GlobalUBOData.h" />
     <ClInclude Include="source\resources\data\MaterialData.h" />
     <ClInclude Include="source\resources\data\MaterialTextureInfo.h" />
     <ClInclude Include="source\resources\data\MeshData.h" />
+    <ClInclude Include="source\resources\data\ModelAsset.h" />
     <ClInclude Include="source\resources\data\ModelData.h" />
     <ClInclude Include="source\resources\data\ModelLoadConfig.h" />
     <ClInclude Include="source\resources\data\ShaderData.h" />
@@ -286,6 +285,14 @@
     <None Include="resource\shaders\object_shader\default.vert" />
     <None Include="resource\shaders\shadow_shader\shadow_pass.frag" />
     <None Include="resource\shaders\shadow_shader\shadow_pass.vert" />
+    <None Include="resource\shaders\texture_generation\brdf\brdf.frag" />
+    <None Include="resource\shaders\texture_generation\brdf\brdf.vert" />
+    <None Include="resource\shaders\texture_generation\cubemap_convultion\convultion.frag" />
+    <None Include="resource\shaders\texture_generation\cubemap_convultion\convultion.vert" />
+    <None Include="resource\shaders\texture_generation\hdr_to_cubemap\equirect.frag" />
+    <None Include="resource\shaders\texture_generation\hdr_to_cubemap\equirect.vert" />
+    <None Include="resource\shaders\texture_generation\prefilter_convultion\prefilter.frag" />
+    <None Include="resource\shaders\texture_generation\prefilter_convultion\prefilter.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

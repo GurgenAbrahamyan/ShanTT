@@ -5,10 +5,15 @@
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
 #include "../../resources/data/ModelLoadConfig.h" 
+#include "../../resources/data/ModelAsset.h"
+
 class EventBus;
 class MeshManager;
 class MaterialManager;
 class TextureManager;
+class ModelComponent;
+
+
 
 class ModelManager {
 public:
@@ -20,19 +25,23 @@ public:
     );
 
    
-    entt::entity loadModel(
+    bool loadModel(const std::string& name, const std::string& path);
+
+    void instantiateModel(
         const std::string& name,
-        const std::string& path,
-        entt::registry&    registry,
-        const ModelLoadConfig& config
+        entt::registry& registry,
+        entt::entity entity
     );
 
-    
-    void destroyModel(entt::entity root, entt::registry& registry);
-
-    entt::entity getModel(const std::string& name) const;
+    const std::unordered_map<std::string, ModelAsset>& getLoadedModels() const;
 
     bool isLoaded(const std::string& name) const;
+
+    
+
+
+
+
 
 private:
     EventBus* bus;
@@ -40,5 +49,5 @@ private:
     MaterialManager* materialManager;
     TextureManager* textureManager;
 
-    std::unordered_map<std::string, entt::entity> loadedModels;
+    std::unordered_map<std::string, ModelAsset> loadedModels;
 };

@@ -6,6 +6,14 @@
 #include "../data/BatchMap.h"
 #include "GPULight.h"
 #include "ShadowData.h"
+#include "../../ecs/components/graphics/CubeMapComponent.h"
+#include "../../resources/assets/Texture.h"
+#include "../../resources/managers/ModelManager.h"
+struct DebugTexture {
+    std::string name;
+    unsigned int textureID = 0;
+};
+
 struct RenderContext {
 
  
@@ -14,6 +22,7 @@ struct RenderContext {
 
     CameraComponent* camera = nullptr;
     TransformComponent* cameraTransform = nullptr;
+    CubeMapComponent* cubeMapComp = nullptr;
 
     MaterialBatchMap batches;
 
@@ -26,4 +35,8 @@ struct RenderContext {
     int shadowSlots;
 
     std::vector<ShadowData> shadowData;
+
+    std::vector<DebugTexture> debugTextures;
+    Texture* brdfTexture;
+	ModelManager* modelManager;
 };

@@ -13,10 +13,22 @@ public:
 
     KeyboardInput(EventBus* bus) {
         this->bus = bus;
+        bus->subscribe<CameraMode>([this](CameraMode& event) {
+			cameraMode = event.key;
+            if (event.key) {
+                std::cout << "Switched to Camera Mode\n";
+            }       
+            else {
+                std::cout << "Switched to UI Mode\n";
+            }
+			});
     }
 
 
     void processInput() {
+
+        if (!cameraMode)
+            return;
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, true);
@@ -71,6 +83,7 @@ public:
         }
     }
 private:
+	bool cameraMode = false;
     EventBus* bus;
     GLFWwindow* window = EngineContext::get().getWindow();
 };

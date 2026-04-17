@@ -112,7 +112,9 @@ public:
 
     void execute(RenderContext& ctx) override
     {
-
+        if (outputs.empty()) return;
+        if (!ctx.camera)
+            return;
 
    
         glDisable(GL_CULL_FACE);
@@ -121,7 +123,7 @@ public:
      
 
         
-        if (outputs.empty()) return;
+        
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
@@ -218,14 +220,16 @@ public:
 
     void execute(RenderContext& ctx) override {
         if (outputs.empty() || inputs.empty()) return;
-
+        if (!ctx.camera)
+            return;
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
        
         shader->Activate();
 
-        shader->setVec3("cameraPos", GLAdapter::toGL(ctx.cameraTransform->position));
+        
+            shader->setVec3("cameraPos", GLAdapter::toGL(ctx.cameraTransform->position));
 
         
 	    glActiveTexture(GL_TEXTURE0); 
@@ -239,13 +243,27 @@ public:
         glActiveTexture(GL_TEXTURE4); 
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(4)); // gEmissive
 
+        if (ctx.cubeMapComp) {
+            glActiveTexture(GL_TEXTURE10);
+            ctx.cubeMapComp->cubeMap->bindIrrTexture(10); 
+            glActiveTexture(GL_TEXTURE11);
+            ctx.cubeMapComp->cubeMap->bindPreFilterTexture(11);
+            glActiveTexture(GL_TEXTURE12);
+            ctx.brdfTexture->Bind(12);
+
+            shader->setFloat("envIntensity", ctx.cubeMapComp->intensity);
+
+        }
         shader->setInt("gAlbedo", 0);
         shader->setInt("gPosition", 1);
         shader->setInt("gNormal", 2);
         shader->setInt("gARM", 3);
         shader->setInt("gEmissive", 4);
+        shader->setInt("irradianceMap", 10);
+        shader->setInt("prefilterMap", 11);
+        shader->setInt("brdfLUT", 12);
 
-        
+
         uploadLights(&ctx);
         uploadLightMatrices(&ctx);
 
@@ -316,8 +334,7 @@ public:
        
         //   glDisable(GL_CULL_FACE);
 
-        auto& registry = *context.registry;
-
+      
         glBindFramebuffer(GL_READ_FRAMEBUFFER, inputs[0]->framebuffer->getID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb->getID());
         glBlitFramebuffer(
@@ -330,9 +347,9 @@ public:
         auto* camTrans = context.cameraTransform;
         if (!cam || !camTrans) return;
 
-        auto skyView = registry.view<CubeMapComponent>();
-        if (skyView.empty()) return;
-        CubeMapComponent& cmc = registry.get<CubeMapComponent>(skyView.front());
+        
+        if (!context.cubeMapComp) return;
+        CubeMapComponent& cmc = *context.cubeMapComp;
         if (!cmc.cubeMap) return;
 
         shader->Activate();
@@ -341,16 +358,15 @@ public:
 
 
         Mat4 view_mat = cam->viewMatrix;
-        view_mat.data[12] = 0.0f;
-        view_mat.data[13] = 0.0f;
-        view_mat.data[14] = 0.0f;
+      
 
         shader->setInt("skybox", 0);
         shader->setMat4("projection", cam->projectionMatrix);
+		shader->setFloat("envIntensity", cmc.intensity);
         shader->setMat4("view", view_mat);
 
         cmc.cubeMap->bind();
-        cmc.cubeMap->bindTexture();
+        cmc.cubeMap->bindEnvTexture(0);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glDepthFunc(GL_LESS);
@@ -382,7 +398,7 @@ public:
       
 
         auto* cam = context.camera;
-        if (inputs.empty() || outputs.empty()) return;
+        if (!cam || inputs.empty() || outputs.empty()) return;
 
         if (!blurFB) blurFB = outputs[0]->framebuffer;
 
@@ -567,11 +583,14 @@ public:
         shader->Activate();
         shader->setInt("screenTexture", 0);
         
-        shader->setFloat("exposure", 1.5f);
+        shader->setFloat("exposure", 2    );
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, sceneFB->getColorAttachment(0));
+       // glBindTexture(GL_TEXTURE_2D, context.brdfTexture->getID());
 
+
+       // context.brdfTexture->Bind(0);
         if (inputs.size() > 1) {
             FrameBuffer* bloomFB = inputs[1]->framebuffer;
             shader->setInt("bloomTexture", 1);

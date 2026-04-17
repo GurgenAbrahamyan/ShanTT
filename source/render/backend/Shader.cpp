@@ -23,7 +23,7 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geo
 {
     std::string vertexCode = get_file_contents(vertexFile);
     std::string fragmentCode = get_file_contents(fragmentFile);
-    std::string geometryCode = get_file_contents(geometryFile);
+   // std::string geometryCode = get_file_contents(geometryFile);
 
     GLuint vertexShader = compileShader(vertexCode.c_str(), GL_VERTEX_SHADER);
 	std::cout << "Vertex shader compiled successfully: " << vertexFile << "\n";
