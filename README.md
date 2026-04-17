@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-# ShanTT
-=======
+
 #  ShanTT
->>>>>>> 9740bae1e3128502358b9428a3418d57712f90cc
 
 A lightweight C++ engine focused on learning graphics,
 and engine architecture.
