@@ -4,18 +4,19 @@
 #include "../../ecs/components/graphics/LightComponent.h"
 #include "../../ecs/components/core/TransformComponent.h"
 #include "../../math_custom/Mat4.h"
-#include "../../math_custom/GLAdapter.h"
+
 #include "ShadowAtlas.h"
 
 struct ShadowSettings {
     float nearPlane = 0.1f;
-    float farPlane = 100.0f;
-    float orthoWidth = 2.5f;
-    float orthoHeight = 2.5f;
+    float farPlane = 1000.0f;
+    float orthoWidth = 15.0f;
+    float orthoHeight = 15.0f;
 };
 
 class ShadowSystem {
 public:
+    
     ShadowSettings settings;
     ShadowAtlas atlas;
 
@@ -88,7 +89,7 @@ private:
     Mat4 calcDirectional(const GPULight& light) {
         Vector3 lightDir = light.direction.normalized();
         Vector3 lightPos = light.position;
-        Vector3 center = Vector3();// lightPos + lightDir * 10.0f;
+        Vector3 center = lightPos + lightDir * 10.0f;
         Vector3 up = (fabs(lightDir.y) > 0.99f)
             ? Vector3(0, 0, 1) : Vector3(0, 1, 0);
         Mat4 view = Mat4::lookAt(lightPos, center, up);
@@ -96,8 +97,7 @@ private:
             -settings.orthoWidth, settings.orthoWidth,
             -settings.orthoHeight, settings.orthoHeight,
             settings.nearPlane, settings.farPlane);
-       
-        return view * proj;
+        return proj*view;
     }
 
     Mat4 calcSpot(const GPULight& light) {
@@ -117,7 +117,7 @@ private:
             -settings.orthoWidth, settings.orthoWidth,
             -settings.orthoHeight, settings.orthoHeight,
             settings.nearPlane, settings.farPlane);*/
-        return view * proj;
+        return proj*view;
     }
 
     std::vector<Mat4> calcPoint(const GPULight& light) {
@@ -134,6 +134,6 @@ private:
     Mat4 calcPointFace(Vector3 dir, Vector3 up, Vector3 pos) {
         Mat4 view = Mat4::lookAt(pos, pos + dir, up);
         Mat4 proj = Mat4::perspective(90.3f, 1.0f, settings.nearPlane, settings.farPlane);
-        return view * proj;
+        return proj*view;
     }
 };

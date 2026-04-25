@@ -1,14 +1,12 @@
 # Changelog
 
-## [1.0.0] - 2026-04-18
+## [1.0.1] - 2026-04-25
 
 ### Added
-- PBR!
-- HDR CubeMaps
-- Image Based Lighting
-- Improved Shadow Atlasing!
-- More complex and improved Debug UI
-- Model loading at runtime
+
+### Fixes
+- Fixed Directional Lights shadow generation
+- Fixed internal math that is used across the engine
 
 
 ### Known Issues

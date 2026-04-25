@@ -9,13 +9,13 @@ struct CameraComponent {
     float nearPlane = 0.1f;
     float farPlane = 1000.0f;
 
-    // Orientation in engine coordinates (Z-up)
     float pitch = 0.0f;
-    float yaw = 90.0f;
+    float yaw = 0.0f;
 
-    Vector3 front = Vector3(0, 1, 0); // Y-forward internally
+    Vector3 front = Vector3(0, 0, -1); 
+    Vector3 up = Vector3(0, 1, 0);
     Vector3 right = Vector3(1, 0, 0);
-    Vector3 up = Vector3(0, 0, 1); // Z-up
+     // Z-up
 
     // Depth of field / post-processing
     bool applyBlur = false;

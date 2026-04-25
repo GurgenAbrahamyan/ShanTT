@@ -10,7 +10,7 @@
 
 #include "../../math_custom/Quat.h"
 #include "math.h"
-#include "../../math_custom/GLAdapter.h"
+
 #include "../../resources/data/MaterialTextureInfo.h"
 
 
@@ -111,7 +111,7 @@ void ModelLoader::traverseNode(unsigned int nextNode, const Mat4& parentMat)
             
             
             Mat4::translate(localTranslation)*
-            GLAdapter::toGL(Mat4::fromQuat(localRotation))*
+            Mat4::fromQuat(localRotation)*
             Mat4::scale(localScale)
             ;
     }

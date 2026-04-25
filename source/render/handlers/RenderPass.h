@@ -15,7 +15,7 @@
 #include "../../ecs/components/core/WorldMatrixComponent.h"
 #include "../../ecs/components/graphics/ModelComponent.h"
 #include "../backend/Shader.h"
-#include "../../math_custom/GLAdapter.h"
+
 #include "../ecs_systems/ShadowAtlas.h"
 #include "../data/RenderResource.h"
 #include <glad/glad.h>
@@ -52,11 +52,11 @@ public:
 
         int numCasters = (int)ctx.shadowData.size();
 
-       
+
         FrameBuffer* fb = outputs[0]->framebuffer;
-        if (fb->getWidth() != ShadowAtlas::ATLAS_SIZE|| fb->getHeight() != ShadowAtlas::ATLAS_SIZE) {
+        if (fb->getWidth() != ShadowAtlas::ATLAS_SIZE || fb->getHeight() != ShadowAtlas::ATLAS_SIZE) {
             fb->resize(ShadowAtlas::ATLAS_SIZE, ShadowAtlas::ATLAS_SIZE);
-          
+
         }
 
         shader->Activate();
@@ -65,9 +65,9 @@ public:
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
 
-      
+
         for (ShadowData& data : ctx.shadowData) {
-            
+
             int x = int(data.uvMin.x * ShadowAtlas::ATLAS_SIZE);
             int y = int(data.uvMin.y * ShadowAtlas::ATLAS_SIZE);
             int w = int((data.uvMax.x - data.uvMin.x) * ShadowAtlas::ATLAS_SIZE);
@@ -76,7 +76,7 @@ public:
             glViewport(x, y, w, h);
             shader->setMat4("lightSpaceMatrix", data.lightMatrix);
 
-        
+
             for (auto& [mat, meshMap] : ctx.batches) {
                 for (auto& [mesh, batch] : meshMap) {
                     if (batch.instances.empty()) continue;
@@ -91,7 +91,7 @@ public:
                         batch.instances.size());
                 }
             }
-           
+
         }
 
         fb->unbind();
@@ -116,14 +116,14 @@ public:
         if (!ctx.camera)
             return;
 
-   
-        glDisable(GL_CULL_FACE);
-     
-       
-     
 
-        
-        
+        glDisable(GL_CULL_FACE);
+
+
+
+
+
+
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
@@ -149,7 +149,7 @@ public:
 
         fb->unbind();
     }
-    
+
 
 private:
     UniformBuffer* lightsUBO = new UniformBuffer(
@@ -183,7 +183,7 @@ private:
         auto& gpuLights = ctx->shadowData;
 
 
-       
+
         lightMatricesUBO->bind();
 
         if (!gpuLights.empty())
@@ -196,14 +196,14 @@ private:
 
         }
 
-     
+
     }
 };
 
 class LightingPass : public RenderPass {
 public:
     LightingPass(Shader* s) : RenderPass(s), quadVBO(quadVertices, sizeof(quadVertices), false) {
-        
+
         quadVAO.Bind();
         quadVBO.Bind();
 
@@ -225,27 +225,27 @@ public:
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
-       
+
         shader->Activate();
 
-        
-            shader->setVec3("cameraPos", GLAdapter::toGL(ctx.cameraTransform->position));
 
-        
-	    glActiveTexture(GL_TEXTURE0); 
+        shader->setVec3("cameraPos", ctx.cameraTransform->position);
+
+
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(0)); // gAlbedo
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(1)); // gPos
-        glActiveTexture(GL_TEXTURE2); 
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(2)); // gNormal
-        glActiveTexture(GL_TEXTURE3); 
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(3)); // gARM
-        glActiveTexture(GL_TEXTURE4); 
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(4)); // gEmissive
 
         if (ctx.cubeMapComp) {
             glActiveTexture(GL_TEXTURE10);
-            ctx.cubeMapComp->cubeMap->bindIrrTexture(10); 
+            ctx.cubeMapComp->cubeMap->bindIrrTexture(10);
             glActiveTexture(GL_TEXTURE11);
             ctx.cubeMapComp->cubeMap->bindPreFilterTexture(11);
             glActiveTexture(GL_TEXTURE12);
@@ -279,7 +279,7 @@ public:
             shader->setInt("shadowsEnabled", 0);
         }
 
-        
+
         quadVAO.Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         quadVAO.Unbind();
@@ -331,10 +331,10 @@ public:
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
-       
+
         //   glDisable(GL_CULL_FACE);
 
-      
+
         glBindFramebuffer(GL_READ_FRAMEBUFFER, inputs[0]->framebuffer->getID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb->getID());
         glBlitFramebuffer(
@@ -347,7 +347,7 @@ public:
         auto* camTrans = context.cameraTransform;
         if (!cam || !camTrans) return;
 
-        
+
         if (!context.cubeMapComp) return;
         CubeMapComponent& cmc = *context.cubeMapComp;
         if (!cmc.cubeMap) return;
@@ -358,11 +358,11 @@ public:
 
 
         Mat4 view_mat = cam->viewMatrix;
-      
+
 
         shader->setInt("skybox", 0);
         shader->setMat4("projection", cam->projectionMatrix);
-		shader->setFloat("envIntensity", cmc.intensity);
+        shader->setFloat("envIntensity", cmc.intensity);
         shader->setMat4("view", view_mat);
 
         cmc.cubeMap->bind();
@@ -395,7 +395,7 @@ public:
     bool alreadySwapped = false;
 
     void execute(RenderContext& context) override {
-      
+
 
         auto* cam = context.camera;
         if (!cam || inputs.empty() || outputs.empty()) return;
@@ -403,13 +403,13 @@ public:
         if (!blurFB) blurFB = outputs[0]->framebuffer;
 
         if (!cam->applyBlur) {
-            outputs[0]->framebuffer = inputs[0]->framebuffer; 
+            outputs[0]->framebuffer = inputs[0]->framebuffer;
             return;
         }
 
-        outputs[0]->framebuffer = blurFB; 
+        outputs[0]->framebuffer = blurFB;
 
-      
+
 
         FrameBuffer* inputFB = inputs[0]->framebuffer;
         FrameBuffer* outputFB = outputs[0]->framebuffer;
@@ -456,7 +456,7 @@ class BloomPass : public RenderPass {
 public:
     BloomPass(Shader* extractShader, Shader* blurShader, int width, int height)
         : RenderPass(blurShader), extractShader(extractShader),
-       
+
         quadVBO(quadVertices, sizeof(quadVertices), false)
     {
         pingpongFBO[0] = new FrameBuffer(width, height);
@@ -479,16 +479,16 @@ public:
         FrameBuffer* inputFB = inputs[0]->framebuffer;
         glViewport(0, 0, inputFB->getWidth(), inputFB->getHeight());
 
-     
+
         for (int i = 0; i < 2; i++) {
-			pingpongFBO[i]->bind();
+            pingpongFBO[i]->bind();
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-			pingpongFBO[i]->unbind();
+            pingpongFBO[i]->unbind();
         }
 
 
-    
+
         extractShader->Activate();
         pingpongFBO[0]->bind();
 
@@ -515,7 +515,7 @@ public:
                 pingpongFBO[horizontal]->getWidth(),
                 pingpongFBO[horizontal]->getHeight());
             shader->setInt("horizontal", horizontal);
-			glActiveTexture(GL_TEXTURE0);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(
                 GL_TEXTURE_2D, first_iteration ? pingpongFBO[0]->getColorAttachment(0)
                 : pingpongFBO[!horizontal]->getColorAttachment(0)
@@ -528,10 +528,10 @@ public:
             if (first_iteration)
                 first_iteration = false;
         }
-		pingpongFBO[!horizontal]->unbind();
-       
+        pingpongFBO[!horizontal]->unbind();
 
-        
+
+
         outputs[0]->framebuffer = pingpongFBO[!horizontal];
     }
 
@@ -539,7 +539,7 @@ private:
     VAO quadVAO;
     VBO quadVBO;
     FrameBuffer* pingpongFBO[2];
-	Shader* extractShader;
+    Shader* extractShader;
 
     static constexpr float quadVertices[16] = {
   -1.0f,  1.0f,  0.0f, 1.0f,
@@ -573,24 +573,24 @@ public:
 
     void execute(RenderContext& context) override
     {
-        if (inputs.size() == 0 ) return;
+        if (inputs.size() == 0) return;
 
         FrameBuffer* sceneFB = inputs[0]->framebuffer;
-        
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST);
 
         shader->Activate();
         shader->setInt("screenTexture", 0);
-        
-        shader->setFloat("exposure", 2    );
+
+        shader->setFloat("exposure", 2);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, sceneFB->getColorAttachment(0));
-       // glBindTexture(GL_TEXTURE_2D, context.brdfTexture->getID());
+        // glBindTexture(GL_TEXTURE_2D, context.brdfTexture->getID());
 
 
-       // context.brdfTexture->Bind(0);
+        // context.brdfTexture->Bind(0);
         if (inputs.size() > 1) {
             FrameBuffer* bloomFB = inputs[1]->framebuffer;
             shader->setInt("bloomTexture", 1);
@@ -598,7 +598,7 @@ public:
             glBindTexture(GL_TEXTURE_2D, bloomFB->getColorAttachment(0));
         }
         else {
-			shader->setInt("isBloom", false);
+            shader->setInt("isBloom", false);
         }
         quadVAO.Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

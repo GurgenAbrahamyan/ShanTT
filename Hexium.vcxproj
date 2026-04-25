@@ -207,7 +207,6 @@
     <ClInclude Include="source\input\MouseInput.h" />
     <ClInclude Include="source\input\UIInput.h" />
     <ClInclude Include="source\math_custom\GeneralFunctions.h" />
-    <ClInclude Include="source\math_custom\GLAdapter.h" />
     <ClInclude Include="source\math_custom\Mat4.h" />
     <ClInclude Include="source\math_custom\Quat.h" />
     <ClInclude Include="source\math_custom\Vector2.h" />

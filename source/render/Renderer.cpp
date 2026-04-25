@@ -1,10 +1,10 @@
 #include "Renderer.h"
-#include "../math_custom/GLAdapter.h"
 
 
 
 
-using namespace GLAdapter;
+
+
 
 Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     : window(nullptr),
@@ -13,7 +13,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     ctx(ctx)
 
 {
-	
+
     shaderManager = new ShaderManager(bus);
 
     if (!glfwInit()) {
@@ -69,7 +69,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     m_MainFrameBuffer = std::make_unique<FrameBuffer>(
         fbWidth,
-       fbHeight
+        fbHeight
     );
 
     m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);  // gAlbedo
@@ -87,19 +87,19 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     m_LightFrameBuffer = std::make_unique<FrameBuffer>(
         fbWidth,
         fbHeight
-	);
+    );
 
-	m_LightFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);
-	m_LightFrameBuffer->addDepthBuffer();
+    m_LightFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);
+    m_LightFrameBuffer->addDepthBuffer();
 
     m_BlurFrameBuffer->addColorBuffer();
     m_BlurFrameBuffer->addDepthBuffer();
 
-    
 
- 
-	
-	
+
+
+
+
     graph = new RenderGraph();
 
 
@@ -109,9 +109,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     sceneResource->framebuffer = m_MainFrameBuffer.get();
     blurResource = new RenderResource();
     blurResource->framebuffer = m_BlurFrameBuffer.get();
-	lightResource = new RenderResource();
-	lightResource->framebuffer = m_LightFrameBuffer.get();
-	
+    lightResource = new RenderResource();
+    lightResource->framebuffer = m_LightFrameBuffer.get();
+
 
     shaderManager->load(
         "default_shadow",
@@ -136,7 +136,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "resource\\shaders\\lighting_shader\\lighting_pass.frag",
         "resource\\Shaders\\object_shader\\default.geom",
         ShaderType::LIGHT
-	);
+    );
 
     Shader* objShader = shaderManager->getShader("default_light");
     objShader->Activate();
@@ -183,13 +183,13 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "resource\\Shaders\\bloom_shader\\bloom_extract.frag",
         "resource\\Shaders\\object_shader\\default.geom",
         ShaderType::UNKNOWN
-	);
+    );
 
 
 
-   auto* shadow = graph->addPass<ShadowPass>(
+    auto* shadow = graph->addPass<ShadowPass>(
         shaderManager->getShader("default_shadow"));
-        
+
 
     auto* geometry = graph->addPass<GeometryPass>(
         shaderManager->getShader("default"));
@@ -198,10 +198,10 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     auto* cubemap = graph->addPass<CubeMapPass>(
         shaderManager->getShader("default_cubemap"));
-        
+
     auto* blur = graph->addPass<BlurPass>(
         shaderManager->getShader("default_effect"));
-        
+
     auto* bloom = graph->addPass<BloomPass>(
         shaderManager->getShader("bloom_extract"),
         shaderManager->getShader("default_bloom"),
@@ -217,22 +217,22 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     geometry->outputs.push_back(sceneResource);
 
-	lighting->inputs.push_back(sceneResource);
+    lighting->inputs.push_back(sceneResource);
     lighting->inputs.push_back(shadowResource);
-	lighting->outputs.push_back(lightResource);
+    lighting->outputs.push_back(lightResource);
 
-	cubemap->inputs.push_back(sceneResource);
+    cubemap->inputs.push_back(sceneResource);
     cubemap->outputs.push_back(lightResource);
 
 
     blur->inputs.push_back(lightResource);
     blur->outputs.push_back(blurResource);
 
-	
+
 
     bloom->inputs.push_back(blurResource);
     bloom->outputs.push_back(new RenderResource());
-    
+
     finalPass->inputs.push_back(blurResource);
     finalPass->inputs.push_back(bloom->outputs[0]);
 
@@ -273,10 +273,10 @@ void Renderer::render()
 
     graph->execute(*ctx);
 
-   
+
 
     ui->render();
-   
+
 }
 
 
@@ -292,7 +292,7 @@ void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int heig
 void Renderer::rebuildContext(RenderContext* ctx)
 {
 
-  
+
 
 
     if (!ctx || !ctx->registry) return;
@@ -309,7 +309,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
     // find active camera
     for (auto entity : registry.view<ActiveCameraTag>())
     {
-       
+
         ctx->camera = registry.try_get<CameraComponent>(entity);
         ctx->cameraTransform = registry.try_get<TransformComponent>(entity);
         break;
@@ -323,18 +323,18 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
     for (auto entity : view)
     {
-		for (auto submesh : view.get<ModelComponent>(entity).asset->meshes)
+        for (auto submesh : view.get<ModelComponent>(entity).asset->meshes)
         {
-            Mat4 entityWorld = (GLAdapter::toGL(getWorldTransform(entity, registry)).toColumnMajor());
+            Mat4 entityWorld = getWorldTransform(entity, registry);
             auto& transform = view.get<TransformComponent>(entity);
             auto& meshComp = submesh.mesh;
             auto& matComp = submesh.material;
             if (!meshComp || !matComp)
                 continue;
-            Mat4 model = submesh.localTransform.toColumnMajor();
+            Mat4 model = submesh.localTransform;
             auto& meshMap = ctx->batches[matComp];
             auto& batch = meshMap[meshComp];
-            batch.instances.push_back(model * entityWorld);
+            batch.instances.push_back(entityWorld*model);
         }
 
     }
@@ -348,10 +348,10 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
             l.type = static_cast<int>(lc.type);
             if (lc.castsShadow) {
-              
+
                 l.shadowIndex = shadowIndex;
                 if (lc.type == LightType::Point) {
-                    shadowIndex += 6; 
+                    shadowIndex += 6;
                 }
                 else {
                     shadowIndex += 1;
@@ -359,8 +359,8 @@ void Renderer::rebuildContext(RenderContext* ctx)
             }
             l.intensity = lc.intensity;
             l.color = lc.color;
-            l.position = GLAdapter::toGL(tc.position);
-            l.direction = GLAdapter::toGL(lc.direction);
+            l.position = tc.position;
+            l.direction = lc.direction;
             l.innerCone = lc.innerConeAngle;
             l.outerCone = lc.outerConeAngle;
 
@@ -399,9 +399,9 @@ Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) 
         local =
             Mat4::translate(tc->position) *
             Mat4::fromQuat(tc->rotation) *
-            Mat4::scale(tc->scale) 
-            
-            
+            Mat4::scale(tc->scale)
+
+
             ;
     }
 
@@ -446,17 +446,17 @@ void Renderer::clearFramebuffers()
     }
 
     if (m_LightFrameBuffer) {
-    
+
         m_LightFrameBuffer->bind();
         glViewport(0, 0, m_LightFrameBuffer->getWidth(), m_LightFrameBuffer->getHeight());
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // ? depth never cleared!
-		m_LightFrameBuffer->unbind();
-        
-        
+        m_LightFrameBuffer->unbind();
+
+
     }
 
- 
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.67f, 0.67f, 0.67f, 1.0f);

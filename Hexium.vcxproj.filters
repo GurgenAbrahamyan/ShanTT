@@ -284,9 +284,6 @@
     <ClInclude Include="source\math_custom\Vector2.h">
       <Filter>Source Files\Engine\math</Filter>
     </ClInclude>
-    <ClInclude Include="source\math_custom\GLAdapter.h">
-      <Filter>Source Files\Engine\math</Filter>
-    </ClInclude>
     <ClInclude Include="source\render\data\RenderContext.h">
       <Filter>Source Files\Engine\render\data</Filter>
     </ClInclude>

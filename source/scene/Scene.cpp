@@ -115,25 +115,25 @@ void Scene::initObjects() {
         };
 
 
-    createRBWithModelTransform(chess, 1.0f, Vector3(-10, -10, 3), Quat(), Vector3(6, 6, 6));
+    createRBWithModelTransform(chess, 1.0f, Vector3(-10, 3, -10), Quat(), Vector3(6, 6, 6));
 
     // Map (static)
-    createRBWithModelTransform(map, 1.0f, Vector3(0, -10, 3), Quat(), Vector3(0.2f, 0.2f, 0.2f));
+    createRBWithModelTransform(map, 1.0f, Vector3(0, 3, -10), Quat(), Vector3(0.2f, 0.2f, 0.2f));
 
     // Duck
-    createRBWithModelTransform(duck, 1.0f, Vector3(10, -10, 3), Quat(), Vector3(1, 1, 1));
+    createRBWithModelTransform(duck, 1.0f, Vector3(10, 3, -10), Quat(), Vector3(1, 1, 1));
     
     // Helmet
-    createRBWithModelTransform(helmet, 1.0f, Vector3(-10, 0, 3), Quat(), Vector3(1, 1, 1));
+    createRBWithModelTransform(helmet, 1.0f, Vector3(-10, 3, 0), Quat(), Vector3(1, 1, 1));
 
     // Car
-    createRBWithModelTransform(car, 1.0f, Vector3(0, 0, 3), Quat(), Vector3(100, 100, 100));
+    createRBWithModelTransform(car, 1.0f, Vector3(0, 3, 0), Quat(), Vector3(100, 100, 100));
 
     // Boombox
-    createRBWithModelTransform(boombox, 1.0f, Vector3(10, 0, 3), Quat(), Vector3(3, 3, 3));
+    createRBWithModelTransform(boombox, 1.0f, Vector3(10, 3, 0), Quat(), Vector3(3, 3, 3));
 
     // Cannon
-    createRBWithModelTransform(cannon, 5.0f, Vector3(-10, 10, 3), Quat(), Vector3(3, 3, 3));
+    createRBWithModelTransform(cannon, 5.0f, Vector3(-10, 3, 10), Quat(), Vector3(3, 3, 3));
 
 
     registry.emplace<CollisionShapeComponent>(chess, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
@@ -144,7 +144,7 @@ void Scene::initObjects() {
     registry.emplace<CollisionShapeComponent>(boombox, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
     registry.emplace<CollisionShapeComponent>(cannon, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
     
-    auto rect5 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect5", Vector3(0, 0, 0), Vector3(30, 30, 2));
+    auto rect5 = GraphicsEntityFactory::createRectangle(registry, *meshManager, *materialManager, "rect5", Vector3(0, 0, 0), Vector3(30, 2, 30));
 
     
     registry.emplace<RigidBodyComponent>(rect5, PhysicsComponentFactory::createStaticBody(registry, rect5));
@@ -154,72 +154,17 @@ void Scene::initObjects() {
     
 
     LightComponent dir2;
-    dir2.type = LightType::Spot;
+    dir2.type = LightType::Directional;
     dir2.color = Vector3(1, 1, 1);
     dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
+    dir2.direction = Vector3(0, -1, 0);
     dir2.innerConeAngle = 0.85;
     dir2.outerConeAngle = 0.90f;
     dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(-10, -10, 6), dir2, "SpotLight1");
+    GraphicsEntityFactory::createLight(registry, Vector3(0, 5, 0), dir2, "SpotLight1");
 
  
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(0, -10, 6), dir2, "SpotLight2");
-
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(10, -10, 6), dir2, "SpotLight3");
-
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(-10, 0, 6), dir2, "SpotLight4");
-
     
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(0, 0, 6), dir2, "SpotLight5");
-
-
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(10, 0, 6), dir2, "SpotLight6");
-
- 
-    dir2.type = LightType::Spot;
-    dir2.color = Vector3(1, 1, 1);
-    dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, 0, -1);
-    dir2.innerConeAngle = 0.85;
-    dir2.outerConeAngle = 0.90f;
-    dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(-10, 10, 6), dir2, "SpotLight7");
    
 
      

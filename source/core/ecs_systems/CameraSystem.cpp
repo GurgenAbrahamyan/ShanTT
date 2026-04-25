@@ -8,7 +8,6 @@
 #include "../../core/Event.h"
 #include "../EngineContext.h"
 #include "../../math_custom/Mat4.h"
-#include "../../math_custom/GLAdapter.h"
 
 
 CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(registry) {
@@ -43,8 +42,8 @@ void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt)
     float velocity = movementSpeed * dt;
     if (key == 'W') transform->position += cam->front * velocity;
     if (key == 'S') transform->position -= cam->front * velocity;
-    if (key == 'A') transform->position += cam->right * velocity;
-    if (key == 'D') transform->position -= cam->right * velocity;
+    if (key == 'A') transform->position -= cam->right * velocity;
+    if (key == 'D') transform->position += cam->right * velocity;
     if (key == 'Q') transform->position -= cam->up * velocity;
     if (key == 'E') transform->position += cam->up * velocity;
 }
@@ -61,10 +60,11 @@ void CameraSystem::processMouse(entt::registry& registry, float xoffset, float y
     xoffset *= mouseSensitivity;
     yoffset *= mouseSensitivity;
 
-    cam->yaw -= xoffset;
+    cam->yaw += xoffset;
     cam->pitch += yoffset;
 
     cam->pitch = std::clamp(cam->pitch, -89.0f, 89.0f);
+
     if (cam->yaw > 360.f) cam->yaw -= 360.f;
     if (cam->yaw < -360.f) cam->yaw += 360.f;
 }
@@ -76,18 +76,19 @@ void CameraSystem::updateVectors(entt::registry& registry) {
     auto* cam = registry.try_get<CameraComponent>(camEntity);
     if (!cam) return;
 
-    // Convert yaw/pitch to radians
+
     float yawRad = Mat4::radians(cam->yaw);
     float pitchRad = Mat4::radians(cam->pitch);
 
-    // Recompute front vector for Z-up / Y-forward
-    cam->front.x = sin(yawRad) * cos(pitchRad);   // left-right
-    cam->front.y = cos(yawRad) * cos(pitchRad);   // forward-back
-    cam->front.z = sin(pitchRad);                 // up-down
+    // Y-up, X-right, Z-toward-camera (OpenGL right-handed)
+    cam->front.x =  cos(yawRad)* cos(pitchRad);
+    cam->front.y = sin(pitchRad);
+    cam->front.z = sin(yawRad)*cos(pitchRad);  
     cam->front = cam->front.normalized();
 
-    // Right and up
-    cam->right = cam->front.cross(Vector3(0, 0, 1)).normalized(); // right perpendicular to up
+
+
+	cam->right = cam->front.cross(Vector3(0, 1, 0)).normalized();
     cam->up = cam->right.cross(cam->front).normalized();
 }
 
@@ -100,15 +101,9 @@ void CameraSystem::updateMatrices(entt::registry& registry) {
     auto* transform = registry.try_get<TransformComponent>(camEntity);
     if (!cam || !transform) return;
 
-    // Convert engine Z-up -> OpenGL Y-up
-    
-    Vector3 posGL = GLAdapter::toGL(transform->position);
-    Vector3 frontGL= GLAdapter::toGL(cam->front);
-    Vector3 upGL = GLAdapter::toGL(cam->up);
-
-    cam->viewMatrix = Mat4::lookAt(posGL, posGL + frontGL, upGL);
+   
+    cam->viewMatrix = Mat4::lookAt(transform->position, transform->position + cam->front, cam->up);
     cam->projectionMatrix = Mat4::perspective(cam->fov, cam->aspectRatio, cam->nearPlane, cam->farPlane);
-	//cam->projectionMatrix = Mat4::ortho(860,-860, 540, -540, cam->nearPlane, cam->farPlane);
 }
 
 // --- Helper ---

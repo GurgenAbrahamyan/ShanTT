@@ -116,10 +116,11 @@ float randomAngle(vec3 seed) {
 
 float pcf(sampler2D map, vec2 atlasUV, float currentDepth, float bias, vec2 tileSize, float spreadPixels) {
     vec2 texelSize = tileSize / vec2(textureSize(map,0));
-    float angle = randomAngle(vec3(atlasUV,currentDepth));
-    float s = sin(angle), c = cos(angle);
-    mat2 rot = mat2(c,-s,s,c);
-    float shadow = 0.0;
+    float angle    = randomAngle(vec3(atlasUV,currentDepth));
+    float s        = sin(angle), c = cos(angle);
+    mat2 rot       = mat2(c,-s,s,c);
+    float shadow   = 0.0;
+
     for(int i=0;i<16;i++){
         vec2 offset = rot * poissonDisk[i] * texelSize * spreadPixels;
         float closest = texture(map, atlasUV + offset).r;
@@ -130,17 +131,26 @@ float pcf(sampler2D map, vec2 atlasUV, float currentDepth, float bias, vec2 tile
 
 
 float calcShadowPoint(GPULight light, vec3 normal, vec3 fragPos) {
-    if(light.shadowIndex<0) return 0.0;
-    vec3 L = fragPos - light.position;
+
+    if(light.shadowIndex<0) 
+         return 0.0;
+
+    vec3 L    = fragPos - light.position;
     vec3 absL = abs(L);
     int face;
-    if(absL.x>=absL.y && absL.x>=absL.z) face=(L.x>=0?0:1);
-    else if(absL.y>=absL.x && absL.y>=absL.z) face=(L.y>=0?2:3);
-    else face=(L.z>=0?4:5);
+
+    if(absL.x >= absL.y && absL.x >= absL.z) 
+         face=(L.x >= 0 ? 0 : 1);
+
+
+    else if(absL.y>=absL.x && absL.y>=absL.z) 
+         face=(L.y>=0?2:3);
+    else 
+         face=(L.z>=0?4:5);
 
     int idx = light.shadowIndex + face;
     vec4 fp = shadowInfo[idx].lightMatrix * vec4(fragPos,1.0);
-    vec3 projCoords = fp.xyz/fp.w*0.5+0.5;
+    vec3 projCoords = fp.xyz/fp.w * 0.5+0.5;
     if(projCoords.z>1.0) return 0.0;
 
     vec2 tileSize = shadowInfo[idx].maxUv - shadowInfo[idx].minUv;
@@ -151,31 +161,44 @@ float calcShadowPoint(GPULight light, vec3 normal, vec3 fragPos) {
 }
 
 float calcShadowDirectional(GPULight light, vec3 normal, vec3 fragPos) {
-    if(light.shadowIndex<0) return 0.0;
-    int idx = light.shadowIndex;
-    vec4 fp = shadowInfo[idx].lightMatrix * vec4(fragPos,1.0);
-    vec3 projCoords = fp.xyz/fp.w*0.5+0.5;
-    if(projCoords.z>1.0) return 0.0;
+
+    if(light.shadowIndex < 0) 
+        return 0.0;
+
+    int idx       = light.shadowIndex;
+
+    vec4 fp       = shadowInfo[idx].lightMatrix * vec4(fragPos,1.0);
+    vec3 projCoords = fp.xyz / fp.w * 0.5 + 0.5;
+
+    if(projCoords.z > 1.0) 
+         return 0.0;
 
     vec2 tileSize = shadowInfo[idx].maxUv - shadowInfo[idx].minUv;
-    vec2 atlasUV = shadowInfo[idx].minUv + projCoords.xy*tileSize;
-    float bias = max(0.004*(1.0-dot(normalize(normal), normalize(-light.direction))), 0.005);
+    vec2 atlasUV  = shadowInfo[idx].minUv + projCoords.xy * tileSize;
+
+    float bias    = max(0.004 * (1.0 - dot(normalize(normal), normalize( -light.direction ))), 0.0005);
     return pcf(shadowMap, atlasUV, projCoords.z, bias, tileSize, 17);
 }
 
 float calcShadowSpot(GPULight light, vec3 normal, vec3 fragPos) {
-    if(light.shadowIndex<0) return 0.0;
+
+    if(light.shadowIndex < 0) 
+        return 0.0;
+
     int idx = light.shadowIndex;
     vec4 fp = shadowInfo[idx].lightMatrix * vec4(fragPos,1.0);
-    vec3 projCoords = fp.xyz/fp.w*0.5+0.5;
-    if(projCoords.z>1.0) return 0.0;
 
-    vec2 centered = projCoords.xy*2.0-1.0;
-    if(dot(centered,centered)>1.0) return 0.0;
+    vec3 projCoords = fp.xyz / fp.w * 0.5+0.5;
+    if(projCoords.z > 1.0) 
+        return 0.0;
+
+    vec2 centered = projCoords.xy * 2.0-1.0;
+    if(dot(centered, centered)>1.0) return 0.0;
 
     vec2 tileSize = shadowInfo[idx].maxUv - shadowInfo[idx].minUv;
-    vec2 atlasUV = shadowInfo[idx].minUv + projCoords.xy*tileSize;
-    float bias = max(0.004*(1.0-dot(normalize(normal), normalize(-light.direction))),0.0005);
+    vec2 atlasUV = shadowInfo[idx].minUv + projCoords.xy * tileSize;
+
+    float bias = max(0.004 * (1.0 - dot(normalize(normal), normalize( -light.direction ) ) ), 0.0005);
     return pcf(shadowMap, atlasUV, projCoords.z, bias, tileSize, 35);
 }
 
@@ -200,7 +223,7 @@ vec3 cookTorrance(vec3 L, vec3 N, vec3 V, vec3 albedo,
     float denom = 4.0 * NdotV * NdotL + 0.0001; // epsilon to avoid /0
     vec3  spec  = num / denom;
 
-    // kS = Fresnel (reflected energy), kD = refracted
+   
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic); // metals have no diffuse
 

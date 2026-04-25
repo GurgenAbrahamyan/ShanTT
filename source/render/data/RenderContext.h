@@ -34,6 +34,7 @@ struct RenderContext {
 
     int shadowSlots;
 
+
     std::vector<ShadowData> shadowData;
 
     std::vector<DebugTexture> debugTextures;
