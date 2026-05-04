@@ -39,9 +39,4 @@ void Texture::Unbind() const {
 
 
 
-void Texture::Delete() {
-    if (ID != 0) {
-        glDeleteTextures(1, &ID);
-        ID = 0;
-    }
-}
+

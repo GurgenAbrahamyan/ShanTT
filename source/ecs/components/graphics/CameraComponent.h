@@ -15,14 +15,14 @@ struct CameraComponent {
     Vector3 front = Vector3(0, 0, -1); 
     Vector3 up = Vector3(0, 1, 0);
     Vector3 right = Vector3(1, 0, 0);
-     // Z-up
+
 
     // Depth of field / post-processing
     bool applyBlur = false;
-    float focusDistance = 5.0f;
-    float aperture = 1.5f;
-    float focalLength = 0.05f;
-    float blurScale = 500.0f;
+    float focusDistance = 2.650f;
+    float aperture = 0.670;
+    float focalLength = 0.094f;
+    float blurScale = 106.0f;
 
     // Matrices ready for OpenGL
     Mat4 viewMatrix;

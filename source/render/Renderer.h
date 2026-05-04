@@ -36,7 +36,7 @@ public:
 	FrameBuffer* getBlurFrameBuffer() const { return m_BlurFrameBuffer.get(); }
 	FrameBuffer* getShadowFrameBuffer() const { return m_ShadowFrameBuffer.get(); }
 	void rebuildContext(RenderContext* ctx);
-
+	RenderGraph* getRenderGraph() const { return graph; }
 
     GLFWwindow* getWindow() const;
 
@@ -63,6 +63,7 @@ private:
     RenderResource* sceneResource;
     RenderResource* blurResource;
 	RenderResource* lightResource;
+
 
     UiInput* ui;
     RenderContext* ctx;

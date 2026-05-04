@@ -24,7 +24,7 @@ public:
         const std::string& name,
         const std::string& vertexPath,
         const std::string& fragmentPath,
-        const std::string& geometryPath = "",
+     
         ShaderType type = ShaderType::UNKNOWN
     );
 

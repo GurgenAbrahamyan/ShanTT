@@ -33,7 +33,7 @@ public:
         entt::entity entity
     );
 
-    const std::unordered_map<std::string, ModelAsset>& getLoadedModels() const;
+    const std::unordered_map<std::string, std::unique_ptr<ModelAsset>>& getLoadedModels() const;
 
     bool isLoaded(const std::string& name) const;
 
@@ -49,5 +49,5 @@ private:
     MaterialManager* materialManager;
     TextureManager* textureManager;
 
-    std::unordered_map<std::string, ModelAsset> loadedModels;
+    std::unordered_map<std::string, std::unique_ptr<ModelAsset>> loadedModels;
 };

@@ -33,8 +33,11 @@
 #include "../ecs/components/physics/RigidBodyComponent.h"
 #include "../ecs/components/physics/SoftBodyComponent.h"
 
+#include "../render/handlers/BloomPass.h"
+#include "../render/handlers/FinalBlitPass.h"
 
-#include "../resources/managers/ModelManager.h"
+
+
 
 using ComponentTypes = std::tuple<
     TagComponent,
@@ -202,7 +205,7 @@ public:
         ImGui::NewFrame();
     }
 
-    void buildUI(RenderContext* ctx)
+    void buildUI(RenderContext* ctx, RenderGraph* rendergraph)
     {
         auto* registry = ctx->registry;
         auto* modelMgr = ctx->modelManager; // ModelManager* added to RenderContext
@@ -326,13 +329,9 @@ public:
         ImGui::Separator();
         ImGui::Spacing();
 
-        // Each entry: name → bool open flag
-        // Expand this list as you add more managers/systems
         struct SystemEntry { const char* label; bool* openFlag; };
         SystemEntry systemEntries[] = {
-            { "Model Manager",   &modelManagerOpen   },
-            // { "Texture Manager", &textureManagerOpen },
-            // { "Physics System",  &physicsSystemOpen  },
+            { "Model Manager", &modelManagerOpen },
         };
 
         for (auto& entry : systemEntries)
@@ -344,10 +343,44 @@ public:
             if (isOpen) ImGui::PopStyleColor();
         }
 
+        // ── Render Passes ─────────────────────────────────────────────────────
+        if (rendergraph)
+        {
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Render Passes");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            const auto& passes = rendergraph->getPasses();
+            for (int i = 0; i < (int)passes.size(); i++)
+            {
+                RenderPass* pass = passes[i].get();
+                if (passRenderMap.find(typeid(*pass)) == passRenderMap.end()) continue;
+
+                bool isOpen = (activePassIndex == i);
+                if (isOpen) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
+                if (ImGui::Selectable(pass->passName(), isOpen))
+                    activePassIndex = (activePassIndex == i) ? -1 : i;
+                if (isOpen) ImGui::PopStyleColor();
+            }
+        }
+
         ImGui::EndChild();
 
         ImGui::Columns(1);
         ImGui::End();
+
+        if (rendergraph && activePassIndex >= 0)
+        {
+            const auto& passes = rendergraph->getPasses();
+            if (activePassIndex < (int)passes.size())
+            {
+                RenderPass* pass = passes[activePassIndex].get();
+                auto it = passRenderMap.find(typeid(*pass));
+                if (it != passRenderMap.end())
+                    DrawRenderPassWindow(pass, it->second, ctx);
+            }
+        }
 
         // ── SINGLE ENTITY INSPECTOR WINDOW ────────────────────────────────────────
         if (registry->valid(activeInspectorEntity))
@@ -378,6 +411,9 @@ public:
         if (modelManagerOpen && modelMgr) {
          DrawModelManagerWindow(modelMgr, registry, ctx);
     }
+
+
+
       //  // ── GBUFFER / RENDER PASS VIEWER ─────────────────────────────────────────
         const float gbufX = (float)ctx->windowWidth -  gbufW;
         float gbufH = (float)ctx->windowHeight / 2.f;
@@ -454,6 +490,26 @@ public:
     }
 
 private:
+    int activePassIndex = -1;
+
+    std::unordered_map<std::type_index,
+        std::function<void(RenderPass*)>> passRenderMap =
+    {
+        { typeid(FinalBlitPass), [](RenderPass* base) {
+            auto* p = static_cast<FinalBlitPass*>(base);
+            ImGui::DragFloat("Exposure",        &p->settings.exposure,       0.05f, 0.f, 20.f);
+            ImGui::Checkbox("Bloom",           &p->settings.isBloom);
+            if (p->settings.isBloom)
+                ImGui::DragFloat("Bloom Intensity", &p->settings.bloomintensity, 0.001f, 0.f, 1.f);
+        }},
+
+        { typeid(BloomPass), [](RenderPass* base) {
+            auto* p = static_cast<BloomPass*>(base);
+          //  ImGui::DragInt("Mip Levels",    &p->settings.mipMapLength, 1, 1, 12);
+            ImGui::DragFloat("Filter Radius", &p->settings.filterRadius, 0.0001f, 0.f, 0.05f);
+        }},
+    };
+
 
     // ── Model Manager Window ──────────────────────────────────────────────────
     void DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry, RenderContext* ctx)
@@ -522,8 +578,8 @@ private:
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Text("Path: %s", asset.path.c_str());
-                ImGui::Text("Meshes: %zu", asset.meshes.size());
+                ImGui::Text("Path: %s", asset.get()->path.c_str());
+                ImGui::Text("Meshes: %zu", asset.get()->meshes.size());
                 ImGui::EndTooltip();
             }
 
@@ -818,5 +874,26 @@ private:
             EndComponentHeader();
         }},
     };
+
+    void DrawRenderPassWindow(RenderPass* pass,
+        const std::function<void(RenderPass*)>& drawFn,
+        RenderContext* ctx)
+    {
+        const float pad = 10.f;
+        const float w = (float)ctx->windowWidth / 5.f;
+
+        ImGui::SetNextWindowSize(ImVec2(w, 0), ImGuiCond_FirstUseEver); // height auto
+        ImGui::SetNextWindowPos(
+            ImVec2((float)ctx->windowWidth - 2.f * w - 2.f * pad, pad),
+            ImGuiCond_FirstUseEver);
+
+        bool open = true;
+        std::string title = std::string(pass->passName()) + " Settings";
+        ImGui::Begin(title.c_str(), &open, 0);
+        drawFn(pass);
+        ImGui::End();
+
+        if (!open) activePassIndex = -1;
+    }
     
 };

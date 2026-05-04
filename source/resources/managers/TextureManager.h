@@ -84,6 +84,6 @@ private:
 
     std::unique_ptr<Shader> brdfShader;
 
-    Texture* createSinglePixel(unsigned char* data, int channels, GLenum internal);
+    std::unique_ptr<Texture> createSinglePixel(unsigned char* data, int channels, GLenum internal);
 
 };

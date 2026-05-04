@@ -147,7 +147,7 @@
     <ClCompile Include="source\core\ecs_systems\CameraSystem.cpp" />
     <ClCompile Include="source\core\Engine.cpp" />
     <ClCompile Include="source\ecs\factories\GraphicsEntityFactory.cpp" />
-    <ClCompile Include="source\Hexium.cpp" />
+    <ClCompile Include="source\ShanTT.cpp" />
     <ClCompile Include="source\input\MouseInput.cpp" />
     <ClCompile Include="source\libraries\glad.c" />
     <ClCompile Include="source\libraries\imgui\imgui.cpp" />
@@ -234,7 +234,14 @@
     <ClInclude Include="source\render\data\ShadowData.h" />
     <ClInclude Include="source\render\ecs_systems\ShadowAtlas.h" />
     <ClInclude Include="source\render\ecs_systems\ShadowSystem.h" />
+    <ClInclude Include="source\render\handlers\BloomPass.h" />
+    <ClInclude Include="source\render\handlers\BlurPass.h" />
+    <ClInclude Include="source\render\handlers\CubeMapPass.h" />
+    <ClInclude Include="source\render\handlers\FinalBlitPass.h" />
+    <ClInclude Include="source\render\handlers\GeometryPass.h" />
+    <ClInclude Include="source\render\handlers\LightingPass.h" />
     <ClInclude Include="source\render\handlers\RenderPass.h" />
+    <ClInclude Include="source\render\handlers\ShadowPass.h" />
     <ClInclude Include="source\render\Renderer.h" />
     <ClInclude Include="source\render\RenderGraph.h" />
     <ClInclude Include="source\resources\assets\CubeMap.h" />
@@ -269,8 +276,11 @@
   <ItemGroup>
     <None Include="resource\shaders\bloom_shader\bloom.frag" />
     <None Include="resource\shaders\bloom_shader\bloom.vert" />
+    <None Include="resource\shaders\bloom_shader\bloom_downsample.frag" />
     <None Include="resource\shaders\bloom_shader\bloom_extract.frag" />
     <None Include="resource\shaders\bloom_shader\bloom_extract.vert" />
+    <None Include="resource\shaders\bloom_shader\bloom_upsample.frag" />
+    <None Include="resource\shaders\bloom_shader\render_quad.vert" />
     <None Include="resource\shaders\camera_effects\blur_pass.frag" />
     <None Include="resource\shaders\camera_effects\blur_pass.vert" />
     <None Include="resource\shaders\cubemap_shader\default.frag" />

@@ -29,7 +29,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	void Delete() {
+	~VAO() {
 		glDeleteVertexArrays(1, &ID);
 	}
 };

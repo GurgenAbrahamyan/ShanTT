@@ -30,13 +30,14 @@ public:
     Texture& operator=(const Texture&) = delete;
     void Bind( int slot = 0);
     void Unbind() const;
-    void Delete(); 
-
+   
     int getWidth() const { return width; }
     int getHeight() const { return height; }
 	
 	int getID() const { return ID; }
-
+    ~Texture() {
+        if (ID) glDeleteTextures(1, &ID);
+    }
 private:
     GLuint ID = 0;
    

@@ -19,22 +19,22 @@ static std::string get_file_contents(const char* filename)
     return contents.str();
 }
 
-Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geometryFile)
+Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
     std::string vertexCode = get_file_contents(vertexFile);
     std::string fragmentCode = get_file_contents(fragmentFile);
-   // std::string geometryCode = get_file_contents(geometryFile);
+  
 
     GLuint vertexShader = compileShader(vertexCode.c_str(), GL_VERTEX_SHADER);
 	std::cout << "Vertex shader compiled successfully: " << vertexFile << "\n";
     GLuint fragmentShader = compileShader(fragmentCode.c_str(), GL_FRAGMENT_SHADER);
 	std::cout << "Fragment shader compiled successfully: " << fragmentFile << "\n";
-//	GLuint geometryShader = compileShader(geometryCode.c_str(), GL_GEOMETRY_SHADER);
+
 
     ID = glCreateProgram();
     glAttachShader(ID, vertexShader);
     glAttachShader(ID, fragmentShader);
-//	glAttachShader(ID, geometryShader);
+
     glLinkProgram(ID);
 
     checkLinkErrors(ID);

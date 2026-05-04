@@ -24,8 +24,7 @@ public:
     GLuint getInstanceVBO() override;
     
 private:
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+ 
     
     VAO* VAO1 = nullptr;
     VBO* VBO1 = nullptr;
@@ -33,4 +32,7 @@ private:
     
     GLuint instanceVBO = 0;
     size_t instanceVBOCapacity = 0;
+
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
 };

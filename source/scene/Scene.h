@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "../../include/EnTT/entt.hpp"
-
+#include <memory>
 class Texture;
 class EventBus;
 class ModelManager;
@@ -25,8 +25,8 @@ private:
     entt::registry   registry;
     CubeMap* skybox = nullptr;
 
-    TextureManager* textureManager = nullptr;
-    MaterialManager* materialManager = nullptr;
-    MeshManager* meshManager = nullptr;
-    ModelManager* modelManager = nullptr;
+    std::unique_ptr<TextureManager> textureManager = nullptr;
+    std::unique_ptr<MaterialManager> materialManager = nullptr;
+    std::unique_ptr<MeshManager> meshManager = nullptr;
+    std::unique_ptr<ModelManager> modelManager = nullptr;
 };

@@ -12,7 +12,6 @@ ShaderManager::ShaderManager(EventBus* bus)
             event.data->name,
             event.data->vertexPath,
             event.data->fragmentPath,
-            event.data->geometryPath,
             event.data->type
         );
         event.result = shader;
@@ -29,7 +28,7 @@ Shader* ShaderManager::load(
     const std::string& name,
     const std::string& vertexPath,
     const std::string& fragmentPath,
-    const std::string& geometryPath,
+   
     ShaderType type
 ) {
 
@@ -42,12 +41,11 @@ Shader* ShaderManager::load(
     std::unique_ptr<Shader> shader;
 
     try {
-        if (geometryPath.empty()) {
-            shader = std::make_unique<Shader>(vertexPath.c_str(), fragmentPath.c_str(), nullptr);
-        }
-        else {
-            shader = std::make_unique<Shader>(vertexPath.c_str(), fragmentPath.c_str(), geometryPath.c_str());
-        }
+      
+            
+       
+            shader = std::make_unique<Shader>(vertexPath.c_str(), fragmentPath.c_str());
+        
     }
     catch (...) {
         std::cerr << "[ShaderManager] Failed to load shader: " << name << "\n";

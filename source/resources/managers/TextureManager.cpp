@@ -10,7 +10,7 @@
 #include <memory>
 
 
-TextureManager::TextureManager() {} // empty, no GL calls
+TextureManager::TextureManager() {} 
 
 void TextureManager::initDefaults()
 {
@@ -24,30 +24,30 @@ void TextureManager::initDefaults()
 
     equirectShader = std::make_unique<Shader>(
         "resource\\shaders\\texture_generation\\hdr_to_cubemap\\equirect.vert", 
-        "resource\\shaders\\texture_generation\\hdr_to_cubemap\\equirect.frag", "  ");
+        "resource\\shaders\\texture_generation\\hdr_to_cubemap\\equirect.frag");
 
     irradianceShader = std::make_unique<Shader>(
         "resource\\shaders\\texture_generation\\cubemap_convultion\\convultion.vert",
-        "resource\\shaders\\texture_generation\\cubemap_convultion\\convultion.frag", "  ");
+        "resource\\shaders\\texture_generation\\cubemap_convultion\\convultion.frag");
 
     prefilterShader = std::make_unique<Shader>(
         "resource\\shaders\\texture_generation\\prefilter_convultion\\prefilter.vert",
-        "resource\\shaders\\texture_generation\\prefilter_convultion\\prefilter.frag", "  ");
+        "resource\\shaders\\texture_generation\\prefilter_convultion\\prefilter.frag");
     brdfShader = std::make_unique<Shader>(
         "resource\\shaders\\texture_generation\\brdf\\brdf.vert",
-        "resource\\shaders\\texture_generation\\brdf\\brdf.frag", "  ");
+        "resource\\shaders\\texture_generation\\brdf\\brdf.frag");
        
     generateBRDF();
 
 }
 
-Texture* TextureManager::createSinglePixel(unsigned char* data, int channels, GLenum internal)
+std::unique_ptr<Texture> TextureManager::createSinglePixel(unsigned char* data, int channels, GLenum internal)
 {
     GLenum format = (channels == 1) ? GL_RED : (channels == 3) ? GL_RGB : GL_RGBA;
     TextureDesc desc;
     desc.internalFormat = internal;
     desc.format = format;
-    return new Texture(1, 1, data, desc);
+    return std::make_unique<Texture>(1, 1, data, desc);
 }
 
 TextureID TextureManager::addTexture(const std::string& path,const TextureType& type)
@@ -127,12 +127,16 @@ Texture* TextureManager::loadARM(const std::string& aoPath, const std::string& a
     unsigned char* armData = nullptr;
 
     stbi_set_flip_vertically_on_load(false);
-
+    bool fromSTBI = false;
     // 1. Load ARM if present
     if (!armPath.empty()) {
         armData = stbi_load(armPath.c_str(), &w, &h, &ch, 4); // force RGBA
         if (!armData) {
             std::cerr << "Failed to load ARM texture: " << armPath << "\n";
+            
+        }
+        if (armData) {
+            fromSTBI = true;
         }
     }
 
@@ -163,6 +167,9 @@ Texture* TextureManager::loadARM(const std::string& aoPath, const std::string& a
             armData[i * 4 + 2] = 0;   // B default (metallic)
             armData[i * 4 + 3] = 255; // A default
         }
+
+       
+        fromSTBI = false;
     }
     else {
         // Ensure R is at least 255 if AO missing
@@ -190,6 +197,7 @@ Texture* TextureManager::loadARM(const std::string& aoPath, const std::string& a
         }
     }
 
+
     TextureDesc desc;
     desc.internalFormat = GL_RGBA8;
     desc.format = GL_RGBA;
@@ -197,7 +205,7 @@ Texture* TextureManager::loadARM(const std::string& aoPath, const std::string& a
     auto tex = std::make_unique<Texture>(w, h, armData, desc);
 
     // Clean up
-    if (!armPath.empty()) stbi_image_free(armData);
+    if (fromSTBI) stbi_image_free(armData);
     else delete[] armData;
 
     Texture* raw = tex.get();
@@ -441,6 +449,7 @@ void TextureManager::equirectToCubemap(const std::string& hdrPath)
     else
     {
         std::cout << "Failed to load HDR image." << std::endl;
+        return;
     }
 
     unsigned int captureFBO;
@@ -479,7 +488,6 @@ void TextureManager::equirectToCubemap(const std::string& hdrPath)
        Mat4::lookAt(Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
     };
 
-    // convert HDR equirectangular environment map to cubemap equivalent
     equirectShader->Activate();
     equirectShader->setInt("equirectangularMap", 0);
     equirectShader->setMat4("projection", captureProjection);
@@ -497,11 +505,13 @@ void TextureManager::equirectToCubemap(const std::string& hdrPath)
 
         renderCube(); // renders a 1x1 cube
     }
+
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     cubeMap = std::make_unique<CubeMap>();
     cubeMap->setEnvTexture(envCubemap);
-
+    glDeleteTextures(1, &hdrTexture);
+ 
 
     unsigned int irradianceMap;
     glGenTextures(1, &irradianceMap);
@@ -587,7 +597,7 @@ void TextureManager::equirectToCubemap(const std::string& hdrPath)
         }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+    glDeleteFramebuffers(1, &captureFBO);
     cubeMap->setPreFilterTexture(prefilterMap);
 }
 

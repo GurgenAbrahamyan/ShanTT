@@ -4,9 +4,11 @@
 #include <string>
 #include <vector>
 #include "../assets/Material.h"
+
 class EventBus;
 class TextureManager;
 struct MaterialData;
+struct MaterialTextureInfo;
 // Define standard texture slot indices
 enum class TextureSlot {
     BASE_COLOR = 0,
@@ -26,6 +28,8 @@ public:
     Material* getMaterial(int id);
     int getMaterialID(const std::string& name);
     Material* getRectangleMaterial();
+
+    Texture* loadTex(const MaterialTextureInfo& info);
 private:
     TextureManager* textureManager;
     EventBus* bus;

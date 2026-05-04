@@ -1,6 +1,12 @@
 #include "Renderer.h"
 
-
+#include "handlers/ShadowPass.h"
+#include "handlers/GeometryPass.h"
+#include "handlers/LightingPass.h"
+#include "handlers/CubeMapPass.h"
+#include "handlers/BlurPass.h"
+#include "handlers/BloomPass.h"
+#include "handlers/FinalBlitPass.h"
 
 
 
@@ -111,13 +117,13 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     blurResource->framebuffer = m_BlurFrameBuffer.get();
     lightResource = new RenderResource();
     lightResource->framebuffer = m_LightFrameBuffer.get();
-
+	
 
     shaderManager->load(
         "default_shadow",
         "resource\\Shaders\\shadow_shader\\shadow_pass.vert",
         "resource\\Shaders\\shadow_shader\\shadow_pass.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+        
         ShaderType::SHADOWMAP
     );
 
@@ -126,7 +132,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "default",
         "resource\\Shaders\\object_shader\\default.vert",
         "resource\\Shaders\\object_shader\\default.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+        
         ShaderType::OBJECT3D
     );
 
@@ -134,7 +140,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "default_light",
         "resource\\shaders\\lighting_shader\\lighting_pass.vert",
         "resource\\shaders\\lighting_shader\\lighting_pass.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+       
         ShaderType::LIGHT
     );
 
@@ -148,7 +154,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "default_cubemap",
         "resource\\Shaders\\cubemap_shader\\default.vert",
         "resource\\Shaders\\cubemap_shader\\default.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+       
         ShaderType::CUBEMAP
     );
 
@@ -156,7 +162,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "default_effect",
         "resource\\Shaders\\camera_effects\\blur_pass.vert",
         "resource\\Shaders\\camera_effects\\blur_pass.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+       
         ShaderType::CAMERAEFFECT
     );
 
@@ -165,23 +171,23 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         "default_blit",
         "resource\\Shaders\\final_blit_shader\\default_final_blit_shader.vert",
         "resource\\Shaders\\final_blit_shader\\default_final_blit_shader.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+        
         ShaderType::BLIT
     );
 
     shaderManager->load(
-        "default_bloom",
-        "resource\\Shaders\\bloom_shader\\bloom.vert",
-        "resource\\Shaders\\bloom_shader\\bloom.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+        "bloom_downsample",
+        "resource\\Shaders\\bloom_shader\\render_quad.vert",
+        "resource\\Shaders\\bloom_shader\\bloom_downsample.frag",
+ 
         ShaderType::CAMERAEFFECT
     );
 
     shaderManager->load(
-        "bloom_extract",
-        "resource\\Shaders\\bloom_shader\\bloom_extract.vert",
-        "resource\\Shaders\\bloom_shader\\bloom_extract.frag",
-        "resource\\Shaders\\object_shader\\default.geom",
+        "bloom_upsample",
+        "resource\\Shaders\\bloom_shader\\render_quad.vert",
+        "resource\\Shaders\\bloom_shader\\bloom_upsample.frag",
+        
         ShaderType::UNKNOWN
     );
 
@@ -203,8 +209,8 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         shaderManager->getShader("default_effect"));
 
     auto* bloom = graph->addPass<BloomPass>(
-        shaderManager->getShader("bloom_extract"),
-        shaderManager->getShader("default_bloom"),
+        shaderManager->getShader("bloom_downsample"),
+        shaderManager->getShader("bloom_upsample"),
         fbWidth, fbHeight);
     auto* finalPass = graph->addPass<FinalBlitPass>(
         shaderManager->getShader("default_blit"));
@@ -225,14 +231,16 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     cubemap->outputs.push_back(lightResource);
 
 
+    bloom->inputs.push_back(lightResource);
+    bloom->outputs.push_back(new RenderResource());
+
+
     blur->inputs.push_back(lightResource);
     blur->outputs.push_back(blurResource);
 
 
 
-    bloom->inputs.push_back(blurResource);
-    bloom->outputs.push_back(new RenderResource());
-
+ 
     finalPass->inputs.push_back(blurResource);
     finalPass->inputs.push_back(bloom->outputs[0]);
 
@@ -388,7 +396,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
     ui->startNewFrame();
 
-    ui->buildUI(ctx);
+    ui->buildUI(ctx, graph);
 };
 
 Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) {

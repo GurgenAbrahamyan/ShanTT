@@ -19,10 +19,10 @@
 #include "../core/EngineContext.h"
 #include "../resources/data/ModelLoadConfig.h" 
 Scene::Scene(EventBus* bus) {
-    textureManager = new TextureManager();
-    materialManager = new MaterialManager(textureManager, bus);
-    meshManager = new MeshManager(bus);
-    modelManager = new ModelManager(bus, meshManager, materialManager, textureManager);
+    textureManager = std::make_unique<TextureManager>();
+	materialManager = std::make_unique<MaterialManager>(textureManager.get(), bus);
+    meshManager = std::make_unique<MeshManager>(bus);
+    modelManager = std::make_unique<ModelManager>(bus, meshManager.get(), materialManager.get(), textureManager.get());
 
    /* bus->subscribe<CreateObject>([this](CreateObject& event) {
         static int count = 0;
@@ -49,10 +49,6 @@ Scene::Scene(EventBus* bus) {
 
 Scene::~Scene() {
 
-    delete modelManager;
-    delete meshManager;
-    delete materialManager;
-    delete textureManager;
 }
 
 void Scene::initObjects() {
@@ -68,7 +64,10 @@ void Scene::initObjects() {
     };
     //skybox = textureManager->loadCubeMapArray(faces);
     skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\cedar_bridge_sunset_1_4k.hdr");
-   // skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\warm_restaurant_night_4k.hdr");
+   // skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\041_hdrmaps_com_free_4K.hdr");
+
+    
+    // skybox = textureManager->loadCubeMapHDR("resource\\textures\\hdr\\warm_restaurant_night_4k.hdr");
     GraphicsEntityFactory::createSkybox(registry, skybox);
 
     CameraComponent cameraComp;
@@ -231,5 +230,5 @@ Texture* Scene::getBRDF(){
     return textureManager->getBRDF();
 }
 ModelManager* Scene::getModelManager() const{
-    return modelManager;
+    return modelManager.get();
 }

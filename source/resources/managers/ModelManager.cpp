@@ -84,7 +84,7 @@ bool ModelManager::loadModel(const std::string& name, const std::string& path)
         asset.meshes.push_back(entry);
     }
 
-    loadedModels[name] = std::move(asset);
+    loadedModels[name] = std::make_unique<ModelAsset>(std::move(asset));
 
     std::cout << "Loaded model asset: " << name << "\n";
     return true;
@@ -98,7 +98,7 @@ void ModelManager::instantiateModel(
     auto it = loadedModels.find(name);
     if (it == loadedModels.end()) return;
 
-    const ModelAsset& asset = it->second;
+    const ModelAsset& asset = *it->second;
 
     auto& model = registry.emplace_or_replace<ModelComponent>(entity);
    
@@ -109,7 +109,7 @@ bool ModelManager::isLoaded(const std::string& name) const {
     return loadedModels.find(name) != loadedModels.end();
 }
 
-const std::unordered_map<std::string, ModelAsset>&
+const std::unordered_map<std::string, std::unique_ptr<ModelAsset>>&
 ModelManager::getLoadedModels() const {
     return loadedModels;
 }

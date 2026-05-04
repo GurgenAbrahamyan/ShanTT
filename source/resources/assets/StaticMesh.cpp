@@ -16,6 +16,7 @@ StaticMesh::~StaticMesh() {
     if (instanceVBO != 0) {
         glDeleteBuffers(1, &instanceVBO);
     }
+
 }
 
 void StaticMesh::bind() {

@@ -22,4 +22,6 @@ public:
         for (auto& p : passes)
             p->execute(ctx);
     }
+    const std::vector<std::unique_ptr<RenderPass>>& getPasses() const { 
+        return passes; }
 };

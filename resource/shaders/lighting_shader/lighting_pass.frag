@@ -51,6 +51,10 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }  
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return  F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - max(cosTheta, 0.0), 5.0);
+}  
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -69,6 +73,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
+    //For direct Lighting
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
 
@@ -202,6 +207,7 @@ float calcShadowSpot(GPULight light, vec3 normal, vec3 fragPos) {
     return pcf(shadowMap, atlasUV, projCoords.z, bias, tileSize, 35);
 }
 
+
 vec3 cookTorrance(vec3 L, vec3 N, vec3 V, vec3 albedo,
                   float roughness, float metallic,
                   vec3 lightColor, float lightIntensity, float shadow)
@@ -219,7 +225,7 @@ vec3 cookTorrance(vec3 L, vec3 N, vec3 V, vec3 albedo,
     float G = GeometrySmith(N, V, L, roughness);
     vec3  F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3  num   = D * G * F;
+    vec3  num   = D * F * G;
     float denom = 4.0 * NdotV * NdotL + 0.0001; // epsilon to avoid /0
     vec3  spec  = num / denom;
 
@@ -238,7 +244,7 @@ vec3 calcPointLight(GPULight light, vec3 N, vec3 V,
     vec3 Lvec = light.position - fragPos;
     float dist = length(Lvec);
     vec3  L    = normalize(Lvec);
-    float attenuation = 1.0 / (0.01*dist*dist + 0.001*dist + 1.0);
+    float attenuation = 1.0 / dist*dist;
 
     float shadow = shadowsEnabled ? calcShadowPoint(light, N, fragPos) : 0.0;
 
@@ -285,7 +291,7 @@ void main() {
     }
 
     vec3 normal = normalize(normalSample.xyz);
-    vec3  albedo   = texture(gAlbedo, vUV).rgb; // linearize if sRGB
+    vec3  albedo   = texture(gAlbedo, vUV).rgb; 
     vec3  arm      = texture(gARM, vUV).rgb;
     vec3  emissive = texture(gEmissive, vUV).rgb;
 
@@ -300,7 +306,7 @@ void main() {
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
     
-    vec3 fresnel = F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - max(dot(normal, V), 0.0), 5.0);
+    vec3 fresnel = fresnelSchlickRoughness(max(dot(normal, V), 0.0), F0, roughness);
     vec3 kS = fresnel;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;

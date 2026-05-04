@@ -1,13 +1,12 @@
 # Changelog
 
-## [1.0.1] - 2026-04-25
+## [1.1.0] - 2026-05-5
 
 ### Added
-
+- Phys. Based Bloom
+- RenderPasses settings configuration
 ### Fixes
-- Fixed Directional Lights shadow generation
-- Fixed internal math that is used across the engine
-
+- Bug fixes
 
 ### Known Issues
-- Parallax Occlusion Mapping not yet implemented
+

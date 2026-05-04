@@ -44,48 +44,50 @@ int MaterialManager::addMaterial(const MaterialData& materialData)
     {
         if (texInfo.path.empty()) continue;
 
-        int slot = static_cast<int>(TextureSlot::MAX_SLOTS);
+       
 
-        switch (texInfo.type)
-        {
-        case TextureType::Albedo:
-        {
-            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
-            Texture* tex = textureManager->getTexture(texID);
-            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), tex);
-            break;
-        }
-        case TextureType::Normal:
-        {
-            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
-            Texture* tex = textureManager->getTexture(texID);
-            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), tex);
-            break;
-        }
-        case TextureType::Emissive:
-        {
-            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
-            Texture* tex = textureManager->getTexture(texID);
-            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), tex);
-            break;
-        }
-        case TextureType::Height:
-        {
-            uint32_t texID = textureManager->addTexture(texInfo.path, texInfo.type);
-            Texture* tex = textureManager->getTexture(texID);
-            if (tex) mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), tex);
-            break;
-        }
-        case TextureType::ORM: armInfo = &texInfo; break;
-        case TextureType::AO:  aoInfo = &texInfo; break;
-        default: break;
+        Texture* tex = loadTex(texInfo);
+        if (tex) {
+            switch (texInfo.type)
+            {
+            case TextureType::Albedo:
+            {
+
+
+                mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), tex);
+                break;
+            }
+            case TextureType::Normal:
+            {
+
+                mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), tex);
+                break;
+            }
+            case TextureType::Emissive:
+            {
+
+                mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), tex);
+                break;
+            }
+            case TextureType::Height:
+            {
+
+                mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), tex);
+                break;
+            }
+            case TextureType::ORM: armInfo = &texInfo; break;
+            case TextureType::AO:  aoInfo = &texInfo; break;
+            default: break;
+            }
         }
     }
 
     // Pack ARM — always goes through loadARM so AO gets baked into R if present
     if (armInfo) {
+        std::string armPath = armInfo ? armInfo->path : "";
         std::string aoPath = aoInfo ? aoInfo->path : "";
-        Texture* tex = textureManager->loadARM(aoPath, armInfo->path);
+
+        Texture* tex = textureManager->loadARM(aoPath, armPath);
         if (tex)
             mat->SetTexture(static_cast<int>(TextureSlot::ARM), tex);
     }
@@ -142,4 +144,9 @@ int MaterialManager::getMaterialID(const std::string& name) {
 
     std::cerr << "Material not found with name: " << name << "\n";
     return -1;
+}
+
+Texture* MaterialManager::loadTex(const MaterialTextureInfo& info) {
+    uint32_t id = textureManager->addTexture(info.path, info.type);
+    return textureManager->getTexture(id);
 }

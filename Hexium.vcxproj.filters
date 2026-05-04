@@ -165,7 +165,7 @@
     <ClCompile Include="source\render\Renderer.cpp">
       <Filter>Source Files\Engine\render</Filter>
     </ClCompile>
-    <ClCompile Include="source\Hexium.cpp">
+    <ClCompile Include="source\ShanTT.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
     <ClCompile Include="source\core\Engine.cpp">
@@ -491,6 +491,27 @@
     <ClInclude Include="source\resources\data\ModelAsset.h">
       <Filter>Source Files\Engine\resources\data</Filter>
     </ClInclude>
+    <ClInclude Include="source\render\handlers\ShadowPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\GeometryPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\LightingPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\CubeMapPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\BlurPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\BloomPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="source\render\handlers\FinalBlitPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\textures\crate.jpg">
@@ -572,6 +593,15 @@
     </None>
     <None Include="resource\shaders\texture_generation\brdf\brdf.frag">
       <Filter>Resource Files\shaders\texture_generation\brdf</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom_downsample.frag">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\bloom_upsample.frag">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_shader\render_quad.vert">
+      <Filter>Resource Files\shaders\bloom_shader</Filter>
     </None>
   </ItemGroup>
 </Project>

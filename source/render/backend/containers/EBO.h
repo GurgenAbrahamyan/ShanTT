@@ -29,7 +29,7 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	void Delete() {
+	~EBO() {
 		glDeleteBuffers(1, &ID);
 	}
 };
