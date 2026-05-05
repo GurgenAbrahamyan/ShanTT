@@ -35,6 +35,7 @@
 
 #include "../render/handlers/BloomPass.h"
 #include "../render/handlers/FinalBlitPass.h"
+#include "../render/handlers/FXAAPass.h"
 
 
 
@@ -507,6 +508,12 @@ private:
             auto* p = static_cast<BloomPass*>(base);
           //  ImGui::DragInt("Mip Levels",    &p->settings.mipMapLength, 1, 1, 12);
             ImGui::DragFloat("Filter Radius", &p->settings.filterRadius, 0.0001f, 0.f, 0.05f);
+        }},
+
+        { typeid(FXAAPass), [](RenderPass* base) {
+            auto* p = static_cast<FXAAPass*>(base);
+            ImGui::DragFloat("Edge Threshold", &p->settings.edgeThreshold, 0.001f, 0.f, 1.f);
+            ImGui::DragFloat("Blend Strength", &p->settings.blendStrength, 0.001f, 0.f, 1.f);
         }},
     };
 

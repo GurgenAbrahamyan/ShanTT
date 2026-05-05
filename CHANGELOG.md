@@ -1,10 +1,10 @@
 # Changelog
 
-## [1.1.0] - 2026-05-5
+## [1.2.0] - 2026-05-5
 
 ### Added
-- Phys. Based Bloom
-- RenderPasses settings configuration
+- ACES tone mapping
+- FXAA anti-aliasing
 ### Fixes
 - Bug fixes
 

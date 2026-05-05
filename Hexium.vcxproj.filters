@@ -151,6 +151,12 @@
     <Filter Include="Resource Files\shaders\texture_generation\brdf">
       <UniqueIdentifier>{7abdb241-b03a-4089-9c4c-65c0d7a55da1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders\anti_aliasing">
+      <UniqueIdentifier>{ec6d3f18-72fb-4135-94c2-88f3ce44734d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\shaders\anti_aliasing\FXAA">
+      <UniqueIdentifier>{1c2af518-409f-46b6-b978-457d3c3a8f8d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\libraries\glad.c">
@@ -512,6 +518,9 @@
     <ClInclude Include="source\render\handlers\FinalBlitPass.h">
       <Filter>Source Files\Engine\render\handlers</Filter>
     </ClInclude>
+    <ClInclude Include="source\render\handlers\FXAAPass.h">
+      <Filter>Source Files\Engine\render\handlers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resource\textures\crate.jpg">
@@ -602,6 +611,12 @@
     </None>
     <None Include="resource\shaders\bloom_shader\render_quad.vert">
       <Filter>Resource Files\shaders\bloom_shader</Filter>
+    </None>
+    <None Include="resource\shaders\anti_aliasing\FXAA\FXAA.frag">
+      <Filter>Resource Files\shaders\anti_aliasing\FXAA</Filter>
+    </None>
+    <None Include="resource\shaders\anti_aliasing\FXAA\FXAA.vert">
+      <Filter>Resource Files\shaders\anti_aliasing\FXAA</Filter>
     </None>
   </ItemGroup>
 </Project>

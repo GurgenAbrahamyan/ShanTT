@@ -239,6 +239,7 @@
     <ClInclude Include="source\render\handlers\CubeMapPass.h" />
     <ClInclude Include="source\render\handlers\FinalBlitPass.h" />
     <ClInclude Include="source\render\handlers\GeometryPass.h" />
+    <ClInclude Include="source\render\handlers\FXAAPass.h" />
     <ClInclude Include="source\render\handlers\LightingPass.h" />
     <ClInclude Include="source\render\handlers\RenderPass.h" />
     <ClInclude Include="source\render\handlers\ShadowPass.h" />
@@ -274,6 +275,8 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <None Include="resource\shaders\anti_aliasing\FXAA\FXAA.frag" />
+    <None Include="resource\shaders\anti_aliasing\FXAA\FXAA.vert" />
     <None Include="resource\shaders\bloom_shader\bloom.frag" />
     <None Include="resource\shaders\bloom_shader\bloom.vert" />
     <None Include="resource\shaders\bloom_shader\bloom_downsample.frag" />

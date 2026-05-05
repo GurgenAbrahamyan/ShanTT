@@ -6,9 +6,9 @@ class FinalBlitPass : public RenderPass {
 
     static struct Settings {
 
-        float exposure = 3;
+        float exposure = 0.8; //0.8 - 1.3
         bool isBloom = true;
-		float bloomintensity = 0.08f;
+		float bloomintensity = 0.06f;
 
     };
 
@@ -38,7 +38,13 @@ public:
 
         FrameBuffer* sceneFB = inputs[0]->framebuffer;
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (outputs.empty()){
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+        else {
+            outputs[0]->framebuffer->bind();
+        }
+
         glDisable(GL_DEPTH_TEST);
 
         shader->Activate();
@@ -64,8 +70,10 @@ public:
         quadVAO.Bind();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         quadVAO.Unbind();
-
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      
         glEnable(GL_DEPTH_TEST);
+
     }
 
     const char* passName() const override { return "Final Blit"; }

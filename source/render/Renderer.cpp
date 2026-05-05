@@ -7,7 +7,7 @@
 #include "handlers/BlurPass.h"
 #include "handlers/BloomPass.h"
 #include "handlers/FinalBlitPass.h"
-
+#include "handlers/FXAAPass.h"
 
 
 
@@ -191,6 +191,14 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         ShaderType::UNKNOWN
     );
 
+    shaderManager->load(
+        "FXAA",
+        "resource\\Shaders\\anti_aliasing\\FXAA\\FXAA.vert",
+        "resource\\Shaders\\anti_aliasing\\FXAA\\FXAA.frag",
+        
+        ShaderType::UNKNOWN
+    );
+
 
 
     auto* shadow = graph->addPass<ShadowPass>(
@@ -214,6 +222,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         fbWidth, fbHeight);
     auto* finalPass = graph->addPass<FinalBlitPass>(
         shaderManager->getShader("default_blit"));
+    auto* fxaaPass = graph->addPass<FXAAPass>(
+        shaderManager->getShader("FXAA")
+    );
 
 
 
@@ -239,10 +250,15 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     blur->outputs.push_back(blurResource);
 
 
-
- 
     finalPass->inputs.push_back(blurResource);
     finalPass->inputs.push_back(bloom->outputs[0]);
+
+    RenderResource* res = new RenderResource();
+    res->framebuffer = new FrameBuffer(fbWidth, fbHeight); //TO-DO FIX
+    res->framebuffer->addColorBuffer();
+    finalPass->outputs.push_back(res);
+
+    fxaaPass->inputs.push_back(res);
 
 
 
