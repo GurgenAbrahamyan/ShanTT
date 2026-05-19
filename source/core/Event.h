@@ -4,12 +4,14 @@
 #include "../math_custom/Vector3.h"
 
 #include <string.h>
-class MaterialData;
-class MeshData;
-class Material;
+struct MaterialData;
+struct MeshData;
+struct ShaderData;
+
 class RenderMesh;
-class ShaderData;
+class Material;
 class Shader;
+
 class Event {
 };
 
@@ -75,7 +77,7 @@ class InitModel : Event {
 class InitMaterial : Event {
 public:
     MaterialData* data;
-	Material* result;
+	Material* result = nullptr;
     InitMaterial(MaterialData* data) {
         this->data = data;
     }
@@ -87,7 +89,7 @@ public:
 class InitMesh : Event {
 public:
     MeshData* data;
-    RenderMesh* result;
+    RenderMesh* result = nullptr;
     InitMesh(MeshData* data) {
         this->data = data;
     }
@@ -98,7 +100,7 @@ public:
 class InitShader : Event {
 public:
     ShaderData* data;
-    Shader* result;
+    Shader* result = nullptr;
 
     InitShader(ShaderData* data) {
         this->data = data;
@@ -110,7 +112,7 @@ public:
 class GetDefaultShader : Event {
 public:
     
-    Shader* shader;
+    Shader* shader = nullptr;
 
     GetDefaultShader() {
             

@@ -4,7 +4,7 @@
 
 struct CameraComponent {
 
-    float fov = 120.0f;
+    float fov = 90.0f;
     float aspectRatio = 1920.0f / 1200.0f;
     float nearPlane = 0.1f;
     float farPlane = 1000.0f;
@@ -20,7 +20,7 @@ struct CameraComponent {
     // Depth of field / post-processing
     bool applyBlur = false;
     float focusDistance = 2.650f;
-    float aperture = 0.670;
+    float aperture = 0.670f;
     float focalLength = 0.094f;
     float blurScale = 106.0f;
 

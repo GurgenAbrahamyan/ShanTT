@@ -64,19 +64,15 @@ struct Quat
     }
 
 
-    static Quat FromAxisAngle(float angleRad, float ax, float ay, float az)
+   
+
+    static Quat fromAxisAngleDeg(const Vector3& axis, float deg)
     {
-        float half = angleRad * 0.5f;
+        float half = deg * 3.14159265359f / 180.0f * 0.5f;
         float s = std::sin(half);
-
-        return Quat(
-            ax * s,
-            ay * s,
-            az * s,
-            std::cos(half)
-        );
+        Vector3 n = axis.normalized();
+        return Quat(n.x * s, n.y * s, n.z * s, std::cos(half));
     }
-
 
     Vector3 rotate(const Vector3& v)  const
     {
@@ -92,6 +88,49 @@ struct Quat
         float len = std::sqrt(x * x + y * y + z * z + w * w);
         if (len == 0.0f) return *this;
         return Quat(x / len, y / len, z / len, w / len);
+    }
+
+  
+    Vector3 toEulerDeg() const
+    {
+        Vector3 e;
+
+        // pitch (X)
+        float sinp = 2.0f * (w * x - z * y);
+        if (std::abs(sinp) >= 1.0f)
+            e.x = std::copysign(90.0f, sinp); // gimbal pole
+        else
+            e.x = std::asin(sinp) * (180.0f / 3.14159265359f);
+
+        // yaw (Y)
+        float siny = 2.0f * (w * y + x * z);
+        float cosy = 1.0f - 2.0f * (y * y + x * x);
+        e.y = std::atan2(siny, cosy) * (180.0f / 3.14159265359f);
+
+        // roll (Z)
+        float sinr = 2.0f * (w * z + y * x);
+        float cosr = 1.0f - 2.0f * (z * z + y * y);
+        e.z = std::atan2(sinr, cosr) * (180.0f / 3.14159265359f);
+
+        return e;
+    }
+
+  
+    static Quat fromEulerDeg(const Vector3& e)
+    {
+        float cx = std::cos(e.x * 3.14159265359f / 180.0f * 0.5f);
+        float sx = std::sin(e.x * 3.14159265359f / 180.0f * 0.5f);
+        float cy = std::cos(e.y * 3.14159265359f / 180.0f * 0.5f);
+        float sy = std::sin(e.y * 3.14159265359f / 180.0f * 0.5f);
+        float cz = std::cos(e.z * 3.14159265359f / 180.0f * 0.5f);
+        float sz = std::sin(e.z * 3.14159265359f / 180.0f * 0.5f);
+
+        return Quat(
+            sx * cy * cz - cx * sy * sz,  // x
+            cx * sy * cz + sx * cy * sz,  // y
+            cx * cy * sz - sx * sy * cz,  // z
+            cx * cy * cz + sx * sy * sz   // w
+        ).normalized();
     }
 
 };

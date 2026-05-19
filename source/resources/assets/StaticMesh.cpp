@@ -84,8 +84,7 @@ void StaticMesh::setupBuffers() {
     EBO1 = new EBO(indices.data(), indices.size() * sizeof(unsigned int), false);
 
     // Setup vertex attributes
-    VAO1->LinkAttrib(*VBO1, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);                              // position
-    VAO1->LinkAttrib(*VBO1, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, color));        // color
+    VAO1->LinkAttrib(*VBO1, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);                              // position     // color
     VAO1->LinkAttrib(*VBO1, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, uv));           // uv
     VAO1->LinkAttrib(*VBO1, 3, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, normal));       // normal
 	VAO1->LinkAttrib(*VBO1, 4, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, tangent));     // tangent
@@ -146,15 +145,5 @@ GLuint StaticMesh::getInstanceVBO() {
 }
 
 void StaticMesh::setColor(const Vector3& col) {
-    for (size_t i = 0; i < vertices.size(); i++) {
-        vertices[i].color.setX(col.getX());
-        vertices[i].color.setY(col.getY());
-        vertices[i].color.setZ(col.getZ());
-    }
 
-    // Update VBO if already initialized
-    if (VBO1) {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO1->ID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data());
-    }
 }

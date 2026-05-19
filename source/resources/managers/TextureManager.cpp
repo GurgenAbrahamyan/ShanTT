@@ -579,8 +579,8 @@ void TextureManager::equirectToCubemap(const std::string& hdrPath)
     unsigned int maxMipLevels = 10;
     for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
     {
-        unsigned int mipWidth = 256 * std::pow(0.5, mip);
-        unsigned int mipHeight = 256 * std::pow(0.5, mip);
+        unsigned int mipWidth = static_cast<int>(256 * std::pow(0.5, mip));
+        unsigned int mipHeight = static_cast<int>(256 * std::pow(0.5, mip));
       
         glViewport(0, 0, mipWidth, mipHeight);
 

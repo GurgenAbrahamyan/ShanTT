@@ -25,6 +25,7 @@ namespace GraphicsEntityFactory {
     entt::entity createLight(
         entt::registry& registry,
         Vector3 position,
+        Quat rotation,
 		LightComponent type,
         const std::string& tag = "light"
     );

@@ -4,9 +4,9 @@
 
 class FinalBlitPass : public RenderPass {
 
-    static struct Settings {
+    struct Settings {
 
-        float exposure = 0.8; //0.8 - 1.3
+        float exposure = 0.8f; //0.8 - 1.3
         bool isBloom = true;
 		float bloomintensity = 0.06f;
 

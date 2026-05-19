@@ -7955,6 +7955,7 @@ class lexer : public lexer_base<BasicJsonType>
 
             // multi-line comments skip input until */ is read
             case '*':
+                
             {
                 while (true)
                 {
@@ -7987,7 +7988,7 @@ class lexer : public lexer_base<BasicJsonType>
                     }
                 }
             }
-
+            [[fallthrough]];
             // unexpected character after reading '/'
             default:
             {

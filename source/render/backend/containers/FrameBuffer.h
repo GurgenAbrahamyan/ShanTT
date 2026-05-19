@@ -97,7 +97,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
        
-        GLenum attachment = GL_COLOR_ATTACHMENT0 + m_ColorAttachments.size();
+        GLenum attachment = (GLenum)(GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(m_ColorAttachments.size()));
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, colorTex, 0);
 
         m_ColorAttachments.push_back(colorTex);
@@ -105,22 +105,22 @@ public:
         
         std::vector<GLenum> drawBuffers;
         for (size_t i = 0; i < m_ColorAttachments.size(); ++i)
-            drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-        glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+            drawBuffers.push_back((GLenum)(GL_COLOR_ATTACHMENT0 + i));
+        glDrawBuffers((GLsizei)drawBuffers.size(), drawBuffers.data());
 
         unbind();
     }
 
     void addColorAttachmentFromTexture(GLuint textureID) {
         bind();
-        GLenum attachment = GL_COLOR_ATTACHMENT0 + m_ColorAttachments.size();
+        GLenum attachment = (GLenum)(GL_COLOR_ATTACHMENT0 + m_ColorAttachments.size());
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, textureID, 0);
         m_ColorAttachments.push_back(textureID);
 
         std::vector<GLenum> drawBuffers;
         for (size_t i = 0; i < m_ColorAttachments.size(); ++i)
-            drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
-        glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+            drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i));
+        glDrawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
 
         unbind();
     }
@@ -150,7 +150,7 @@ public:
     }
     void setColorAttachment(size_t index, GLuint textureID) {
         bind();
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index,
+        glFramebufferTexture2D(GL_FRAMEBUFFER, static_cast<GLenum> (GL_COLOR_ATTACHMENT0 + index),
             GL_TEXTURE_2D, textureID, 0);
         unbind();
     }

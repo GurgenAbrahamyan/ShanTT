@@ -22,12 +22,12 @@ void MouseInput::proccessInput(int screenWidth, int screenHeight) {
         }
         if (cameraMode && !io.WantCaptureMouse) {
             double xpos, ypos;
-            int xmid = float(screenWidth) / 2;
-            int ymid = float(screenHeight) / 2;
+            int xmid = screenWidth / 2;
+            int ymid = screenHeight / 2;
             glfwGetCursorPos(window, &xpos, &ypos);
 
-            double xoffset = xpos - xmid;
-            double yoffset = ymid - ypos;
+            double xoffset = xpos - (double) xmid;
+            double yoffset = ymid - (double) ypos;
 
             if (xoffset != 0 || yoffset != 0) {
                 MouseDragged m(xoffset, yoffset);

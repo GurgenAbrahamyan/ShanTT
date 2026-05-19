@@ -136,7 +136,7 @@ void Scene::initObjects() {
 
 
     registry.emplace<CollisionShapeComponent>(chess, PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
-    registry.emplace<CollisionShapeComponent>(map, PhysicsComponentFactory::createCubeShape(Vector3(0.2, 0.2, 0.2)));
+    registry.emplace<CollisionShapeComponent>(map, PhysicsComponentFactory::createCubeShape(Vector3(0.2f, 0.2f, 0.2f)));
     registry.emplace<CollisionShapeComponent>(duck, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
     registry.emplace<CollisionShapeComponent>(helmet, PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));
     registry.emplace<CollisionShapeComponent>(car, PhysicsComponentFactory::createCubeShape(Vector3(100, 100, 100)));
@@ -156,11 +156,13 @@ void Scene::initObjects() {
     dir2.type = LightType::Directional;
     dir2.color = Vector3(1, 1, 1);
     dir2.intensity = 8.0f;
-    dir2.direction = Vector3(0, -1, 0);
-    dir2.innerConeAngle = 0.85;
+    dir2.innerConeAngle = 0.85f;
     dir2.outerConeAngle = 0.90f;
     dir2.castsShadow = true;
-    GraphicsEntityFactory::createLight(registry, Vector3(0, 5, 0), dir2, "SpotLight1");
+    GraphicsEntityFactory::createLight(registry, 
+        Vector3(0, 5, 0), 
+        Quat::fromAxisAngleDeg(Vector3(1.0f, 0.0f, 0.0f), -90.0f),
+        dir2, "DirLight");
 
  
     

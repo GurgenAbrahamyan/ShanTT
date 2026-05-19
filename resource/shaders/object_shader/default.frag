@@ -9,7 +9,6 @@ layout (location = 4) out vec4 gEmissive;
 in vec2 vUV;
 in vec3 vNormal;
 in vec3 vCrntPos;
-in vec3 vColor;
 in mat3 TBN;
 
 uniform sampler2D albedoMap;   

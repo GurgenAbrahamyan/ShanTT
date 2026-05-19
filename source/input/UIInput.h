@@ -716,15 +716,53 @@ private:
             EndComponentHeader();
         }},
 
-        { typeid(TransformComponent), [](entt::registry& r, entt::entity e, bool& del) {
-            if (!BeginComponentHeader("Transform", del)) return;
-            auto& t = r.get<TransformComponent>(e);
-            DragVec3("Position", t.position);
-            DragQuat("Rotation", t.rotation);
-            DragVec3("Scale",    t.scale, 0.01f);
-            EndComponentHeader();
-        }},
+       {  typeid(TransformComponent), [](entt::registry& r, entt::entity e, bool& del) {
+    if (!BeginComponentHeader("Transform", del)) return;
+    auto& t = r.get<TransformComponent>(e);
 
+    DragVec3("Position", t.position);
+
+    static std::unordered_map<uint32_t, bool>    eulerMode;
+    static std::unordered_map<uint32_t, Vector3> eulerCache;
+    static std::unordered_map<uint32_t, Quat>    lastQuat;
+
+    uint32_t id = (uint32_t)e;
+    auto [modeIt,  modeInserted] = eulerMode.emplace(id, true);
+    auto [cacheIt, cacheInserted] = eulerCache.emplace(id, t.rotation.toEulerDeg());
+    auto [lqIt,    lqInserted] = lastQuat.emplace(id, t.rotation);
+
+    bool& showEuler = modeIt->second;
+    Vector3& euler = cacheIt->second;
+    Quat& prevQuat = lqIt->second;
+
+    bool externalChange =
+        prevQuat.x != t.rotation.x || prevQuat.y != t.rotation.y ||
+        prevQuat.z != t.rotation.z || prevQuat.w != t.rotation.w;
+
+    if (showEuler) {
+        if (externalChange && !ImGui::IsItemActive())
+            euler = t.rotation.toEulerDeg();
+
+        if (ImGui::DragFloat3("Rotation", &euler.x, 0.5f))
+            t.rotation = Quat::fromEulerDeg(euler).normalized();
+    }
+ else {
+  float buf[4] = { t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w };
+  if (ImGui::DragFloat4("Rotation", buf, 0.001f))
+      t.rotation = Quat(buf[0], buf[1], buf[2], buf[3]).normalized();
+}
+
+ImGui::SameLine();
+if (ImGui::SmallButton(showEuler ? "E" : "Q")) {
+    showEuler = !showEuler;
+    if (showEuler) euler = t.rotation.toEulerDeg(); // sync ONLY on switch, not every frame
+}
+
+prevQuat = t.rotation;
+
+DragVec3("Scale", t.scale, 0.01f);
+EndComponentHeader();
+}},
         { typeid(WorldMatrixComponent), [](entt::registry& r, entt::entity e, bool& del) {
             if (!BeginComponentHeader("World Matrix", del, false)) return;
             EndComponentHeader();
@@ -770,7 +808,7 @@ private:
             if (ImGui::Combo("Type", &typeIdx, types, 3)) l.type = (LightType)typeIdx;
             float col[3] = { l.color.x, l.color.y, l.color.z };
             if (ImGui::ColorEdit3("Color", col)) l.color = { col[0], col[1], col[2] };
-            DragVec3("Direction", l.direction);
+         
             ImGui::DragFloat("Intensity", &l.intensity, 0.01f, 0.f, 100.f);
             if (l.type == LightType::Spot)
             {

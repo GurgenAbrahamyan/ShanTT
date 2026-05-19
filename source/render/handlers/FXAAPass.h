@@ -5,8 +5,8 @@
 class FXAAPass : public RenderPass {
 
     struct Settings {
-        float edgeThreshold = 0.1f;
-        float blendStrength = 0.5f;
+        float edgeThreshold = 0.2f;
+        float blendStrength = 0.4f;
     };
     
 public :

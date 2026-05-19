@@ -37,12 +37,13 @@ namespace GraphicsEntityFactory {
     entt::entity createLight(
         entt::registry& registry,
 		Vector3 position,
+        Quat rotation,
         LightComponent ligthComp,
         const std::string& tag)
     {
         auto entity = registry.create();
         registry.emplace<TagComponent>(entity, tag);
-        registry.emplace<TransformComponent>(entity, position, Quat(), Vector3(1, 1, 1));
+        registry.emplace<TransformComponent>(entity, position, rotation, Vector3(1, 1, 1));
         registry.emplace<LightComponent>(entity, ligthComp);
         return entity;
     }

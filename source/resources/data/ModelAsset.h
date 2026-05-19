@@ -5,9 +5,9 @@
 #include "../assets/RenderMesh.h"
 
 struct MeshEntry {
-    RenderMesh* mesh;
-    Material* material;
-    Mat4 localTransform;
+    RenderMesh* mesh = nullptr;
+    Material* material = nullptr;
+    Mat4 localTransform = Mat4();
 };
 
 struct ModelAsset

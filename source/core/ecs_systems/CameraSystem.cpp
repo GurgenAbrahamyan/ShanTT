@@ -20,7 +20,7 @@ CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(r
         });
 
     bus->subscribe<MouseDragged>([this](MouseDragged& event) {
-        processMouse(this->registry, event.x, event.y);
+        processMouse(this->registry, static_cast<float> (event.x), static_cast<float>(event.y));
         });
 }
 

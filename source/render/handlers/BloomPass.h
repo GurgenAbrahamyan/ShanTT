@@ -4,10 +4,10 @@
 #include <glad/glad.h>
 class BloomPass : public RenderPass {
 
-    static struct Settings {
+    struct Settings {
 
         int mipMapLength = 5;
-        float filterRadius = 0.005;
+        float filterRadius = 0.005f;
 
     };
 public:
@@ -16,7 +16,7 @@ public:
         windowWidth(width), windowHeight(height),
         quadVBO(quadVertices, sizeof(quadVertices), false)
     {
-        init(width, height, settings.mipMapLength);
+        init( width, height, settings.mipMapLength);
 
 
         quadVAO.Bind();
@@ -45,9 +45,9 @@ public:
 
 private:
     
-    float windowWidth, windowHeight;
+    int windowWidth, windowHeight;
     struct mipLevel {
-        Texture* texture;
+        Texture* texture = nullptr;
         Vector2 size;
     };
 
@@ -69,14 +69,15 @@ private:
 
     void init(int windowWidth, int windowHeight, int mipMapLength) {
 
+        
         bloomFB = new FrameBuffer(windowWidth, windowHeight);
         bloomFB->bind();
 
-        Vector2 initialSizeXY = Vector2(windowWidth, windowHeight);
+        Vector2 initialSizeXY = Vector2(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
 
         for (int i = 0; i < mipMapLength; i++) {
             mipLevel level;
-            level.size = initialSizeXY / pow(2, i);
+            level.size = initialSizeXY / pow(2.0f, static_cast<float>(i));
             TextureDesc desc;
             desc.internalFormat = GL_R11F_G11F_B10F;
             desc.format = GL_RGB;
@@ -116,7 +117,7 @@ private:
 
 
         downsampleShader->Activate();
-        downsampleShader->setVec2("srcResolution", { windowWidth, windowHeight });
+        downsampleShader->setVec2("srcResolution", { static_cast<float>(windowWidth), static_cast<float>(windowHeight) });
 
 
         glActiveTexture(GL_TEXTURE0);
@@ -126,7 +127,7 @@ private:
         for (int i = 0; i < mipLevels.size(); i++)
         {
             const mipLevel& mip = mipLevels[i];
-            glViewport(0, 0, mip.size.x, mip.size.y);
+            glViewport(0, 0, static_cast<GLsizei>(mip.size.x), static_cast<GLsizei>(mip.size.y));
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                 GL_TEXTURE_2D, mip.texture->getID(), 0);
 
@@ -154,7 +155,7 @@ private:
         glBlendFunc(GL_ONE, GL_ONE);
         glBlendEquation(GL_FUNC_ADD);
 
-        for (int i = mipLevels.size() - 1; i > 0; i--)
+        for (int i = static_cast<int>(mipLevels.size()) - 1; i > 0; i--)
         {
             const mipLevel& mip = mipLevels[i];
             const mipLevel& nextMip = mipLevels[i - 1];
@@ -163,7 +164,7 @@ private:
             mip.texture->Bind(0);
 
 
-            glViewport(0, 0, nextMip.size.x, nextMip.size.y);
+            glViewport(0, 0, static_cast<GLsizei>(nextMip.size.x), static_cast<GLsizei>(nextMip.size.y));
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                 GL_TEXTURE_2D, nextMip.texture->getID(), 0);
 

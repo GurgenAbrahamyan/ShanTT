@@ -52,7 +52,7 @@ public:
                         batch.instances.data());
                     glDrawElementsInstanced(GL_TRIANGLES,
                         mesh->indexCount(), GL_UNSIGNED_INT, 0,
-                        batch.instances.size());
+                        static_cast<GLsizei>(batch.instances.size()));
                 }
             }
 

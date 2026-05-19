@@ -16,8 +16,13 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     : window(nullptr),
     bus(bus),
     shaderManager(nullptr),
-    ctx(ctx)
-
+    ctx(ctx),
+    ui(nullptr),
+    blurResource(nullptr),
+    shadowResource(nullptr),
+    lightResource(nullptr),
+    sceneResource(nullptr),
+    graph(nullptr)
 {
 
     shaderManager = new ShaderManager(bus);
@@ -263,9 +268,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
 
 
-
+    
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_FRAMEBUFFER_SRGB);
+    //glEnable(GL_FRAMEBUFFER_SRGB);
     glEnable(GL_MULTISAMPLE);
     glDepthFunc(GL_LESS);
 
@@ -384,7 +389,8 @@ void Renderer::rebuildContext(RenderContext* ctx)
             l.intensity = lc.intensity;
             l.color = lc.color;
             l.position = tc.position;
-            l.direction = lc.direction;
+            l.direction = Mat4::fromQuat(tc.rotation).multiplyVec({ 0.0f, 0.0f, -1.0f }, 0.0f);
+
             l.innerCone = lc.innerConeAngle;
             l.outerCone = lc.outerConeAngle;
 
@@ -413,6 +419,8 @@ void Renderer::rebuildContext(RenderContext* ctx)
     ui->startNewFrame();
 
     ui->buildUI(ctx, graph);
+
+  
 };
 
 Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) {

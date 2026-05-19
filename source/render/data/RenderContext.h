@@ -16,7 +16,7 @@ struct DebugTexture {
 
 struct RenderContext {
 
- 
+
 
     entt::registry* registry = nullptr;
 
@@ -27,10 +27,10 @@ struct RenderContext {
     MaterialBatchMap batches;
 
     std::vector<GPULight> lights;
-    std::vector<GPULight*> shadowCasters; 
-	int windowWidth = 1920;
+    std::vector<GPULight*> shadowCasters;
+    int windowWidth = 1920;
     int windowHeight = 1200;
-  
+
 
     int shadowSlots;
 
@@ -39,5 +39,5 @@ struct RenderContext {
 
     std::vector<DebugTexture> debugTextures;
     Texture* brdfTexture;
-	ModelManager* modelManager;
+    ModelManager* modelManager;
 };

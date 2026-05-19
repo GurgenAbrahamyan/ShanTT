@@ -73,7 +73,7 @@ public:
     }
 
     int getNumParticles() {
-        return particles.size();
+        return static_cast<int>(particles.size());
     }
 
 

@@ -139,7 +139,7 @@ void ModelLoader::traverseNode(unsigned int nextNode, const Mat4& parentMat)
             // Create SubMeshData entry
             SubMeshData subMeshData;
             subMeshData.worldTransform = worldMat;
-            subMeshData.meshIndex = model.meshes.size() - mesh["primitives"].size() + primIndex;
+            subMeshData.meshIndex = static_cast<uint32_t>(model.meshes.size() - mesh["primitives"].size() + primIndex);
             subMeshData.materialIndex = materialIndex;
             subMeshData.name = nodeName + "_submesh_" + std::to_string(primIndex);
 
@@ -302,7 +302,6 @@ std::vector<Vertex> ModelLoader::assembleVertices(
         v.position = positions[i];
         v.normal = normals[i];
         v.uv = uvs[i];
-        v.color = Vector3(1.0f, 1.0f, 1.0f);
         vertices.push_back(v);
     }
     return vertices;

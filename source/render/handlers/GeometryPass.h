@@ -39,7 +39,7 @@ public:
                 mesh->setupInstanceVBO(batch.instances.size());
                 glBindBuffer(GL_ARRAY_BUFFER, mesh->getInstanceVBO());
                 glBufferSubData(GL_ARRAY_BUFFER, 0, batch.instances.size() * sizeof(Mat4), batch.instances.data());
-                glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount(), GL_UNSIGNED_INT, 0, batch.instances.size());
+                glDrawElementsInstanced(GL_TRIANGLES, mesh->indexCount(), GL_UNSIGNED_INT, 0, static_cast<GLsizei>(batch.instances.size()));
             }
         }
 

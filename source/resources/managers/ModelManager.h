@@ -11,7 +11,7 @@ class EventBus;
 class MeshManager;
 class MaterialManager;
 class TextureManager;
-class ModelComponent;
+struct ModelComponent;
 
 
 

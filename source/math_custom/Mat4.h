@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include "Vector3.h"
+#include "Vector4.h"
 #include "Quat.h"
 
 // Column-major matrix

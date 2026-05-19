@@ -62,35 +62,35 @@ RenderMesh* MeshManager::getRectangleMesh() {
 
     std::vector<Vertex> vertices = {
         // Front face (+Y)
-        { Vector3(-hw, hd, -hh), Vector3(1,1,1), Vector2(0,0), Vector3(0,1,0) },
-        { Vector3(hw, hd, -hh), Vector3(1,1,1), Vector2(1,0), Vector3(0,1,0) },
-        { Vector3(hw, hd,  hh), Vector3(1,1,1), Vector2(1,1), Vector3(0,1,0) },
-        { Vector3(-hw, hd,  hh), Vector3(1,1,1), Vector2(0,1), Vector3(0,1,0) },
+        { Vector3(-hw, hd, -hh), Vector2(0,0), Vector3(0,1,0) },
+        { Vector3(hw, hd, -hh), Vector2(1,0), Vector3(0,1,0) },
+        { Vector3(hw, hd,  hh), Vector2(1,1), Vector3(0,1,0) },
+        { Vector3(-hw, hd,  hh), Vector2(0,1), Vector3(0,1,0) },
         // Back face (-Y)
-        { Vector3(-hw,-hd, -hh), Vector3(1,1,1), Vector2(0,0), Vector3(0,-1,0) },
-        { Vector3(-hw,-hd,  hh), Vector3(1,1,1), Vector2(1,0), Vector3(0,-1,0) },
-        { Vector3(hw,-hd,  hh), Vector3(1,1,1), Vector2(1,1), Vector3(0,-1,0) },
-        { Vector3(hw,-hd, -hh), Vector3(1,1,1), Vector2(0,1), Vector3(0,-1,0) },
+        { Vector3(-hw,-hd, -hh), Vector2(0,0), Vector3(0,-1,0) },
+        { Vector3(-hw,-hd,  hh), Vector2(1,0), Vector3(0,-1,0) },
+        { Vector3(hw,-hd,  hh), Vector2(1,1), Vector3(0,-1,0) },
+        { Vector3(hw,-hd, -hh), Vector2(0,1), Vector3(0,-1,0) },
         // Right face (+X)
-        { Vector3(hw,-hd, -hh), Vector3(1,1,1), Vector2(0,0), Vector3(1,0,0) },
-        { Vector3(hw, hd, -hh), Vector3(1,1,1), Vector2(1,0), Vector3(1,0,0) },
-        { Vector3(hw, hd,  hh), Vector3(1,1,1), Vector2(1,1), Vector3(1,0,0) },
-        { Vector3(hw,-hd,  hh), Vector3(1,1,1), Vector2(0,1), Vector3(1,0,0) },
+        { Vector3(hw,-hd, -hh), Vector2(0,0), Vector3(1,0,0) },
+        { Vector3(hw, hd, -hh), Vector2(1,0), Vector3(1,0,0) },
+        { Vector3(hw, hd,  hh), Vector2(1,1), Vector3(1,0,0) },
+        { Vector3(hw,-hd,  hh), Vector2(0,1), Vector3(1,0,0) },
         // Left face (-X)
-        { Vector3(-hw,-hd, -hh), Vector3(1,1,1), Vector2(0,0), Vector3(-1,0,0) },
-        { Vector3(-hw,-hd,  hh), Vector3(1,1,1), Vector2(1,0), Vector3(-1,0,0) },
-        { Vector3(-hw, hd,  hh), Vector3(1,1,1), Vector2(1,1), Vector3(-1,0,0) },
-        { Vector3(-hw, hd, -hh), Vector3(1,1,1), Vector2(0,1), Vector3(-1,0,0) },
+        { Vector3(-hw,-hd, -hh), Vector2(0,0), Vector3(-1,0,0) },
+        { Vector3(-hw,-hd,  hh), Vector2(1,0), Vector3(-1,0,0) },
+        { Vector3(-hw, hd,  hh), Vector2(1,1), Vector3(-1,0,0) },
+        { Vector3(-hw, hd, -hh), Vector2(0,1), Vector3(-1,0,0) },
         // Top face (+Z)
-        { Vector3(-hw, hd,  hh), Vector3(1,1,1), Vector2(0,0), Vector3(0,0,1) },
-        { Vector3(hw, hd,  hh), Vector3(1,1,1), Vector2(1,0), Vector3(0,0,1) },
-        { Vector3(hw,-hd,  hh), Vector3(1,1,1), Vector2(1,1), Vector3(0,0,1) },
-        { Vector3(-hw,-hd,  hh), Vector3(1,1,1), Vector2(0,1), Vector3(0,0,1) },
+        { Vector3(-hw, hd,  hh), Vector2(0,0), Vector3(0,0,1) },
+        { Vector3(hw, hd,  hh), Vector2(1,0), Vector3(0,0,1) },
+        { Vector3(hw,-hd,  hh), Vector2(1,1), Vector3(0,0,1) },
+        { Vector3(-hw,-hd,  hh), Vector2(0,1), Vector3(0,0,1) },
         // Bottom face (-Z)
-        { Vector3(-hw, hd, -hh), Vector3(1,1,1), Vector2(0,0), Vector3(0,0,-1) },
-        { Vector3(-hw,-hd, -hh), Vector3(1,1,1), Vector2(1,0), Vector3(0,0,-1) },
-        { Vector3(hw,-hd, -hh), Vector3(1,1,1), Vector2(1,1), Vector3(0,0,-1) },
-        { Vector3(hw, hd, -hh), Vector3(1,1,1), Vector2(0,1), Vector3(0,0,-1) },
+        { Vector3(-hw, hd, -hh), Vector2(0,0), Vector3(0,0,-1) },
+        { Vector3(-hw,-hd, -hh), Vector2(1,0), Vector3(0,0,-1) },
+        { Vector3(hw,-hd, -hh), Vector2(1,1), Vector3(0,0,-1) },
+        { Vector3(hw, hd, -hh), Vector2(0,1), Vector3(0,0,-1) },
     };
 
     std::vector<unsigned int> indices = {
