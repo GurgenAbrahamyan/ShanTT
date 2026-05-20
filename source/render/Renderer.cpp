@@ -370,6 +370,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
 
     ctx->lights.clear();
     int shadowIndex = 0;
+    float sunElevation = 1.0f;
     registry.view<LightComponent, TransformComponent>().each(
         [&](entt::entity entity, LightComponent& lc, TransformComponent& tc)
         {
@@ -387,10 +388,34 @@ void Renderer::rebuildContext(RenderContext* ctx)
                 }
             }
             l.intensity = lc.intensity;
+            
+
             l.color = lc.color;
             l.position = tc.position;
             l.direction = Mat4::fromQuat(tc.rotation).multiplyVec({ 0.0f, 0.0f, -1.0f }, 0.0f);
+            
 
+            constexpr float SUN_DISTANCE = 100.0f;
+            
+            if (lc.type == LightType::Directional) {
+              
+         
+                l.position = Vector3(
+                    -l.direction.x * SUN_DISTANCE,
+                    -l.direction.y * SUN_DISTANCE,
+                    -l.direction.z * SUN_DISTANCE
+                );
+
+         
+
+                float elevation = -l.direction.y;
+                float t = std::max(0.0f, elevation);
+
+                l.intensity = lc.intensity * (t * t * std::sqrt(t));
+                sunElevation = t;
+            }
+         
+           
             l.innerCone = lc.innerConeAngle;
             l.outerCone = lc.outerConeAngle;
 
@@ -400,6 +425,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
     auto skyView = registry.view<CubeMapComponent>();
     if (skyView.empty()) return;
     ctx->cubeMapComp = &registry.get<CubeMapComponent>(skyView.front());
+    ctx->cubeMapComp->dirLightInfluence = std::sqrt(sunElevation);
 
     ctx->debugTextures.clear();
     if (m_MainFrameBuffer) {

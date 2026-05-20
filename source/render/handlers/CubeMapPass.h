@@ -43,7 +43,7 @@ public:
 
         shader->setInt("skybox", 0);
         shader->setMat4("projection", cam->projectionMatrix);
-        shader->setFloat("envIntensity", cmc.intensity);
+        shader->setFloat("envIntensity", cmc.intensity*cmc.dirLightInfluence);
         shader->setMat4("view", view_mat);
 
         cmc.cubeMap->bind();

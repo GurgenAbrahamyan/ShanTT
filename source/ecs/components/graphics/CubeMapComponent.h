@@ -4,5 +4,6 @@
 
 struct CubeMapComponent {
     CubeMap* cubeMap = nullptr;
-    float intensity = 0.5f;
+    float intensity = 1.0f;
+    float dirLightInfluence = 0.0f;
 };

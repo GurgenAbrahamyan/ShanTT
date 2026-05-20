@@ -51,7 +51,7 @@ public:
             glActiveTexture(GL_TEXTURE12);
             ctx.brdfTexture->Bind(12);
 
-            shader->setFloat("envIntensity", ctx.cubeMapComp->intensity);
+            shader->setFloat("envIntensity", ctx.cubeMapComp->intensity*ctx.cubeMapComp->dirLightInfluence);
 
         }
         shader->setInt("gAlbedo", 0);

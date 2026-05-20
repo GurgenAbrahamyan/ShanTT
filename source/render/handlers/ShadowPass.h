@@ -28,6 +28,8 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(2.0f, 4.0f);
 
 
         for (ShadowData& data : ctx.shadowData) {
@@ -62,6 +64,7 @@ public:
         glViewport(0, 0, ctx.windowWidth, ctx.windowHeight);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+        glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
 

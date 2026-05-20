@@ -320,7 +320,7 @@ void main() {
     float mipLevel =  roughness * 9.0;
     vec3 prefilteredColor = textureLod(prefilterMap, R, mipLevel).rgb;
     vec2 brdfSample = texture(brdfLUT, vec2(max(dot(normal,V),0.001), roughness)).rg;
-    vec3 diffuseIBL = irradiance * albedo * envIntensity;
+    vec3 diffuseIBL = irradiance * albedo *  envIntensity;
     vec3 specularIBL = prefilteredColor * (fresnel * brdfSample.x + brdfSample.y) * envIntensity;
 
     vec3 ambient = (kD * diffuseIBL + specularIBL) * ao;

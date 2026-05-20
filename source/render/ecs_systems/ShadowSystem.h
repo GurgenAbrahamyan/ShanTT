@@ -9,9 +9,9 @@
 
 struct ShadowSettings {
     float nearPlane = 0.1f;
-    float farPlane = 100.0f;
-    float orthoWidth = 15.0f;
-    float orthoHeight = 15.0f;
+    float farPlane = 1000.0f;
+    float orthoWidth = 20.0f;
+    float orthoHeight = 20.0f;
 };
 
 class ShadowSystem {

@@ -17,7 +17,7 @@ struct ShadowTile {
 class ShadowAtlas {
 public:
     static constexpr int ATLAS_SIZE = 8192;
-
+    static constexpr std::array<int, 5> TILE_SIZES = { 2048, 512, 256, 128 };
 
     struct Band {
         int tileSize;
@@ -26,12 +26,12 @@ public:
         int rows;
     };
 
-    static constexpr std::array<Band, 4> BANDS = {{
-        { 1024, 0,    8,  4 },
-        { 512,  4096, 16, 4 },
-        { 256,  6144, 32, 4 },
-        { 128,  7168, 64, 8 },
-    }};
+    static constexpr std::array<Band, 4> BANDS = { {
+    { 2048, 0,     4,  2 },   
+    { 512,  4096,  16, 4 },
+    { 256,  6144,  32, 4 },
+    { 128,  7168,  64, 8 },
+} };
 
     ShadowAtlas() { buildTiles(); }
 
@@ -86,9 +86,9 @@ public:
 
 
     int allocateBestFitConsecutive(int count) {
-        static const int sizes[] = { 1024, 512, 256, 128 };
+ 
 
-        for (int s : sizes) {
+        for (int s : TILE_SIZES) {
             int idx = allocateConsecutive(s, count);
             if (idx != -1)
                 return idx;
@@ -97,9 +97,9 @@ public:
     }
 
     int allocateBestFit() {
-        static const int sizes[] = { 1024, 512, 256, 128 };
+      
 
-        for (int s : sizes) {
+        for (int s : TILE_SIZES) {
             int idx = allocate(s);
             if (idx != -1)
                 return idx;
