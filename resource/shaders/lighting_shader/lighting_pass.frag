@@ -3,7 +3,7 @@ out vec4 FragColor;
 in vec2 vUV;
 
 uniform sampler2D gAlbedo;
-uniform sampler2D gPosition;
+uniform sampler2D gDepth;
 uniform sampler2D gNormal;
 uniform sampler2D gARM;
 uniform sampler2D gEmissive;
@@ -11,6 +11,9 @@ uniform sampler2D shadowMap;
 
 uniform bool shadowsEnabled;
 uniform vec3 cameraPos;
+
+uniform mat4 invView;
+uniform mat4 invProjection;
 
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
@@ -44,6 +47,31 @@ layout(std140) uniform LightBlock {
     int lightCount;
     vec3 pad5;        
 };
+
+vec3 decodeNormalOct(vec2 enc) {
+    enc = enc * 2.0 - 1.0;                                // [0,1] ? [-1,1]
+    vec3 n = vec3(enc.x, enc.y, 1.0 - abs(enc.x) - abs(enc.y));
+    if (n.z < 0.0) {
+        vec2 sgn = vec2(n.x >= 0.0 ? 1.0 : -1.0,
+                        n.y >= 0.0 ? 1.0 : -1.0);
+        n.xy = (1.0 - abs(n.yx)) * sgn;
+    }
+    return normalize(n);
+}
+
+vec3 reconstructWorldPos(float linearDepth, vec2 uv) {
+  
+    vec4 clipPos = vec4(uv * 2.0 - 1.0, -1.0, 1.0);
+    vec4 viewRay = invProjection * clipPos;
+    viewRay /= viewRay.w;
+
+   
+    vec3 viewPos  = viewRay.xyz * (linearDepth / -viewRay.z);
+    vec4 worldPos = invView * vec4(viewPos, 1.0);
+    return worldPos.xyz;
+}
+
+
 const float PI = 3.14159265359;
 
 
@@ -281,16 +309,17 @@ vec3 calcSpotLight(GPULight light, vec3 N, vec3 V,
 }
 
 void main() {
-    vec3 fragPos = texture(gPosition, vUV).xyz;
+    float depth = texture(gDepth, vUV).r;
 
-    vec4 normalSample = texture(gNormal, vUV);
-    
-    if(normalSample.a < 0.5) {
+    // Sky / empty pixels: depth will be 0 (nothing wrote to it)
+    if (depth <= 0.0) {
         FragColor = vec4(0.0, 0.0, 0.0, 0.0);
         return;
     }
 
-    vec3 normal = normalize(normalSample.xyz);
+    vec2 encodedN = texture(gNormal, vUV).rg;
+    vec3 normal   = decodeNormalOct(encodedN);
+    vec3 fragPos  = reconstructWorldPos(depth, vUV);
     vec3  albedo   = texture(gAlbedo, vUV).rgb; 
     vec3  arm      = texture(gARM, vUV).rgb;
     vec3  emissive = texture(gEmissive, vUV).rgb;

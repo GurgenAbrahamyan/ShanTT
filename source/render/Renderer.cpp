@@ -83,9 +83,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
         fbHeight
     );
 
-    m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);  // gAlbedo
-    m_MainFrameBuffer->addColorBuffer(GL_RGBA32F, GL_RGBA, GL_FLOAT);   // gPos
-    m_MainFrameBuffer->addColorBuffer(GL_RGBA32F, GL_RGBA, GL_FLOAT);   // gNormal
+    m_MainFrameBuffer->addColorBuffer(GL_RGBA8, GL_RGBA, GL_FLOAT);  // gAlbedo
+    m_MainFrameBuffer->addColorBuffer(GL_R32F, GL_RED, GL_FLOAT);   // gDepth
+    m_MainFrameBuffer->addColorBuffer(GL_RG16F, GL_RG, GL_FLOAT);   // gNormal
     m_MainFrameBuffer->addColorBuffer(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE); // gARM
     m_MainFrameBuffer->addColorBuffer(GL_RGBA16F, GL_RGBA, GL_FLOAT);   // gEmissive
     m_MainFrameBuffer->addDepthBuffer();

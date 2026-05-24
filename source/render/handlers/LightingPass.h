@@ -30,7 +30,8 @@ public:
 
 
         shader->setVec3("cameraPos", ctx.cameraTransform->position);
-
+        shader->setMat4("invView", ctx.camera->viewMatrix.inverse());
+        shader->setMat4("invProjection", ctx.camera->projectionMatrix.inverse());
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(0)); // gAlbedo
@@ -55,7 +56,7 @@ public:
 
         }
         shader->setInt("gAlbedo", 0);
-        shader->setInt("gPosition", 1);
+        shader->setInt("gDepth", 1);
         shader->setInt("gNormal", 2);
         shader->setInt("gARM", 3);
         shader->setInt("gEmissive", 4);
