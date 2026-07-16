@@ -12,9 +12,9 @@ class BloomPass : public RenderPass {
     };
 public:
     BloomPass(Shader* downScaleShader, Shader* upScaleShader, int width, int height)
-        : RenderPass(downScaleShader), upsampleShader(upScaleShader),
-        windowWidth(width), windowHeight(height),
-        quadVBO(quadVertices, sizeof(quadVertices), false)
+        : RenderPass(downScaleShader),
+        windowWidth(width), windowHeight(height), 
+        quadVBO(quadVertices, sizeof(quadVertices), false),  upsampleShader(upScaleShader)
     {
         init( width, height, settings.mipMapLength);
 
@@ -27,7 +27,7 @@ public:
         quadVBO.Unbind();
     }
 
-    void execute(RenderContext& context) override
+    void execute( [[maybe_unused]] RenderContext& context) override
     {
         if (inputs.empty() || outputs.empty()) return;
 
@@ -124,7 +124,7 @@ private:
         glBindTexture(GL_TEXTURE_2D, inputFB->getColorAttachment(0));
 
 
-        for (int i = 0; i < mipLevels.size(); i++)
+        for (size_t i{}; i < mipLevels.size(); ++i)
         {
             const mipLevel& mip = mipLevels[i];
             glViewport(0, 0, static_cast<GLsizei>(mip.size.x), static_cast<GLsizei>(mip.size.y));

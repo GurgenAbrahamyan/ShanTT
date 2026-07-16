@@ -1,29 +1,1121 @@
 #include "UiInput.h"
 
-UiInput::UiInput(GLFWwindow* window=nullptr, EventBus* bus=nullptr) : window(window), bus(bus) {
 
-    bus->subscribe<CameraMode>([this](CameraMode& event) {
-        this->UiMode = !event.key;
-        glfwSetInputMode(this->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        });
+#include "../render/handlers/BloomPass.h"
+
+#include "../render/handlers/FinalBlitPass.h"
+
+#include "../render/handlers/FXAAPass.h"
+
+
+UiInput::UiInput(GLFWwindow* window, EventBus* bus) :  bus(bus), window(window)
+
+{
 
     IMGUI_CHECKVERSION();
+
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::StyleColorsDark();
+
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ApplyEditorStyle();
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
+
     ImGui_ImplOpenGL3_Init("#version 330");
+
+
+
+    // ── Pass render map ───────────────────────────────────────────────────────
+
+    passRenderMap = {
+
+        { typeid(FinalBlitPass), [](RenderPass* base) {
+
+            auto* p = static_cast<FinalBlitPass*>(base);
+
+            ImGui::DragFloat("Exposure",        &p->settings.exposure,       0.05f, 0.f, 20.f);
+
+            ImGui::Checkbox ("Bloom",           &p->settings.isBloom);
+
+            if (p->settings.isBloom)
+
+                ImGui::DragFloat("Bloom Intensity", &p->settings.bloomintensity, 0.001f, 0.f, 1.f);
+
+        }},
+
+        { typeid(BloomPass), [](RenderPass* base) {
+
+            auto* p = static_cast<BloomPass*>(base);
+
+            ImGui::DragFloat("Filter Radius", &p->settings.filterRadius, 0.0001f, 0.f, 0.05f);
+
+        }},
+
+        { typeid(FXAAPass), [](RenderPass* base) {
+
+            auto* p = static_cast<FXAAPass*>(base);
+
+            ImGui::DragFloat("Edge Threshold", &p->settings.edgeThreshold, 0.001f, 0.f, 1.f);
+
+            ImGui::DragFloat("Blend Strength", &p->settings.blendStrength, 0.001f, 0.f, 1.f);
+
+        }},
+
+    };
+
+
+
+    // ── Component adder map ───────────────────────────────────────────────────
+
+    componentAdderMap = {
+
+        { "Tag",             [](entt::registry& r, entt::entity e) { r.emplace_or_replace<TagComponent>(e, "unnamed"); }},
+
+        { "Parent",          [](entt::registry& r, entt::entity e) { r.emplace_or_replace<ParentComponent>(e); }},
+
+        { "Transform",       [](entt::registry& r, entt::entity e) { r.emplace_or_replace<TransformComponent>(e); }},
+
+        { "World Matrix",    [](entt::registry& r, entt::entity e) { r.emplace_or_replace<WorldMatrixComponent>(e); }},
+
+        { "Active Camera",   [](entt::registry& r, entt::entity e) { r.emplace_or_replace<ActiveCameraTag>(e); }},
+
+        { "Camera",          [](entt::registry& r, entt::entity e) { r.emplace_or_replace<CameraComponent>(e); }},
+
+        { "CubeMap",         [](entt::registry& r, entt::entity e) { r.emplace_or_replace<CubeMapComponent>(e); }},
+
+        { "Light",           [](entt::registry& r, entt::entity e) { r.emplace_or_replace<LightComponent>(e); }},
+
+        { "Material",        [](entt::registry& r, entt::entity e) { r.emplace_or_replace<MaterialComponent>(e); }},
+
+        { "Mesh",            [](entt::registry& r, entt::entity e) { r.emplace_or_replace<MeshComponent>(e); }},
+
+        { "Model",           [](entt::registry& r, entt::entity e) { r.emplace_or_replace<ModelComponent>(e); }},
+
+        { "Collision Shape", [](entt::registry& r, entt::entity e) { r.emplace_or_replace<CollisionShapeComponent>(e); }},
+
+        { "Rigid Body",      [](entt::registry& r, entt::entity e) { r.emplace_or_replace<RigidBodyComponent>(e); }},
+
+        { "Soft Body",       [](entt::registry& r, entt::entity e) { r.emplace_or_replace<SoftBodyComponent>(e); }},
+
+    };
+
+
+
+    // ── Component render map ──────────────────────────────────────────────────
+
+    componentRenderMap = {
+
+        { typeid(TagComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Tag", del)) return;
+
+            auto& t = r.get<TagComponent>(e);
+
+            char buf[256];
+
+            strncpy_s(buf, t.tag.c_str(), sizeof(buf));
+
+            ImGui::SetNextItemWidth(-1.f);
+
+            if (ImGui::InputText("##tag", buf, sizeof(buf))) t.tag = buf;
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(ParentComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Parent", del)) return;
+
+            auto& p = r.get<ParentComponent>(e);
+
+            ImGui::Text("Parent ID: %s",
+
+                p.parent == entt::null ? "none" : std::to_string((uint32_t)p.parent).c_str());
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(TransformComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Transform", del)) return;
+
+            auto& t = r.get<TransformComponent>(e);
+
+            DragVec3("Position", t.position);
+
+            static std::unordered_map<uint32_t, bool>    eulerMode;
+
+            static std::unordered_map<uint32_t, Vector3> eulerCache;
+
+            static std::unordered_map<uint32_t, Quat>    lastQuat;
+
+            uint32_t id = (uint32_t)e;
+
+            auto [modeIt,  modeInserted]  = eulerMode.emplace(id, true);
+
+            auto [cacheIt, cacheInserted] = eulerCache.emplace(id, t.rotation.toEulerDeg());
+
+            auto [lqIt,    lqInserted]    = lastQuat.emplace(id, t.rotation);
+
+            bool& showEuler = modeIt->second;
+
+            Vector3& euler  = cacheIt->second;
+
+            Quat& prevQuat  = lqIt->second;
+
+            bool externalChange =
+
+                prevQuat.x != t.rotation.x || prevQuat.y != t.rotation.y ||
+
+                prevQuat.z != t.rotation.z || prevQuat.w != t.rotation.w;
+
+            if (showEuler) {
+
+                if (externalChange && !ImGui::IsItemActive())
+
+                    euler = t.rotation.toEulerDeg();
+
+                if (ImGui::DragFloat3("Rotation", &euler.x, 0.5f))
+
+                    t.rotation = Quat::fromEulerDeg(euler).normalized();
+
+            } else {
+
+                float buf[4] = { t.rotation.x, t.rotation.y, t.rotation.z, t.rotation.w };
+
+                if (ImGui::DragFloat4("Rotation", buf, 0.001f))
+
+                    t.rotation = Quat(buf[0], buf[1], buf[2], buf[3]).normalized();
+
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::SmallButton(showEuler ? "E" : "Q")) {
+
+                showEuler = !showEuler;
+
+                if (showEuler) euler = t.rotation.toEulerDeg();
+
+            }
+
+            prevQuat = t.rotation;
+
+            DragVec3("Scale", t.scale, 0.01f);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(WorldMatrixComponent), [](entt::registry&, entt::entity, bool& del) {
+
+            if (!BeginComponentHeader("World Matrix", del, false)) return;
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(ActiveCameraTag), [](entt::registry&, entt::entity, bool& del) {
+
+            if (!BeginComponentHeader("Active Camera", del)) return;
+
+            ImGui::TextDisabled("(marker — no fields)");
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(CameraComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Camera", del)) return;
+
+            auto& c = r.get<CameraComponent>(e);
+
+            ImGui::DragFloat("FOV",          &c.fov,          0.5f,   1.f,   180.f);
+
+            ImGui::DragFloat("Aspect",       &c.aspectRatio,  0.01f,  0.1f,  4.f);
+
+            ImGui::DragFloat("Near",         &c.nearPlane,    0.001f, 0.001f, 10.f);
+
+            ImGui::DragFloat("Far",          &c.farPlane,     1.f,    1.f,   10000.f);
+
+            ImGui::Separator();
+
+            ImGui::DragFloat("Pitch",        &c.pitch,  0.1f);
+
+            ImGui::DragFloat("Yaw",          &c.yaw,    0.1f);
+
+            ImGui::Separator();
+
+            ImGui::Checkbox("Camera Blur",   &c.applyBlur);
+
+            ImGui::DragFloat("Focus Dist",   &c.focusDistance, 0.05f);
+
+            ImGui::DragFloat("Aperture",     &c.aperture,      0.01f);
+
+            ImGui::DragFloat("Focal Length", &c.focalLength,   0.001f);
+
+            ImGui::DragFloat("Blur Scale",   &c.blurScale,     1.f);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(CubeMapComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("CubeMap", del)) return;
+
+            auto& cm = r.get<CubeMapComponent>(e);
+
+            ImGui::DragFloat("Environment Intensity", &cm.intensity, 0.01f, 0.0f, 1.0f);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(LightComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Light", del)) return;
+
+            auto& l = r.get<LightComponent>(e);
+
+            const char* types[] = { "Point", "Directional", "Spot" };
+
+            int typeIdx = (int)l.type;
+
+            if (ImGui::Combo("Type", &typeIdx, types, 3)) l.type = (LightType)typeIdx;
+
+            float col[3] = { l.color.x, l.color.y, l.color.z };
+
+            if (ImGui::ColorEdit3("Color", col)) l.color = { col[0], col[1], col[2] };
+
+            ImGui::DragFloat("Intensity", &l.intensity, 0.01f, 0.f, 100.f);
+
+            if (l.type == LightType::Spot) {
+
+                ImGui::DragFloat("Inner Cone", &l.innerConeAngle, 0.005f, 0.f, 1.f);
+
+                ImGui::DragFloat("Outer Cone", &l.outerConeAngle, 0.005f, 0.f, 1.f);
+
+            }
+
+            ImGui::Checkbox("Casts Shadow", &l.castsShadow);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(MaterialComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Material", del)) return;
+
+            auto& m = r.get<MaterialComponent>(e);
+
+            ImGui::Text("Ptr: %s", m.material ? "set" : "null");
+
+            if (m.material) ImGui::Text("Addr: 0x%llX", (unsigned long long)m.material);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(MeshComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Mesh", del)) return;
+
+            auto& m = r.get<MeshComponent>(e);
+
+            ImGui::Text("Ptr: %s", m.mesh ? "set" : "null");
+
+            if (m.mesh) ImGui::Text("Addr: 0x%llX", (unsigned long long)m.mesh);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(ModelComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Model", del)) return;
+
+            auto& model = r.get<ModelComponent>(e);
+
+            ImGui::Text("Mesh entries: %zu", model.asset->meshes.size());
+
+            ImGui::Spacing();
+
+            static const char* slotLabels[] = { "Albedo", "ARM", "Normal", "Emissive" };
+
+            static constexpr int kDisplaySlots = 4;
+
+            for (size_t i = 0; i < model.asset->meshes.size(); ++i) {
+
+                auto& entry = model.asset->meshes[i];
+
+                ImGui::PushID((int)i);
+
+                bool nodeOpen = ImGui::TreeNodeEx(("Entry " + std::to_string(i)).c_str(),
+
+                    ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth);
+
+                if (nodeOpen) {
+
+                    ImGui::TextDisabled("Mesh:     %s", entry.mesh     ? "set" : "null");
+
+                    ImGui::TextDisabled("Material: %s", entry.material ? "set" : "null");
+
+                    if (entry.material) {
+
+                        Material* mat = entry.material;
+
+                        ImGui::Spacing();
+
+                        ImGui::DragFloat("Metallic",  &mat->metallic,  0.01f, 0.f, 1.f);
+
+                        ImGui::DragFloat("Roughness", &mat->roughness, 0.01f, 0.f, 1.f);
+
+                        ImGui::DragFloat("AO",        &mat->ao,        0.01f, 0.f, 1.f);
+
+                        float bc[4] = { mat->baseColorFactor.x, mat->baseColorFactor.y,
+
+                                        mat->baseColorFactor.z, mat->baseColorFactor.w };
+
+                        if (ImGui::ColorEdit4("Base Color", bc))
+
+                            mat->baseColorFactor = { bc[0], bc[1], bc[2], bc[3] };
+
+                        float ec[3] = { mat->emissiveFactor.x, mat->emissiveFactor.y, mat->emissiveFactor.z };
+
+                        if (ImGui::ColorEdit3("Emissive", ec))
+
+                            mat->emissiveFactor = { ec[0], ec[1], ec[2] };
+
+                        ImGui::Spacing(); ImGui::Separator();
+
+                        ImGui::TextUnformatted("Textures"); ImGui::Separator(); ImGui::Spacing();
+
+                        for (int slot = 0; slot < kDisplaySlots; ++slot) {
+
+                            DrawTextureSlot(slotLabels[slot], mat->GetTexture(slot), 56.f);
+
+                            ImGui::Spacing();
+
+                        }
+
+                    } else ImGui::TextDisabled("No material attached.");
+
+                    ImGui::TreePop();
+
+                }
+
+                ImGui::PopID();
+
+                ImGui::Spacing();
+
+            }
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(CollisionShapeComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Collision Shape", del)) return;
+
+            auto& cs = r.get<CollisionShapeComponent>(e);
+
+            ImGui::Text("Vertices: %zu", cs.vertices.size());
+
+            ImGui::Text("Indices:  %zu", cs.indices.size());
+
+            DragVec3("Local Pos",   cs.localPosition);
+
+            DragQuat("Local Rot",   cs.localRotation);
+
+            DragVec3("Local Scale", cs.localScale, 0.01f);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(RigidBodyComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Rigid Body", del)) return;
+
+            auto& rb = r.get<RigidBodyComponent>(e);
+
+            ImGui::DragFloat("Mass",     &rb.mass,    0.1f,  0.f, 10000.f);
+
+            ImGui::DragFloat("Inv Mass", &rb.invmass, 0.001f);
+
+            ImGui::Separator();
+
+            DragVec3("Lin Velocity", rb.linearVelocity);
+
+            DragVec3("Ang Velocity", rb.angularVelocity);
+
+            ImGui::Separator();
+
+            DragVec3("Force Accum",  rb.forceAccum);
+
+            DragVec3("Torque Accum", rb.torqueAccum);
+
+            EndComponentHeader();
+
+        }},
+
+        { typeid(SoftBodyComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Soft Body", del)) return;
+
+            auto& sb = r.get<SoftBodyComponent>(e);
+
+            ImGui::Text("Particles: %s", sb.particles ? "set" : "null");
+
+            ImGui::DragFloat("Stiffness", &sb.stiffness, 0.01f, 0.f, 1.f);
+
+            ImGui::DragFloat("Damping",   &sb.damping,   0.001f, 0.f, 1.f);
+
+            EndComponentHeader();
+
+        }},
+
+    };
+
 }
 
-void UiInput::processInput(){
+
+
+void UiInput::startNewFrame()
+
+{
+
     ImGui_ImplOpenGL3_NewFrame();
+
     ImGui_ImplGlfw_NewFrame();
+
     ImGui::NewFrame();
 
-    ImGui::Begin("Debug");
-    ImGui::Text("Hello UI");
-    ImGui::End();
+}
+
+
+
+void UiInput::render()
+
+{
 
     ImGui::Render();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    int w, h;
+
+    glfwGetFramebufferSize(window, &w, &h);
+
+    glViewport(0, 0, w, h);
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+}
+
+
+
+void UiInput::ApplyEditorStyle()
+
+{
+
+    ImGuiStyle& s = ImGui::GetStyle();
+
+    ImGui::StyleColorsDark();
+
+    s.WindowRounding = 4.f; s.FrameRounding  = 3.f;
+
+    s.ChildRounding  = 3.f; s.GrabRounding   = 3.f;
+
+    s.FramePadding   = ImVec2(6, 3);
+
+    s.ItemSpacing    = ImVec2(6, 4);
+
+    s.WindowBorderSize = 1.f; s.FrameBorderSize = 0.f;
+
+    ImVec4* c = s.Colors;
+
+    c[ImGuiCol_WindowBg]      = ImVec4(0.10f, 0.10f, 0.12f, 0.97f);
+
+    c[ImGuiCol_ChildBg]       = ImVec4(0.12f, 0.12f, 0.14f, 1.00f);
+
+    c[ImGuiCol_Header]        = ImVec4(0.22f, 0.22f, 0.28f, 1.00f);
+
+    c[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.30f, 0.38f, 1.00f);
+
+    c[ImGuiCol_HeaderActive]  = ImVec4(0.25f, 0.35f, 0.55f, 1.00f);
+
+    c[ImGuiCol_FrameBg]       = ImVec4(0.16f, 0.16f, 0.20f, 1.00f);
+
+    c[ImGuiCol_FrameBgHovered]= ImVec4(0.22f, 0.22f, 0.28f, 1.00f);
+
+    c[ImGuiCol_Button]        = ImVec4(0.22f, 0.30f, 0.50f, 1.00f);
+
+    c[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.38f, 0.62f, 1.00f);
+
+    c[ImGuiCol_SliderGrab]    = ImVec4(0.35f, 0.55f, 0.90f, 1.00f);
+
+    c[ImGuiCol_TitleBgActive] = ImVec4(0.14f, 0.18f, 0.30f, 1.00f);
+
+    c[ImGuiCol_Separator]     = ImVec4(0.28f, 0.28f, 0.35f, 1.00f);
+
+}
+
+
+
+void UiInput::createWindow(const std::string& title, std::function<void(bool&)> drawFunc)
+
+{
+
+    for (auto& w : windows)
+
+        if (w.title == title) { w.open = true; return; }
+
+    windows.push_back({ title, drawFunc });
+
+}
+
+
+
+void UiInput::DrawRenderPassWindow(RenderPass* pass,
+
+    const std::function<void(RenderPass*)>& drawFn,
+
+    RenderContext* ctx)
+
+{
+
+    const float pad = 10.f;
+
+    const float w = (float)ctx->windowWidth / 5.f;
+
+    ImGui::SetNextWindowSize(ImVec2(w, 0), ImGuiCond_FirstUseEver);
+
+    ImGui::SetNextWindowPos(
+
+        ImVec2((float)ctx->windowWidth - 2.f * w - 2.f * pad, pad),
+
+        ImGuiCond_FirstUseEver);
+
+    bool open = true;
+
+    std::string title = std::string(pass->passName()) + " Settings";
+
+    ImGui::Begin(title.c_str(), &open, 0);
+
+    drawFn(pass);
+
+    ImGui::End();
+
+    if (!open) activePassIndex = -1;
+
+}
+
+
+
+void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry, RenderContext* ctx)
+
+{
+
+    const float pad = 10.f;
+
+    const float w = (float)ctx->windowWidth / 5.f;
+
+    float gbufH = (float)ctx->windowHeight / 2.f;
+
+    ImGui::SetNextWindowPos(
+
+        ImVec2((float)ctx->windowWidth - 2 * w - 2 * pad, (float)ctx->windowHeight - gbufH - pad),
+
+        ImGuiCond_FirstUseEver);
+
+    ImGui::SetNextWindowSize(ImVec2(w, gbufH), ImGuiCond_FirstUseEver);
+
+    ImGui::Begin("Model Manager", nullptr, 0);
+
+
+
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.f, 1.f), "Load Model");
+
+    ImGui::Separator();
+
+    static char nameBuf[128] = {};
+
+    static char pathBuf[256] = {};
+
+    ImGui::InputTextWithHint("##name", "Model name", nameBuf, sizeof(nameBuf));
+
+    ImGui::InputTextWithHint("##path", "Path to model file", pathBuf, sizeof(pathBuf));
+
+    bool canLoad = nameBuf[0] && pathBuf[0];
+
+    if (!canLoad) ImGui::BeginDisabled();
+
+    if (ImGui::Button("Load Model", ImVec2(-1, 0))) {
+
+        mgr->loadModel(nameBuf, pathBuf);
+
+        nameBuf[0] = '\0'; pathBuf[0] = '\0';
+
+    }
+
+    if (!canLoad) ImGui::EndDisabled();
+
+    ImGui::Spacing(); ImGui::Separator();
+
+
+
+    ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.f, 1.f), "Loaded Models");
+
+    ImGui::Separator();
+
+    const auto& models = mgr->getLoadedModels();
+
+    static int selectedModel = -1;
+
+    int index = 0;
+
+    for (const auto& [name, asset] : models) {
+
+        bool selected = (selectedModel == index);
+
+        if (ImGui::Selectable(name.c_str(), selected)) selectedModel = index;
+
+        if (ImGui::IsItemHovered()) {
+
+            ImGui::BeginTooltip();
+
+            ImGui::Text("Path: %s",   asset.get()->path.c_str());
+
+            ImGui::Text("Meshes: %zu", asset.get()->meshes.size());
+
+            ImGui::EndTooltip();
+
+        }
+
+        index++;
+
+    }
+
+    ImGui::Spacing(); ImGui::Separator();
+
+
+
+    ImGui::TextColored(ImVec4(0.6f, 1.f, 0.6f, 1.f), "Spawn");
+
+    static char entityName[128] = "ModelEntity";
+
+    ImGui::InputText("Entity Name", entityName, sizeof(entityName));
+
+    if (ImGui::Button("Create Entity + Assign Model", ImVec2(-1, 0))) {
+
+        if (selectedModel >= 0) {
+
+            auto it = models.begin();
+
+            std::advance(it, selectedModel);
+
+            auto entity = registry->create();
+
+            registry->emplace<TagComponent>(entity, std::string(entityName));
+
+            mgr->instantiateModel(it->first, *registry, entity);
+
+            activeInspectorEntity = entity;
+
+        }
+
+    }
+
+    ImGui::End();
+
+}
+
+
+
+void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
+
+{
+
+    auto* registry = ctx->registry;
+
+    auto* modelMgr = ctx->modelManager;
+
+
+
+    const float pad    = 10.f;
+
+    const float panelW = (float)ctx->windowWidth / 5.f;
+
+    const float inspW  = (float)ctx->windowWidth / 5.f;
+
+    const float gbufW  = (float)ctx->windowWidth / 5.f;
+
+    const float usableW = panelW - 2.f * pad;
+
+    const float usableH = (float)ctx->windowHeight - 2.f * pad;
+
+
+
+    ImGui::SetNextWindowSize(ImVec2(usableW, usableH), ImGuiCond_FirstUseEver);
+
+    ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_FirstUseEver);
+
+    ImGui::Begin("Scene", nullptr, 0);
+
+    ImGui::Columns(3, "scene_cols", true);
+
+
+
+    // ── Column 0: Component adder ─────────────────────────────────────────────
+
+    ImGui::BeginChild("##compadder", ImVec2(0.f, 0.f), true);
+
+    if (registry->valid(activeInspectorEntity)) {
+
+        std::string activeName = "Entity " + std::to_string((uint32_t)activeInspectorEntity);
+
+        if (registry->all_of<TagComponent>(activeInspectorEntity))
+
+            activeName = registry->get<TagComponent>(activeInspectorEntity).tag;
+
+        ImGui::TextColored(ImVec4(0.40f, 0.80f, 1.f, 1.f), "%s %s",
+
+            reinterpret_cast<const char*>(u8"\u2605"), activeName.c_str());
+
+    } else ImGui::TextDisabled("No entity selected");
+
+    ImGui::Separator();
+
+    static char compFilter[128] = {};
+
+    ImGui::SetNextItemWidth(-1.f);
+
+    ImGui::InputTextWithHint("##cfilter", "Search components...", compFilter, sizeof(compFilter));
+
+    ImGui::Spacing();
+
+    if (registry->valid(activeInspectorEntity))
+
+        for (auto& [name, adderFn] : componentAdderMap) {
+
+            if (!StrContainsCI(name, compFilter)) continue;
+
+            ImGui::PushID(name.c_str());
+
+            if (ImGui::Selectable(("  + " + name).c_str())) adderFn(*registry, activeInspectorEntity);
+
+            ImGui::PopID();
+
+        }
+
+    ImGui::EndChild();
+
+    ImGui::NextColumn();
+
+
+
+    // ── Column 1: Entity list ─────────────────────────────────────────────────
+
+    ImGui::BeginChild("##entitylist", ImVec2(0.f, 0.f), true);
+
+    if (ImGui::Button(" + ")) ImGui::OpenPopup("NewEntityPopup");
+
+    ImGui::SameLine();
+
+    static char entityFilter[128] = {};
+
+    ImGui::SetNextItemWidth(-1.f);
+
+    ImGui::InputTextWithHint("##efilter", "Filter entities...", entityFilter, sizeof(entityFilter));
+
+    ImGui::Separator();
+
+    entt::entity toDestroy = entt::null;
+
+    auto view = registry->view<entt::entity>();
+
+    for (auto entity : view) {
+
+        if (!registry->valid(entity)) continue;
+
+        std::string displayName = "Entity " + std::to_string((uint32_t)entity);
+
+        if (registry->all_of<TagComponent>(entity))
+
+            displayName = registry->get<TagComponent>(entity).tag;
+
+        if (!StrContainsCI(displayName, entityFilter)) continue;
+
+        bool isActive = (entity == activeInspectorEntity);
+
+        if (isActive) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
+
+        if (ImGui::Selectable(displayName.c_str(), isActive)) activeInspectorEntity = entity;
+
+        if (isActive) ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopupContextItem()) {
+
+            ImGui::TextDisabled("%s", displayName.c_str());
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Delete Entity")) toDestroy = entity;
+
+            ImGui::EndPopup();
+
+        }
+
+    }
+
+    if (registry->valid(toDestroy)) {
+
+        if (activeInspectorEntity == toDestroy) activeInspectorEntity = entt::null;
+
+        registry->destroy(toDestroy);
+
+    }
+
+    if (ImGui::BeginPopup("NewEntityPopup")) {
+
+        ImGui::Text("New Entity Name");
+
+        ImGui::Separator();
+
+        ImGui::SetNextItemWidth(220.f);
+
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+
+        bool confirm = ImGui::InputText("##newname", newEntityNameBuf, sizeof(newEntityNameBuf),
+
+            ImGuiInputTextFlags_EnterReturnsTrue);
+
+        ImGui::SameLine();
+
+        confirm |= ImGui::Button("Create");
+
+        if (confirm && newEntityNameBuf[0] != '\0') {
+
+            auto e = registry->create();
+
+            registry->emplace<TagComponent>(e, std::string(newEntityNameBuf));
+
+            activeInspectorEntity = e;
+
+            newEntityNameBuf[0] = '\0';
+
+            ImGui::CloseCurrentPopup();
+
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel")) { newEntityNameBuf[0] = '\0'; ImGui::CloseCurrentPopup(); }
+
+        ImGui::EndPopup();
+
+    }
+
+    ImGui::EndChild();
+
+    ImGui::NextColumn();
+
+
+
+    // ── Column 2: Systems ─────────────────────────────────────────────────────
+
+    ImGui::BeginChild("##systems", ImVec2(0.f, 0.f), true);
+
+    ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Systems");
+
+    ImGui::Separator(); ImGui::Spacing();
+
+    struct SystemEntry { const char* label; bool* openFlag; };
+
+    SystemEntry systemEntries[] = { { "Model Manager", &modelManagerOpen } };
+
+    for (auto& entry : systemEntries) {
+
+        bool isOpen = *entry.openFlag;
+
+        if (isOpen) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
+
+        if (ImGui::Selectable(entry.label, isOpen)) *entry.openFlag = !(*entry.openFlag);
+
+        if (isOpen) ImGui::PopStyleColor();
+
+    }
+
+    if (rendergraph) {
+
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Render Passes");
+
+        ImGui::Separator(); ImGui::Spacing();
+
+        const auto& passes = rendergraph->getPasses();
+
+        for (int i = 0; i < (int)passes.size(); i++) {
+
+            RenderPass* pass = passes[i].get();
+
+            if (passRenderMap.find(typeid(*pass)) == passRenderMap.end()) continue;
+
+            bool isOpen = (activePassIndex == i);
+
+            if (isOpen) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
+
+            if (ImGui::Selectable(pass->passName(), isOpen))
+
+                activePassIndex = (activePassIndex == i) ? -1 : i;
+
+            if (isOpen) ImGui::PopStyleColor();
+
+        }
+
+    }
+
+    ImGui::EndChild();
+
+    ImGui::Columns(1);
+
+    ImGui::End();
+
+
+
+    if (rendergraph && activePassIndex >= 0) {
+
+        const auto& passes = rendergraph->getPasses();
+
+        if (activePassIndex < (int)passes.size()) {
+
+            RenderPass* pass = passes[activePassIndex].get();
+
+            auto it = passRenderMap.find(typeid(*pass));
+
+            if (it != passRenderMap.end())
+
+                DrawRenderPassWindow(pass, it->second, ctx);
+
+        }
+
+    }
+
+
+
+    if (registry->valid(activeInspectorEntity)) {
+
+        std::string entityName = "Entity " + std::to_string((uint32_t)activeInspectorEntity);
+
+        if (registry->all_of<TagComponent>(activeInspectorEntity))
+
+            entityName = registry->get<TagComponent>(activeInspectorEntity).tag;
+
+        std::string title = std::string(reinterpret_cast<const char*>(u8"\u2605 ")) + entityName + "##insp";
+
+        ImGui::SetNextWindowSize(ImVec2(inspW, usableH / 2), ImGuiCond_FirstUseEver);
+
+        ImGui::SetNextWindowPos(ImVec2((float)ctx->windowWidth - inspW - pad, pad), ImGuiCond_FirstUseEver);
+
+        bool windowOpen = true;
+
+        ImGui::Begin(title.c_str(), &windowOpen, 0);
+
+        ImGui::Text("ID: %u", (uint32_t)activeInspectorEntity);
+
+        ImGui::Separator();
+
+        renderComponents<ComponentTypes>(*registry, activeInspectorEntity, componentRenderMap);
+
+        ImGui::End();
+
+        if (!windowOpen) activeInspectorEntity = entt::null;
+
+    }
+
+
+
+    if (modelManagerOpen && modelMgr)
+
+        DrawModelManagerWindow(modelMgr, registry, ctx);
+
+
+
+    float gbufH = (float)ctx->windowHeight / 2.f;
+
+    ImGui::SetNextWindowSize(ImVec2(gbufW - pad, gbufH), ImGuiCond_FirstUseEver);
+
+    ImGui::SetNextWindowPos(
+
+        ImVec2((float)ctx->windowWidth - gbufW - pad, (float)ctx->windowHeight - gbufH - pad),
+
+        ImGuiCond_FirstUseEver);
+
+    ImGui::Begin("Render Passes", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+
+    const float thumbW = ImGui::GetContentRegionAvail().x;
+
+    const float thumbH = thumbW * (9.f / 16.f);
+
+    for (auto& dt : ctx->debugTextures) {
+
+        if (dt.textureID == 0) continue;
+
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.85f, 1.00f, 1.f));
+
+        ImGui::TextUnformatted(dt.name.c_str());
+
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine(thumbW - 60.f);
+
+        ImGui::TextDisabled("id %u", dt.textureID);
+
+        ImTextureID imID = (ImTextureID)(intptr_t)dt.textureID;
+
+        ImGui::Image(imID, ImVec2(thumbW, thumbH), ImVec2(0,1), ImVec2(1,0));
+
+        if (ImGui::IsItemHovered()) {
+
+            ImGui::BeginTooltip();
+
+            ImGui::Image(imID, ImVec2(512.f, 512.f * (9.f/16.f)), ImVec2(0,1), ImVec2(1,0));
+
+            ImGui::TextDisabled("%s  |  id %u", dt.name.c_str(), dt.textureID);
+
+            ImGui::EndTooltip();
+
+        }
+
+        ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+    }
+
+    ImGui::End();
+
+
+
+    for (auto it = windows.begin(); it != windows.end();) {
+
+        ImGui::Begin(it->title.c_str(), &it->open);
+
+        it->drawFunc(it->open);
+
+        ImGui::End();
+
+        if (!it->open) it = windows.erase(it);
+
+        else           ++it;
+
+    }
+
 }

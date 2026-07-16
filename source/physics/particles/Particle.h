@@ -12,9 +12,12 @@ public:
 
     std::vector<float*> positionPointers;
 
-    Particle(float m, const Vector3& pos)
-        : mass(m), position(pos), forceAccumulator(0, 0, 0)
-		, velocity(0, 0, 0) {}
+    Particle(float m, const Vector3 &pos)
+        : mass(m)
+        , position(pos)
+        , velocity(0, 0, 0)
+        , forceAccumulator(0, 0, 0)
+		 {}
 
    
     void clearForces() {
@@ -36,7 +39,7 @@ public:
     float simulationTime;
     std::vector<float*> positionPointers;
 
-    ParticleSystem(float mass) : simulationTime(0.0f) {
+    ParticleSystem(float) : simulationTime(0.0f) {
       
     }
 

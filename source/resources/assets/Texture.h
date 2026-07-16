@@ -1,8 +1,7 @@
 #pragma once
 
-#include <../glad/glad.h>
-#include <cstdint>
-#include <string>
+#include <glad/glad.h>
+
 
 
 

@@ -1,24 +1,19 @@
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
-#include <iostream>
-#include "core/Engine.h"
-#include <atomic>
 #include "EnTT/entt.hpp"
+#include "glad/glad.h"
+#include "core/Engine.h"
 #include <iostream>
-int main()
-{
 
+int main() {
 
-   
-        std::cout << "EnTT version: "
+  std::cout << "EnTT version: "
             << ENTT_VERSION_MAJOR << "."
-            << ENTT_VERSION_MINOR << "."
-            << ENTT_VERSION_PATCH
-            << "\n";
-    
-	Engine engine;
-    
+            << ENTT_VERSION_MINOR
+            << "."
+            << ENTT_VERSION_PATCH << "\n";
+  
+  
+  Engine engine;
+  engine.run();
 
-	engine.run();
-    return 0;
+  return 0;
 }

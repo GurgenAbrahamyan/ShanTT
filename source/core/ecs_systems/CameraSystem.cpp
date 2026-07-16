@@ -1,7 +1,7 @@
 
 #include "CameraSystem.h"
 #include <cmath>
-#include <iostream>
+
 #include "../../ecs/components/core/TransformComponent.h"
 #include "../../ecs/components/graphics/CameraComponent.h"
 #include "../../ecs/components/graphics/ActiveCameraTag.h"
@@ -25,7 +25,7 @@ CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(r
 }
 
 // --- Update loop ---
-void CameraSystem::update(entt::registry& registry, float dt) {
+void CameraSystem::update(entt::registry& registry, float) {
     updateVectors(registry);
     updateMatrices(registry);
 }

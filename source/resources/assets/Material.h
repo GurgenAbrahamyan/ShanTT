@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
-#include <cstdint>
-#include <string>
+
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Vector4.h"
 class Texture;
@@ -10,8 +9,8 @@ class Material {
 public:
     Material() = default;
 
-    void SetTexture(int slot, Texture* texture);
-    Texture* GetTexture(int slot) const;
+    void SetTexture(unsigned int slot, Texture* texture);
+    Texture* GetTexture(unsigned int slot) const;
 
     float metallic = 1.0f;
     float roughness = 1.0f;

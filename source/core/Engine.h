@@ -1,9 +1,5 @@
 #pragma once
 
-#include <chrono>
-#include <thread>
-#include <iostream>
-
 class EventBus;
 class Scene;
 class Renderer;
@@ -42,7 +38,7 @@ private:
     float accumulator;
     const float PHYSICS_STEP = 1.0f / 60.0f;
 
-    int framecount;
+  
     int framesThisSecond;
     float timeSinceLastFpsPrint;
 

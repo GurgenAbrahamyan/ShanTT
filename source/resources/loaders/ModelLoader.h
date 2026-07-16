@@ -6,7 +6,7 @@
 #include "../../math_custom/Mat4.h"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Vector2.h"
-#include "../../math_custom/Quat.h"
+
 #include "../../resources/data/ModelData.h"
 
 

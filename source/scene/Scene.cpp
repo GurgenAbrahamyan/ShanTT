@@ -1,6 +1,5 @@
 #include "Scene.h"
 #include "../core/EventBus.h"
-#include "../core/Event.h"
 
 #include "../resources/managers/TextureManager.h"
 #include "../resources/managers/MaterialManager.h"
@@ -14,10 +13,9 @@
 #include "../ecs/components/physics/RigidBodyComponent.h"
 #include "../ecs/components/physics/CollisionShapeComponent.h"
 #include "../ecs/components/graphics/CameraComponent.h"
-#include "../ecs/components/graphics/ModelComponent.h"
+
 #include "../ecs/components/core/TagComponent.h"
-#include "../core/EngineContext.h"
-#include "../resources/data/ModelLoadConfig.h" 
+
 Scene::Scene(EventBus* bus) {
     textureManager = std::make_unique<TextureManager>();
 	materialManager = std::make_unique<MaterialManager>(textureManager.get(), bus);

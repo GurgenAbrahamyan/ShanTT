@@ -33,9 +33,10 @@ MeshID MeshManager::addMesh(
     std::unique_ptr<RenderMesh> mesh;
     if (dynamic)
         mesh = std::make_unique<StaticMesh>(vertices, indices);
-    else
+    else{
         mesh = std::make_unique<StaticMesh>(vertices, indices); // StaticMesh later
-
+    }
+    
 	mesh->setID(id);
 
     meshes[id] = std::move(mesh);

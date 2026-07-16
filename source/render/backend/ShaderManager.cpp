@@ -1,6 +1,7 @@
 #include "ShaderManager.h"
 #include "../../core/Event.h"
 #include "../../resources/data/ShaderData.h"
+#include <iostream>
 
 ShaderManager::ShaderManager(EventBus* bus)
     : bus(bus)

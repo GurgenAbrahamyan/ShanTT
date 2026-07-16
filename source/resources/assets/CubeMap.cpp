@@ -45,7 +45,7 @@ float cubeVertices[] = {
      1.0f, -1.0f,  1.0f
 };
 
-CubeMap::CubeMap() : VBO1( new VBO(cubeVertices, sizeof(cubeVertices), false)), VAO1(new VAO()) {
+CubeMap::CubeMap() :  VAO1(new VAO()), VBO1( new VBO(cubeVertices, sizeof(cubeVertices), false)) {
    
 
     VAO1->Bind();

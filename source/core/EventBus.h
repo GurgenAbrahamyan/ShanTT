@@ -3,8 +3,7 @@
 #include <vector>
 #include <functional>
 #include <typeindex>
-#include <typeinfo>
-#include <memory>
+
 
 class EventBus {
 public:

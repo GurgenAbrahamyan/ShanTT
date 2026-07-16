@@ -5,27 +5,25 @@
 #include "../scene/Scene.h"
 #include "../render/Renderer.h"
 #include "../physics/PhysicsEngine.h"
-#include "../input/UIInput.h"
-#include "../input/KeyboardInput.h"
+//#include "../input/UIInput.h"
+#include "../input/KeyBoardInput.h"
 #include "ecs_systems/CameraSystem.h"
 #include "../render/ecs_systems/ShadowSystem.h"
 #include "../input/MouseInput.h"
 #include "EngineContext.h"
-
+#include <chrono>
 
 
 Engine::Engine()
     : bus(new EventBus()),
-    
-    scene(new Scene(bus)),
-    physicsEngine(new PhysicsEngine()),
-    running(true),
-    accumulator(0.0f),
-    framecount(0),
-    framesThisSecond(0),
-    timeSinceLastFpsPrint(0.0f),
-    cameraSystem(new CameraSystem (bus, scene->getRegistry())),
-	shadowSystem(new ShadowSystem())
+      scene(new Scene(bus)),
+      physicsEngine(new PhysicsEngine()),
+      cameraSystem(new CameraSystem (bus, scene->getRegistry())),
+      shadowSystem(new ShadowSystem()),
+      running(true),
+      accumulator(0.0f),
+      framesThisSecond(0),
+      timeSinceLastFpsPrint(0.0f)
 {
     renderContext = new RenderContext(),
     renderer = new Renderer(bus, renderContext);
@@ -38,8 +36,6 @@ Engine::Engine()
 	renderContext->registry = &scene->getRegistry();
     renderContext->brdfTexture = scene->getBRDF();
     renderContext->modelManager = scene->getModelManager();
-    
-    
 }
 
 Engine::~Engine() {
@@ -56,6 +52,7 @@ void Engine::run() {
     auto lastTime = std::chrono::high_resolution_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
+
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> delta = now - lastTime;
         lastTime = now;

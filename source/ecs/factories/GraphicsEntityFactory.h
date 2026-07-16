@@ -11,7 +11,7 @@ enum class LightType;
 
 namespace GraphicsEntityFactory {
 
-    // Primitives only — real models go through ModelManager::loadModel()
+    // Primitives only real models go through ModelManager::loadModel()
 
     entt::entity createRectangle(
         entt::registry& registry,

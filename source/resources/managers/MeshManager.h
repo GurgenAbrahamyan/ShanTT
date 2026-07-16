@@ -34,5 +34,5 @@ private:
 
     MeshID nextID = 0;
 
-    EventBus* bus;
+    [[maybe_unused]] EventBus* bus;
 };

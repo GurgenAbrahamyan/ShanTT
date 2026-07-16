@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include "glfw/glfw3.h"
 #include "../core/EventBus.h"
 #include "../core/Event.h"
 #include "../core/EngineContext.h"

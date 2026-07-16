@@ -1,24 +1,20 @@
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <iostream>
+
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include "glfw/glfw3.h"
 #include "../math_custom/Mat4.h"
 #include "backend/Shader.h"
-#include "../core/EngineContext.h"
+
 #include "backend/containers/FrameBuffer.h"
 
 
 #include "../render/backend/ShaderManager.h"
 #include "../core/EventBus.h"
 
-#include "data/BatchMap.h"
-#include "data/MeshBatch.h"
-#include "data/ShaderType.h"
+
 #include "data/RenderContext.h"
 
-#include "handlers/RenderPass.h"
+
 #include "backend/ShaderManager.h"
 #include "../render/RenderGraph.h"
 
@@ -48,24 +44,25 @@ private:
 	Mat4 getWorldTransform(entt::entity entity, entt::registry& registry);
     void clearFramebuffers();
     GLFWwindow* window;
-   
+   [[maybe_unused]] EventBus* bus;
     ShaderManager* shaderManager;
-    EventBus* bus;
+
+    RenderContext *ctx;
+     UiInput* ui;
+
     
     std::unique_ptr<FrameBuffer> m_MainFrameBuffer;
 	std::unique_ptr<FrameBuffer> m_BlurFrameBuffer;
 	std::unique_ptr<FrameBuffer> m_ShadowFrameBuffer;
     std::unique_ptr<FrameBuffer> m_LightFrameBuffer;
 
-    RenderGraph* graph;
 
-    RenderResource* shadowResource;
-    RenderResource* sceneResource;
     RenderResource* blurResource;
-	RenderResource* lightResource;
-
-
-    UiInput* ui;
-    RenderContext* ctx;
+    RenderResource *shadowResource;
+    RenderResource* lightResource;
+    RenderResource* sceneResource;
+   
+    RenderGraph* graph;
+   
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 };

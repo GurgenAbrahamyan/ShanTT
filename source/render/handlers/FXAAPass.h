@@ -28,7 +28,7 @@ public :
    
     Settings settings;
 
-    void execute(RenderContext& context) override {
+    void execute([[maybe_unused]]RenderContext& context) override {
 
 
         

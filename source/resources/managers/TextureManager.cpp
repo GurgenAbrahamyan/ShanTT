@@ -6,7 +6,6 @@
 #include "../../math_custom/Mat4.h"
 
 #include "../../render/backend/Shader.h"
-#include "../../render/backend/containers/FrameBuffer.h"
 #include <memory>
 
 
@@ -232,7 +231,7 @@ TextureID TextureManager::getID(const std::string& path) const {
     return UINT32_MAX;
 }
 
-void TextureManager::NextTexture(EventBus* bus) {
+void TextureManager::NextTexture(EventBus*) {
 
 }
 

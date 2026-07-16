@@ -1,10 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <string>
-#include "../../include/EnTT/entt.hpp"
-#include "../../math_custom/Vector3.h"
-#include "../../math_custom/Quat.h"
-#include "../../resources/data/ModelLoadConfig.h" 
+#include "EnTT/entt.hpp"
 #include "../../resources/data/ModelAsset.h"
 
 class EventBus;
@@ -19,9 +16,9 @@ class ModelManager {
 public:
     ModelManager(
         EventBus* bus,
-        MeshManager* meshManager,
-        MaterialManager* materialManager,
-        TextureManager* textureManager
+        MeshManager* ,
+        MaterialManager* ,
+        TextureManager*
     );
 
    
@@ -45,9 +42,7 @@ public:
 
 private:
     EventBus* bus;
-    MeshManager* meshManager;
-    MaterialManager* materialManager;
-    TextureManager* textureManager;
+    
 
     std::unordered_map<std::string, std::unique_ptr<ModelAsset>> loadedModels;
 };

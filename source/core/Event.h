@@ -3,7 +3,6 @@
 
 #include "../math_custom/Vector3.h"
 
-#include <string.h>
 struct MaterialData;
 struct MeshData;
 struct ShaderData;
@@ -17,9 +16,9 @@ class Event {
 
 class CreateObject : Event {
 public:
-    Vector3* position;
+    Vector3 position;
 
-    CreateObject(Vector3 position) : position(&position) {}
+    CreateObject(Vector3 position) : position(position) {}
 };
 
 class StopEngine : Event {

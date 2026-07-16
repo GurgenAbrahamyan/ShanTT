@@ -3,6 +3,7 @@
 #include "../../math_custom/Mat4.h"
 #include "../assets/Material.h"
 #include "../assets/RenderMesh.h"
+#include <string>
 
 struct MeshEntry {
     RenderMesh* mesh = nullptr;

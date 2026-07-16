@@ -17,6 +17,8 @@ public:
     RenderPass(Shader* s) : shader(s) {}
 
     virtual void execute(RenderContext& ctx) = 0;
-    virtual const char* passName() const { return "RenderPass"; }
+    virtual const char *passName() const { return "RenderPass"; }
+
+    virtual ~RenderPass() = default;
 };
 

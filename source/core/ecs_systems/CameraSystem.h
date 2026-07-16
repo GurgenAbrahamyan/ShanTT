@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../include/EnTT/entt.hpp"
+#include "EnTT/entt.hpp"
 #include "../../core/EventBus.h"
 
 class CameraSystem {

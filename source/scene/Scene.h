@@ -1,13 +1,13 @@
 #pragma once
-#include <vector>
-#include "../../include/EnTT/entt.hpp"
+#include "EnTT/entt.hpp"
 #include <memory>
+#include "../resources/managers/TextureManager.h"
+#include "../resources/managers/MaterialManager.h"
+#include "../resources/managers/ModelManager.h"
+#include "../resources/managers/MeshManager.h"
+
 class Texture;
 class EventBus;
-class ModelManager;
-class TextureManager;
-class MaterialManager;
-class MeshManager;
 class CubeMap;
 
 class Scene {

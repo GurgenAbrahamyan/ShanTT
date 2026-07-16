@@ -3,7 +3,7 @@
 #include "../../math_custom/Mat4.h"
 
 StaticMesh::StaticMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& ind)
-    : vertices(vertices), indices(ind), instanceVBO(0), instanceVBOCapacity(0)
+    :   instanceVBO(0),  instanceVBOCapacity(0), vertices(vertices), indices(ind)
 {
 	calculateTangents();
 }
@@ -144,6 +144,6 @@ GLuint StaticMesh::getInstanceVBO() {
     return instanceVBO;
 }
 
-void StaticMesh::setColor(const Vector3& col) {
+void StaticMesh::setColor([[maybe_unused]] const Vector3& col) {
 
 }

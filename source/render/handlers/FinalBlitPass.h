@@ -32,7 +32,7 @@ public:
         quadVBO.Unbind();
     }
 
-    void execute(RenderContext& context) override
+    void execute([[maybe_unused]] RenderContext& context) override
     {
         if (inputs.size() == 0) return;
 

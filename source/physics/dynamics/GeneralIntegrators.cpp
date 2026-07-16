@@ -1,7 +1,7 @@
-#pragma once
+
 
 #include "../particles/Particle.h"
-#include "../../math_custom/GeneralFunctions.h"
+//#include "../../math_custom/GeneralFunctions.h"
 #include "../../math_custom/Vector3.h"
 
 class GeneralIntegrators {

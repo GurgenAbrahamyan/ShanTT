@@ -14,7 +14,7 @@ public:
     void execute(RenderContext& ctx) override {
         if (outputs.empty() || ctx.shadowCasters.empty()) return;
 
-        int numCasters = (int)ctx.shadowData.size();
+        
 
 
         FrameBuffer* fb = outputs[0]->framebuffer;

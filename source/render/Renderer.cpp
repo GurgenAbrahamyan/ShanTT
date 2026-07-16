@@ -10,6 +10,16 @@
 #include "handlers/FXAAPass.h"
 
 
+#include <vector>
+#include <unordered_map>
+#include <iostream>
+
+#include "../core/EngineContext.h"
+
+#include "data/BatchMap.h"
+#include "data/MeshBatch.h"
+#include "data/ShaderType.h"
+
 
 
 Renderer::Renderer(EventBus* bus, RenderContext* ctx)
@@ -73,7 +83,7 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     m_ShadowFrameBuffer->addDepthBuffer();
 
     m_ShadowFrameBuffer->bind();
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    
     m_ShadowFrameBuffer->disableColor();
     m_ShadowFrameBuffer->unbind();
 
@@ -314,7 +324,7 @@ GLFWwindow* Renderer::getWindow() const {
     return window;
 }
 
-void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+void Renderer::framebuffer_size_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
@@ -355,7 +365,6 @@ void Renderer::rebuildContext(RenderContext* ctx)
         for (auto submesh : view.get<ModelComponent>(entity).asset->meshes)
         {
             Mat4 entityWorld = getWorldTransform(entity, registry);
-            auto& transform = view.get<TransformComponent>(entity);
             auto& meshComp = submesh.mesh;
             auto& matComp = submesh.material;
             if (!meshComp || !matComp)
@@ -372,7 +381,7 @@ void Renderer::rebuildContext(RenderContext* ctx)
     int shadowIndex = 0;
     float sunElevation = 1.0f;
     registry.view<LightComponent, TransformComponent>().each(
-        [&](entt::entity entity, LightComponent& lc, TransformComponent& tc)
+        [&]([[maybe_unused]] entt::entity entity, LightComponent& lc, TransformComponent& tc)
         {
             GPULight l{};
 

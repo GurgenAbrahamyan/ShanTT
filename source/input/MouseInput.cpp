@@ -1,6 +1,10 @@
-#pragma once
+
 #include "MouseInput.h"
 
+#include "imgui/imgui.h"
+
+
+#include "../core/Event.h"
 
 void MouseInput::proccessInput(int screenWidth, int screenHeight) {
     

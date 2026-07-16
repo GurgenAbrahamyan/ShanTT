@@ -1,10 +1,10 @@
 # Changelog
 
-## [1.2.0] - 2026-05-5
+## [1.2.1] - 2026-07-17
 
 ### Added
-- ACES tone mapping
-- FXAA anti-aliasing
+- CMake Build system
+- Less Warnings
 ### Fixes
 - Bug fixes
 

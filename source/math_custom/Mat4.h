@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 #include "Vector3.h"
-#include "Vector4.h"
+//#include "Vector4.h"
 #include "Quat.h"
 
 // Column-major matrix
@@ -227,7 +227,7 @@ public:
 
         Mat4 result;
         if (fabsf(det) < 1e-8f) {
-            // Matrix is singular — return identity as fallback
+            // Matrix is singular  return identity as fallback
             return result;
         }
 

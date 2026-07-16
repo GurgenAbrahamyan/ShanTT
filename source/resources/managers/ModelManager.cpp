@@ -3,7 +3,7 @@
 #include "MaterialManager.h"
 #include "TextureManager.h"
 #include "../../resources/loaders/ModelLoader.h"
-#include "../../resources/assets/RenderMesh.h"
+
 #include "../../resources/assets/Material.h"
 #include "../../core/EventBus.h"
 #include "../../core/Event.h"
@@ -11,26 +11,18 @@
 #include "../data/MaterialData.h"
 
 // Components
-#include "../../ecs/components/core/TagComponent.h"
-#include "../../ecs/components/core/WorldMatrixComponent.h"
-#include "../../ecs/components/core/ParentComponent.h"
-#include "../../ecs/components/graphics/MeshComponent.h"
-#include "../../ecs/components/graphics/MaterialComponent.h"
+
 #include "../../ecs/components/graphics/ModelComponent.h"
 
-#include "../../resources/data/ModelLoadConfig.h"
 
 #include <iostream>
 
 ModelManager::ModelManager(
     EventBus* bus,
-    MeshManager* meshManager,
-    MaterialManager* materialManager,
-    TextureManager* textureManager)
+    MeshManager*,
+    MaterialManager*,
+    TextureManager*)
     : bus(bus)
-    , meshManager(meshManager)
-    , materialManager(materialManager)
-    , textureManager(textureManager)
 {
 }
 bool ModelManager::loadModel(const std::string& name, const std::string& path)

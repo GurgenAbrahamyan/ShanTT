@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
-#include <vector>
+
 #include "../assets/Material.h"
 
 class EventBus;
@@ -32,7 +32,7 @@ public:
     Texture* loadTex(const MaterialTextureInfo& info);
 private:
     TextureManager* textureManager;
-    EventBus* bus;
+    [[maybe_unused]] EventBus* bus;
     std::unordered_map<int, std::unique_ptr<Material>> idMap;
     std::unordered_map<std::string, int> nameToIDMap;
     int nextID = 0;

@@ -1,19 +1,19 @@
-#pragma once
+
 #include "Material.h"
 #include "Texture.h"
-#include <iostream>
+
 #include "../../render/backend/Shader.h"
 
 
-void Material::SetTexture(int slot, Texture* texture) {
-    if (slot >= textures.size()) {
+void Material::SetTexture(unsigned int slot, Texture* texture) {
+    if (static_cast<size_t>(slot) >= textures.size()) {
         textures.resize(slot + 1, nullptr);
     }
     textures[slot] = texture;
 }
 
-Texture* Material::GetTexture(int slot) const {
-    if (slot >= 0 && slot < textures.size()) {
+Texture* Material::GetTexture(unsigned int slot) const {
+    if (static_cast<size_t>(slot) >= 0 && slot < textures.size()) {
         return textures[slot];
     }
     return nullptr;

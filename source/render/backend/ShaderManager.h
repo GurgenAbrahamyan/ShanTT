@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
-#include <iostream>
+
 
 #include "Shader.h"
 #include "../../core/EventBus.h"
@@ -39,7 +39,7 @@ public:
     void clear(); // for shutdown / reload
 
 private:
-    EventBus* bus;
+    [[maybe_unused]] EventBus* bus;
 
     // All loaded shaders by name
     std::unordered_map<std::string, std::unique_ptr<Shader>> shaders;

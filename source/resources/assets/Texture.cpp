@@ -1,10 +1,9 @@
-#pragma once
+
 #include "Texture.h"
-#include <iostream>
 
 
 Texture::Texture(int w, int h, const void* data, const TextureDesc& desc)
-    : width(w), height(h), target(desc.target)
+    :  target(desc.target),  width(w), height(h)
 {
     glGenTextures(1, &ID);
     glBindTexture(target, ID);

@@ -82,7 +82,7 @@ int MaterialManager::addMaterial(const MaterialData& materialData)
         }
     }
 
-    // Pack ARM — always goes through loadARM so AO gets baked into R if present
+    // Pack ARM  always goes through loadARM so AO gets baked into R if present
     if (armInfo) {
         std::string armPath = armInfo ? armInfo->path : "";
         std::string aoPath = aoInfo ? aoInfo->path : "";

@@ -2,7 +2,7 @@
 
 #include "../../math_custom/Vector3.h"
 #include <vector>
-#include "../data/Vertex.h"
+
 #include "../../math_custom/Mat4.h"
 
 #include "glad/glad.h"
@@ -31,8 +31,8 @@ public:
        return ID;
     }
 
-    virtual void setupInstanceVBO(size_t maxInstances) {};
-    virtual void updateInstanceVBO(const std::vector<Mat4>& matrices) {};
+    virtual void setupInstanceVBO([[maybe_unused]]size_t maxInstances) { /*TO:DO*/};
+    virtual void updateInstanceVBO([[maybe_unused]] const std::vector<Mat4>& matrices) {/*TO:DO*/};
     virtual GLuint getInstanceVBO() { return 0; };
     
 
