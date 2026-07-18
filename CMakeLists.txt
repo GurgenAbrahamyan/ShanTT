@@ -3,6 +3,24 @@
 # ============================================================================
 cmake_minimum_required(VERSION 3.20)
 project(Hexium VERSION 1.0.0 LANGUAGES CXX C)
+
+# ============================================================================
+# CMake Modules Path
+# ============================================================================
+include(FetchContent)
+
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+# Windows users
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
 # ============================================================================
 # Build Configuration
 # ============================================================================
@@ -226,14 +244,8 @@ set(THIRD_PARTY_HEADERS
     include/stb/stb_image.h
 )
 
-if(MSVC)
-    add_compile_options(/W4 /WX)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
 
-add_executable(Hexium
-    ${MAIN_SOURCES}
+add_library(HexiumLib STATIC
     ${CORE_SOURCES}
     ${CORE_HEADERS}
     ${ECS_HEADERS}
@@ -251,14 +263,19 @@ add_executable(Hexium
     ${RESOURCE_HEADERS}
     ${SCENE_SOURCES}
     ${SCENE_HEADERS}
-    ${THIRD_PARTY_HEADERS}
 )
 
-target_include_directories(Hexium PRIVATE
+add_executable(Hexium
+    ${MAIN_SOURCES}
+)
+
+target_link_libraries(Hexium PRIVATE HexiumLib)
+
+target_include_directories(HexiumLib PUBLIC
     ${CMAKE_SOURCE_DIR}/source
 )
 
-target_include_directories(Hexium SYSTEM PRIVATE
+target_include_directories(HexiumLib SYSTEM PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/glad
     ${CMAKE_SOURCE_DIR}/include/glfw
@@ -277,17 +294,17 @@ add_custom_command(TARGET Hexium POST_BUILD
 )
 # Find OpenGL
 find_package(OpenGL REQUIRED)
-target_link_libraries(Hexium PRIVATE OpenGL::GL)
+target_link_libraries(HexiumLib PRIVATE OpenGL::GL)
 
 # Link GLFW
 if(WIN32)
-    target_link_libraries(Hexium PRIVATE
+    target_link_libraries(HexiumLib PRIVATE
         ${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.lib
     )
 endif()
 
 
-target_compile_options(Hexium PRIVATE
+target_compile_options(HexiumLib PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
     $<$<CXX_COMPILER_ID:MSVC>:/permissive->
 
@@ -330,16 +347,6 @@ set_target_properties(Hexium PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release
 )
 
-set(IMGUI_SOURCES
-    source/libraries/imgui/imgui.cpp
-    source/libraries/imgui/imgui_demo.cpp
-    source/libraries/imgui/imgui_draw.cpp
-    source/libraries/imgui/imgui_impl_glfw.cpp
-    source/libraries/imgui/imgui_impl_opengl3.cpp
-    source/libraries/imgui/imgui_tables.cpp
-    source/libraries/imgui/imgui_widgets.cpp
-)
-
 
 
 if(WIN32)
@@ -350,3 +357,5 @@ if(WIN32)
         COMMENT "Copying GLFW DLL to output directory"
     )
 endif()
+
+add_subdirectory(tests)
