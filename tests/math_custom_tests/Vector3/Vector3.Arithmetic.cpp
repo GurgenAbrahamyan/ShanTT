@@ -128,3 +128,24 @@ TEST(Vector3Test, DivisionFloatingPoint)
 
     EXPECT_TRUE(v1.nearEqual(expected));
 }
+
+TEST(Vector3Test, DivisionByZero)
+{
+    Vector3 v{1.0f, 2.0f, 3.0f};
+
+    EXPECT_DEATH(v / 0.0f, "Division by zero or near-zero");
+
+    EXPECT_DEATH(
+        v /= 0.0f,
+        "Division by zero or near-zero"
+    );
+}
+
+TEST(Vector3Test, NegativeOperator)
+{
+    Vector3 v{1.0f, -2.0f, 3.0f};
+
+    Vector3 result{-v};
+
+    EXPECT_EQ(result, (Vector3{-1.0f, 2.0f, -3.0f}));
+}
