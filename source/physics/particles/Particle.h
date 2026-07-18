@@ -57,12 +57,12 @@ public:
     void getState(float* dst) {
 
         for (Particle* p : particles) {
-            *(dst++) = p->position.getX();
-            *(dst++) = p->position.getY();
-            *(dst++) = p->position.getZ();
-            *(dst++) = p->velocity.getX();
-            *(dst++) = p->velocity.getY();
-            *(dst++) = p->velocity.getZ();
+            *(dst++) = p->position.x;
+            *(dst++) = p->position.y;
+            *(dst++) = p->position.z;
+            *(dst++) = p->velocity.x;
+            *(dst++) = p->velocity.y;
+            *(dst++) = p->velocity.z;
         }
     }
 
