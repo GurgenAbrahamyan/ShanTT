@@ -52,13 +52,13 @@ public:
         else                           return Vector3(-y, x, 0);
     }
 
-    bool nearEqual(const Vector3&, float) const { return false;}/* {
+    bool nearEqual(const Vector3& r, float epsilon) const {
         return std::abs(x - r.x) <= epsilon &&
                std::abs(y - r.y) <= epsilon &&
                std::abs(z - r.z) <= epsilon;
     }
 
- */
+ 
     float getX() const { return x; }
     float getY() const { return y; }
     float getZ() const { return z; }
