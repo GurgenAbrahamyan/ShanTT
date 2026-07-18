@@ -18,5 +18,10 @@ public:
 
 private:
     EngineContext() = default;
+    EngineContext (const EngineContext&) = delete;
+    EngineContext &operator=(const EngineContext &) = delete;
+    EngineContext (EngineContext &&) = delete;
+    EngineContext &operator=(EngineContext&&) = delete;
+    
     GLFWwindow* window = nullptr;
 };

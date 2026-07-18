@@ -88,9 +88,9 @@ private:
             *(dst++) = p->particles[i]->velocity.z;
 
            
-            *(dst++) = p->particles[i]->forceAccumulator.getX() / p->particles[i]->mass;
-            *(dst++) = p->particles[i]->forceAccumulator.getY() / p->particles[i]->mass;
-            *(dst++) = p->particles[i]->forceAccumulator.getZ() / p->particles[i]->mass;
+            *(dst++) = p->particles[i]->forceAccumulator.x / p->particles[i]->mass;
+            *(dst++) = p->particles[i]->forceAccumulator.y / p->particles[i]->mass;
+            *(dst++) = p->particles[i]->forceAccumulator.z / p->particles[i]->mass;
         }
 
         return 0;
