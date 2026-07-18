@@ -44,7 +44,7 @@ public:
     float   length()        const { return std::sqrt(lengthSquared()); }
     Vector3 normalized()    const { return *this / length(); }
 
-    Vector3 perpendicular() const {
+    Vector3 orthogonal() const {
         float ax = std::abs(x), ay = std::abs(y), az = std::abs(z);
         if (ax <= ay && ax <= az) return Vector3(0, -z, y);
         else if (ay <= ax && ay <= az) return Vector3(-z, 0, x);
