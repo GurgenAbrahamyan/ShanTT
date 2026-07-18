@@ -2,6 +2,7 @@ add_executable(
     HexiumTests
     test_main.cpp
     math_custom_tests/Vector3/Vector3.Constructors.cpp
+    math_custom_tests/Vector3/Vector3.Comparison.cpp
 )
 
 target_link_libraries(
