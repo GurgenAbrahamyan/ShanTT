@@ -55,20 +55,31 @@ void StaticMesh::calculateTangents()
     }
 
     for (auto& v : vertices)
+{
+    Vector3 N = v.normal;
+    Vector3 T = v.tangent;
+
+    // Gram-Schmidt orthogonalization
+    Vector3 orthoT = T - N * N.dot(T);
+
+    if (orthoT.lengthSquared() > 1e-8f)
     {
-        Vector3 N = v.normal;
-        Vector3 T = v.tangent;
-
-        // Gram-Schmidt orthogonalize
-        Vector3 orthoT = (T - N * N.dot(T)).normalized();
-
-        // Handedness
-        Vector3 B = N.cross(orthoT);
-        Vector3 computedB = N.cross(T);
-        v.tangentW = (B.dot(computedB) < 0.0f) ? -1.0f : 1.0f;
-
-        v.tangent = orthoT;
+        orthoT = orthoT.normalized();
     }
+    else
+    {
+        // Fallback when tangent is invalid
+        orthoT = N.orthogonal();
+    }
+
+    // Handedness
+    Vector3 B = N.cross(orthoT);
+    Vector3 computedB = N.cross(T);
+
+    v.tangentW = (B.dot(computedB) < 0.0f) ? -1.0f : 1.0f;
+
+    v.tangent = orthoT;
+}
 }
 
 
