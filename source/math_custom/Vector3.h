@@ -16,7 +16,6 @@ public:
     
     Vector3 operator+(const Vector3& r) const { return Vector3(x + r.x, y + r.y, z + r.z); }
     Vector3 operator-(const Vector3& r) const { return Vector3(x - r.x, y - r.y, z - r.z); }
-    Vector3 operator*(const Vector3& r) const { return Vector3(x * r.x, y * r.y, z * r.z); }
     Vector3 operator*(float s)          const { return Vector3(x * s, y * s, z * s); }
     Vector3 operator/(float s)          const { return Vector3(x / s, y / s, z / s); }
     Vector3 operator-()                 const { return Vector3(-x, -y, -z); }
@@ -52,7 +51,7 @@ public:
         else                           return Vector3(-y, x, 0);
     }
 
-    bool nearEqual(const Vector3& r, float epsilon) const {
+    bool nearEqual(const Vector3& r, float epsilon = 1e-5f) const {
         return std::abs(x - r.x) <= epsilon &&
                std::abs(y - r.y) <= epsilon &&
                std::abs(z - r.z) <= epsilon;

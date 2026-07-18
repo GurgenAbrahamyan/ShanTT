@@ -3,6 +3,7 @@ add_executable(
     test_main.cpp
     math_custom_tests/Vector3/Vector3.Constructors.cpp
     math_custom_tests/Vector3/Vector3.Comparison.cpp
+    math_custom_tests/Vector3/Vector3.Arithmetic.cpp
 )
 
 target_link_libraries(
