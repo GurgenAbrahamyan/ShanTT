@@ -5,8 +5,14 @@ class Vector3 {
 public:
     float x, y, z;
 
-    Vector3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
+    Vector3() : x(0.0f), y(0.0f), z(0.0f) {}
+    Vector3(float num) : x(num), y(num), z(num) {}
+    Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
+    Vector3(const Vector3 &other)            = default;
+    Vector3 &operator=(const Vector3 &other) = default;
+    Vector3(Vector3 &&other) noexcept        = default;
+    Vector3 &operator=(Vector3 &&other) noexcept = default;
     
     Vector3 operator+(const Vector3& r) const { return Vector3(x + r.x, y + r.y, z + r.z); }
     Vector3 operator-(const Vector3& r) const { return Vector3(x - r.x, y - r.y, z - r.z); }
