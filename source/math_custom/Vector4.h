@@ -77,15 +77,17 @@ struct Vector4 {
     bool operator!=(const Vector4 &other) const { return !(*this == other); }
 
     bool nearEqual(const Vector4 other, float epsilon = 1e-5f) const {
-
       return std::abs(x - other.x) <= epsilon &&
              std::abs(y - other.y) <= epsilon &&
              std::abs(z - other.z) <= epsilon &&
              std::abs(w - other.w) <= epsilon;
-
     }
 
+    float length()        { return 0.0f; }
+    float lengthSquared() { return 0.0f; }
 
+    float dot(const Vector4 &) { return 0.0f; }
+    Vector4 normalized() { return Vector4(); }
     
     float* data() { return &x; }
     const float* data() const { return &x; }
