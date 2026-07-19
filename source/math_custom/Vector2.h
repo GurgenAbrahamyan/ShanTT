@@ -31,10 +31,12 @@ public:
     Vector2& operator*=(float scalar) { x *= scalar; y *= scalar; return *this; }
     Vector2& operator/=(float scalar) { x /= scalar; y /= scalar; return *this; }
 
+    Vector2 operator-() const { return Vector2{}; }
+
     bool operator==(const Vector2 & other) const { return  x == other.x && y == other.y;}
     bool operator!=(const Vector2& other ) const { return  !(*this == other); }
 
-    bool nearEqual(const Vector2& other, float epsilon) const {
+    bool nearEqual(const Vector2& other, float epsilon = 1e-5f) const {
         return std::abs(x - other.x) < epsilon &&std::abs(y - other.y) < epsilon;
     }
 
@@ -51,3 +53,5 @@ public:
 
     void print() const { std::cout << "(" << x << ", " << y << ")\n"; }
 };
+
+inline Vector2 operator*(float, const Vector2) { return Vector2{}; }
