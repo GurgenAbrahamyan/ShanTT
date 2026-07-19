@@ -18,17 +18,55 @@ struct Vector4 {
     Vector4(float x, float y, float z, float w)
         : x {x}, y {y}, z {z}, w {w} {}
 
-    Vector4 operator+(const Vector4 &) const { return Vector4{}; }
-    Vector4 operator-(const Vector4 &) { return Vector4{}; }
-    Vector4 operator*(float) const { return Vector4{}; }
-    Vector4 operator/(float) const { return Vector4{}; }
+    Vector4 operator+(const Vector4 &other) const {
+      return Vector4(x + other.x, y + other.y,
+                     z + other.z, w + other.w);
+    }
+    
+    Vector4 operator-(const Vector4 &other) const {
+      return Vector4(x - other.x, y - other.y,
+                     z - other.z, w - other.w);
+    }
+    Vector4 operator*(float scalar) const {
+      return Vector4(x * scalar, y * scalar,
+                     z * scalar, w * scalar);
+    }
 
-    Vector4& operator+=(const Vector4 &) { return *this; }
-    Vector4& operator-=(const Vector4 &) { return *this; }
-    Vector4& operator*=(float) { return *this; }
-    Vector4& operator/=(float) { return *this; }
+    Vector4 operator/(float scalar) const {
+      assert(scalar > 1e-8f && "Division by zero or near-zero");
+      
+      return Vector4(x / scalar, y / scalar,
+                     z / scalar, w / scalar);
+    }
 
-    Vector4 operator-() const { return Vector4{}; };
+    Vector4 &operator+=(const Vector4 &other) {
+      x += other.x;   y += other.y;
+      z += other.z;   w += other.w;
+      return *this;
+    }
+    
+    Vector4 &operator-=(const Vector4 &other) {
+      x -= other.x;   y -= other.y;
+      z -= other.z;   w -= other.w;
+      return *this;
+    }
+
+    Vector4 &operator*=(float scalar) {
+      x *= scalar;   y *= scalar;
+      z *= scalar;   w *= scalar;
+      return *this;
+    }
+
+    Vector4 &operator/=(float scalar) {
+
+      assert(scalar > 1e-8f && "Division by zero or near-zero");
+      
+      x /= scalar;   y /= scalar;
+      z /= scalar;   w /= scalar;
+      return *this;
+    }
+
+    Vector4 operator-() const { return Vector4(-x, -y, -z, -w); };
 
 
 
@@ -53,4 +91,7 @@ struct Vector4 {
     const float* data() const { return &x; }
 };
 
-inline Vector4 operator*(float, const Vector4&) { return Vector4{}; }
+inline Vector4 operator*(float scalar, const Vector4 &other) {
+        return Vector4(other.x * scalar, other.y * scalar,
+                       other.z * scalar, other.w * scalar);
+  }
