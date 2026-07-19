@@ -6,11 +6,17 @@ struct Vector4 {
   
     float x, y, z, w;
 
-    Vector4() {}
-    Vector4(const Vector3&, float) {}
-    Vector4(const Vector2 &, float, float) {}
+    Vector4()
+        : Vector4(0.0f, 0.0f, 0.0f, 0.0f) {}
 
-    Vector4(float, float, float, float) {}
+    Vector4(const Vector3 &other, float w)
+        : Vector4(other.x, other.y, other.z, w) {}
+    
+    Vector4(const Vector2 &other, float z, float w)
+        : Vector4(other.x, other.y, z, w) {}
+
+    Vector4(float x, float y, float z, float w)
+        : x {x}, y {y}, z {z}, w {w} {}
     
 
     bool operator==(const Vector4 &other) const {
