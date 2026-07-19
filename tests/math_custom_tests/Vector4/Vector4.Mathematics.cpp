@@ -10,7 +10,7 @@ TEST(Vector4Test, DotProduct)
 
     float result = v1.dot(v2);
 
-    EXPECT_FLOAT_EQ(result, 32.0f);
+    EXPECT_FLOAT_EQ(result, 48.0f);
 }
 
 

@@ -83,11 +83,18 @@ struct Vector4 {
              std::abs(w - other.w) <= epsilon;
     }
 
-    float length()        { return 0.0f; }
-    float lengthSquared() { return 0.0f; }
+    float length() { return std::sqrt(lengthSquared()); }
+    float lengthSquared() { return x * x + y * y + z * z + w * w; }
 
-    float dot(const Vector4 &) { return 0.0f; }
-    Vector4 normalized() { return Vector4(); }
+    float dot(const Vector4 &other) {
+      return x * other.x + y * other.y + z * other.z + w * other.w;
+    }
+
+    Vector4 normalized() {
+      float len = length();
+      assert(len > 1e-8f && "Cannot normalize near-zero vector");
+      return Vector4(x / len, y / len, z / len, w / len);
+    }
     
     float* data() { return &x; }
     const float* data() const { return &x; }
