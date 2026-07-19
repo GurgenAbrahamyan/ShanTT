@@ -53,20 +53,27 @@ public:
     }
   
     float length() const { return std::sqrt(x * x + y * y); }
-    float lengthSquared() const { return 0.0f;  /*       x *x + y *y;    */}
+    float lengthSquared() const { return x *x + y *y; }
 
     Vector2 normalized() const {
         float len = length();
-        return (len == 0) ? Vector2(0, 0) : Vector2(x / len, y / len);
+        assert(len > 1e-8f && "Cannot normalize near-zero vector");
+        return Vector2(x / len, y / len);
     }
 
-    Vector2 perpendicular(Direction) const {
-        return Vector2{};
+    Vector2 perpendicular(Direction dir) const {
+        if(dir == Direction::CW) {
+            return Vector2(y, -x);
+        } 
+        else if(dir == Direction::CCW) {
+            return Vector2(-y, x);
+        }
+        return Vector2(0, 0); // Should not reach here
     }
 
   
     float dot(const Vector2& other) const { return x * other.x + y * other.y; }
-    float cross(const Vector2& ) { return 0.0f; }
+    float cross(const Vector2& other) { return x * other.y - y * other.x; }
 
     void print() const { std::cout << "(" << x << ", " << y << ")\n"; }
 };
