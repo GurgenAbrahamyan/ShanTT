@@ -17,14 +17,28 @@ struct Vector4 {
 
     Vector4(float x, float y, float z, float w)
         : x {x}, y {y}, z {z}, w {w} {}
-    
 
+    Vector4 operator+(const Vector4 &) const { return Vector4{}; }
+    Vector4 operator-(const Vector4 &) { return Vector4{}; }
+    Vector4 operator*(float) const { return Vector4{}; }
+    Vector4 operator/(float) const { return Vector4{}; }
+
+    Vector4& operator+=(const Vector4 &) { return *this; }
+    Vector4& operator-=(const Vector4 &) { return *this; }
+    Vector4& operator*=(float) { return *this; }
+    Vector4& operator/=(float) { return *this; }
+
+    Vector4 operator-() const { return Vector4{}; };
+
+
+
+    
     bool operator==(const Vector4 &other) const {
       return x == other.x && y == other.y && z == other.z && w == other.w;
     }
     bool operator!=(const Vector4 &other) const { return !(*this == other); }
 
-    bool nearEqual(const Vector4 other, float epsilon) const {
+    bool nearEqual(const Vector4 other, float epsilon = 1e-5f) const {
 
       return std::abs(x - other.x) <= epsilon &&
              std::abs(y - other.y) <= epsilon &&
@@ -38,3 +52,5 @@ struct Vector4 {
     float* data() { return &x; }
     const float* data() const { return &x; }
 };
+
+inline Vector4 operator*(float, const Vector4&) { return Vector4{}; }
