@@ -1,19 +1,20 @@
 add_executable(
-    HexiumTests
+    ShanTT_Tests
     test_main.cpp
-    math_custom_tests/Vector3/Vector3.Constructors.cpp
-    math_custom_tests/Vector3/Vector3.Comparison.cpp
-    math_custom_tests/Vector3/Vector3.Arithmetic.cpp
-    math_custom_tests/Vector3/Vector3.Mathematics.cpp
 )
 
+add_subdirectory(
+    math_custom_tests
+)
+
+
 target_link_libraries(
-    HexiumTests
+    ShanTT_Tests
     PRIVATE
     GTest::gtest_main
-    HexiumLib
+    ShanTT_Lib
 )
 
 include(GoogleTest)
 
-gtest_discover_tests(HexiumTests)
+gtest_discover_tests(ShanTT_Tests)

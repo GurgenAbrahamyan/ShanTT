@@ -2,7 +2,7 @@
 # ShanTT Game Engine - CMake Configuration
 # ============================================================================
 cmake_minimum_required(VERSION 3.20)
-project(Hexium VERSION 1.0.0 LANGUAGES CXX C)
+project(ShanTT VERSION 1.0.0 LANGUAGES CXX C)
 
 # ============================================================================
 # CMake Modules Path
@@ -245,7 +245,7 @@ set(THIRD_PARTY_HEADERS
 )
 
 
-add_library(HexiumLib STATIC
+add_library(ShanTT_Lib STATIC
     ${CORE_SOURCES}
     ${CORE_HEADERS}
     ${ECS_HEADERS}
@@ -265,17 +265,17 @@ add_library(HexiumLib STATIC
     ${SCENE_HEADERS}
 )
 
-add_executable(Hexium
+add_executable(ShanTT
     ${MAIN_SOURCES}
 )
 
-target_link_libraries(Hexium PRIVATE HexiumLib)
+target_link_libraries(ShanTT PRIVATE ShanTT_Lib)
 
-target_include_directories(HexiumLib PUBLIC
+target_include_directories(ShanTT_Lib PUBLIC
     ${CMAKE_SOURCE_DIR}/source
 )
 
-target_include_directories(HexiumLib SYSTEM PRIVATE
+target_include_directories(ShanTT_Lib SYSTEM PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/glad
     ${CMAKE_SOURCE_DIR}/include/glfw
@@ -286,25 +286,25 @@ target_include_directories(HexiumLib SYSTEM PRIVATE
     ${CMAKE_SOURCE_DIR}/include/KHR
 )
 
-add_custom_command(TARGET Hexium POST_BUILD
+add_custom_command(TARGET ShanTT POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resource"
-    "$<TARGET_FILE_DIR:Hexium>/resource"
+    "$<TARGET_FILE_DIR:ShanTT>/resource"
     COMMENT "Copying resource to output directory"
 )
 # Find OpenGL
 find_package(OpenGL REQUIRED)
-target_link_libraries(HexiumLib PRIVATE OpenGL::GL)
+target_link_libraries(ShanTT_Lib PRIVATE OpenGL::GL)
 
 # Link GLFW
 if(WIN32)
-    target_link_libraries(HexiumLib PRIVATE
+    target_link_libraries(ShanTT_Lib PRIVATE
         ${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.lib
     )
 endif()
 
 
-target_compile_options(HexiumLib PRIVATE
+target_compile_options(ShanTT_Lib PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
     $<$<CXX_COMPILER_ID:MSVC>:/permissive->
 
@@ -341,7 +341,7 @@ source_group("Header Files\\Scene" FILES ${SCENE_HEADERS})
 source_group("Third Party" FILES ${THIRD_PARTY_HEADERS})
 
 
-set_target_properties(Hexium PROPERTIES
+set_target_properties(ShanTT PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release
@@ -350,10 +350,10 @@ set_target_properties(Hexium PROPERTIES
 
 
 if(WIN32)
-    add_custom_command(TARGET Hexium POST_BUILD
+    add_custom_command(TARGET ShanTT POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.dll"
-        $<TARGET_FILE_DIR:Hexium>
+        $<TARGET_FILE_DIR:ShanTT>
         COMMENT "Copying GLFW DLL to output directory"
     )
 endif()
