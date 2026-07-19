@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <iostream>
-
+#include <cassert>
 class Vector2 {
 public:
     float x, y;
@@ -24,14 +24,20 @@ public:
     Vector2 operator+(const Vector2& other) const { return Vector2(x + other.x, y + other.y); }
     Vector2 operator-(const Vector2& other) const { return Vector2(x - other.x, y - other.y); }
     Vector2 operator*(float scalar) const { return Vector2(x * scalar, y * scalar); }
-    Vector2 operator/(float scalar) const { return Vector2(x / scalar, y / scalar); }
+
+    Vector2 operator/(float scalar) const { 
+        assert(scalar > 1e-8f && "Division by zero or near-zero");
+        return Vector2(x / scalar, y / scalar); }
 
     Vector2& operator+=(const Vector2& other) { x += other.x; y += other.y; return *this; }
     Vector2& operator-=(const Vector2& other) { x -= other.x; y -= other.y; return *this; }
     Vector2& operator*=(float scalar) { x *= scalar; y *= scalar; return *this; }
-    Vector2& operator/=(float scalar) { x /= scalar; y /= scalar; return *this; }
 
-    Vector2 operator-() const { return Vector2{}; }
+    Vector2& operator/=(float scalar) {
+        assert(scalar > 1e-8f && "Division by zero or near-zero");
+        x /= scalar; y /= scalar; return *this; }
+
+    Vector2 operator-() const { return Vector2(-x, -y); };
 
     bool operator==(const Vector2 & other) const { return  x == other.x && y == other.y;}
     bool operator!=(const Vector2& other ) const { return  !(*this == other); }
@@ -54,4 +60,4 @@ public:
     void print() const { std::cout << "(" << x << ", " << y << ")\n"; }
 };
 
-inline Vector2 operator*(float, const Vector2) { return Vector2{}; }
+inline Vector2 operator*(float scalar, const Vector2 &other) { return other * scalar; }
