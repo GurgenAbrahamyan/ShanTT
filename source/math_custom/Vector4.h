@@ -1,10 +1,17 @@
 #pragma once
 #include <cmath>
-
+#include "Vector2.h"
+#include "Vector3.h"
 struct Vector4 {
+  
     float x, y, z, w;
-    Vector4(float x = 1, float y = 1, float z = 1, float w = 1)
-        : x(x), y(y), z(z), w(w) {}
+
+    Vector4() {}
+    Vector4(const Vector3&, float) {}
+    Vector4(const Vector2 &, float, float) {}
+
+    Vector4(float, float, float, float) {}
+    
 
     bool operator==(const Vector4 &other) const {
       return x == other.x && y == other.y && z == other.z && w == other.w;
