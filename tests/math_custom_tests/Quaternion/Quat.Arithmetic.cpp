@@ -150,10 +150,9 @@ TEST(QuatTest, DivisionByNearZero)
 {
     Quat q{1.0f, 2.0f, 3.0f, 4.0f};
 
-    EXPECT_DEATH(
-        q / 1e-10f,
-        ""
-    );
+    EXPECT_DEATH(q / 1e-10f, "Division by zero or near-zero");
+
+    EXPECT_DEATH(q /= 1e-10f, "Division by zero or near-zero");
 }
 
 

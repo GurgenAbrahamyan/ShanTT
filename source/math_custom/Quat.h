@@ -18,23 +18,23 @@ struct Quat
     }
 
 
-    Quat operator+(const Quat &r) const {
+    Quat operator+(const Quat& r) const {
         return Quat( x + r.x, y + r.y,
                      z + r.z, w + r.w );
     }
 
     Quat operator-(const Quat& r) const {
-        return Quat( x + r.x, y + r.y,
-                     z + r.z, w + r.w );
+        return Quat( x - r.x, y - r.y,
+                     z - r.z, w - r.w );
     }
 
-    Quat operator*(const Quat &r) const {
-        return Quat(
-            w * r.w - x * r.x - y * r.y - z * r.z,
-            w * r.x + x * r.w + y * r.z - z * r.y,
-            w * r.y - x * r.z + y * r.w + z * r.x,
-            w * r.z + x * r.y - y * r.x + z * r.w
-        );
+    Quat operator*(const Quat& r) const {
+        float newX = w * r.x + x * r.w + y * r.z - z * r.y;
+        float newY = w * r.y - x * r.z + y * r.w + z * r.x;
+        float newZ = w * r.z + x * r.y - y * r.x + z * r.w;
+        float newW = w * r.w - x * r.x - y * r.y - z * r.z;
+
+        return Quat{newX, newY, newZ, newW};
     }
 
     Quat operator*(float scale) const {
@@ -43,41 +43,48 @@ struct Quat
     }
 
     Quat operator/(float scale) const {
-        return Quat( x * scale, y * scale,
-                     z * scale,w * scale );
+        assert(scale > 1e-8f && "Division by zero or near-zero");
+        return Quat( x / scale, y / scale,
+                     z / scale, w / scale );
     }
 
-    Quat& operator+=(const Quat &r) {
+    Quat& operator+=(const Quat& r) {
          x += r.x; y += r.y;
          z += r.z; w += r.w;
 
          return *this;
     }
 
-    Quat& operator-=(const Quat &r) {
+    Quat& operator-=(const Quat& r) {
          x -= r.x; y -= r.y;
          z -= r.z; w -= r.w;
 
          return *this;
     }
 
-    Quat& operator*=(const Quat &r) {
-        x = w * r.w - x * r.x - y * r.y - z * r.z;
-        y = w * r.x + x * r.w + y * r.z - z * r.y;
-        z = w * r.y - x * r.z + y * r.w + z * r.x;
-        w = w * r.z + x * r.y - y * r.x + z * r.w;
-        
+    Quat& operator*=(const Quat& r){
+        float newX = w * r.x + x * r.w + y * r.z - z * r.y;
+        float newY = w * r.y - x * r.z + y * r.w + z * r.x;
+        float newZ = w * r.z + x * r.y - y * r.x + z * r.w;
+        float newW = w * r.w - x * r.x - y * r.y - z * r.z;
+
+        x = newX;
+        y = newY;
+        z = newZ;
+        w = newW;
+
         return *this;
     }
 
-    Quat& operator*=(float scale) {
+    Quat &operator*=(float scale) {
          x *= scale; y *= scale;
          z *= scale; w *= scale;
          
          return *this;
     }
 
-    Quat& operator/=(float scale) {
+    Quat &operator/=(float scale) {
+        assert(scale > 1e-8 && "Division by zero or near-zero");
         x /= scale; y /= scale;
         z /= scale; w /= scale;
 
@@ -86,20 +93,20 @@ struct Quat
 
 
     Quat operator-() const {
-        return Quat( x, y, z, w );
+        return Quat( -x, -y, -z, -w );
     }
 
 
 
-    bool operator==(const Quat &other ) const {
+    bool operator==(const Quat& other ) const {
         return x == other.x && y == other.y && z == other.z && w == other.w;
     }
     
-    bool operator!=(const Quat &other ) const  {
+    bool operator!=(const Quat& other ) const  {
         return !(*this == other);
     }
 
-    bool nearEqual(const Quat &other, float epsilon = 1e-5f) const {
+    bool nearEqual(const Quat& other, float epsilon = 1e-5f) const {
         return std::abs(x - other.x) <= epsilon &&
                std::abs(y - other.y) <= epsilon &&
                std::abs(z - other.z) <= epsilon &&
