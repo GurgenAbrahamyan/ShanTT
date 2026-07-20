@@ -163,30 +163,44 @@ struct Quat
     }
 
     Vector3 inverseRotate(const Vector3& v) const { return inverse().rotate(v);}
-    
+
+
     Vector3 toEulerDeg() const {
+      
         Vector3 e;
 
-        // pitch (X)
-        float sinp = 2.0f * (w * x - z * y);
-        if (std::abs(sinp) >= 1.0f)
-            e.x = std::copysign(90.0f, sinp); // gimbal pole
+        constexpr float radToDeg = 180.0f / 3.14159265359f;
+
+        float m00 = 1.0f - 2.0f * (y*y + z*z);
+        float m10 = 2.0f * (x*y + z*w);
+        float m20 = 2.0f * (x*z - y*w);
+
+        float m21 = 2.0f * (y*z + x*w);
+        float m22 = 1.0f - 2.0f * (x*x + y*y);
+
+        float m01 = 2.0f * (x*y - z*w);
+        float m11 = 1.0f - 2.0f * (x*x + z*z);
+
+    // XYZ order
+        e.y = std::asin(-m20);
+
+        if (std::abs(m20) < 0.999999f)
+        {
+        e.x = std::atan2(m21, m22);
+        e.z = std::atan2(m10, m00);
+        }
         else
-            e.x = std::asin(sinp) * (180.0f / 3.14159265359f);
+        {
+        e.x = std::atan2(-m01, m11);
+        e.z = 0.0f;
+        }
 
-        // yaw (Y)
-        float siny = 2.0f * (w * y + x * z);
-        float cosy = 1.0f - 2.0f * (y * y + x * x);
-        e.y = std::atan2(siny, cosy) * (180.0f / 3.14159265359f);
-
-        // roll (Z)
-        float sinr = 2.0f * (w * z + y * x);
-        float cosr = 1.0f - 2.0f * (z * z + y * y);
-        e.z = std::atan2(sinr, cosr) * (180.0f / 3.14159265359f);
+        e.x *= radToDeg;
+        e.y *= radToDeg;
+        e.z *= radToDeg;
 
         return e;
     }
-
   
     static Quat fromEulerDeg(const Vector3& e) {
         float cx = std::cos(e.x * 3.14159265359f / 180.0f * 0.5f);

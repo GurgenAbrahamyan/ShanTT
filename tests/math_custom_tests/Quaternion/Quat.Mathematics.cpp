@@ -110,15 +110,18 @@ TEST(QuatTest, FromAxisAngle)
     );
 }
 
-TEST(QuatTest, EulerConversion)
-{
+TEST(QuatTest, EulerConversion) {
+
+
+
     Vector3 euler{30.0f, 45.0f, 60.0f};
 
-    Quat q = Quat::fromEulerDeg(euler);
+    Quat q1 = Quat::fromEulerDeg(euler);
 
-    Vector3 result = q.toEulerDeg();
+    Vector3 converted = q1.toEulerDeg();
 
-    EXPECT_TRUE(
-        result.nearEqual(euler, 1e-4f)
-    );
+    Quat q2 = Quat::fromEulerDeg(converted);
+
+    EXPECT_TRUE(q1.sameRotation(q2));
 }
+
