@@ -17,8 +17,18 @@ struct Quat
         : x(_x), y(_y), z(_z), w(_w) {
     }
 
-    Quat operator*(const Quat& r) const
-    {
+
+    Quat operator+(const Quat &r) const {
+        return Quat( x + r.x, y + r.y,
+                     z + r.z, w + r.w );
+    }
+
+    Quat operator-(const Quat& r) const {
+        return Quat( x + r.x, y + r.y,
+                     z + r.z, w + r.w );
+    }
+
+    Quat operator*(const Quat &r) const {
         return Quat(
             w * r.w - x * r.x - y * r.y - z * r.z,
             w * r.x + x * r.w + y * r.z - z * r.y,
@@ -28,36 +38,72 @@ struct Quat
     }
 
     Quat operator*(float scale) const {
-        return Quat(
-            x * scale,
-            y * scale,
-            z * scale,
-            w * scale
-        );
-    }
-    Quat operator+(const Quat& r) const
-    {
-        return Quat(
-            x + r.x,
-            y + r.y,
-            z + r.z,
-            w + r.w
-        );
+        return Quat( x * scale, y * scale,
+                     z * scale, w * scale);
     }
 
+    Quat operator/(float scale) const {
+        return Quat( x * scale, y * scale,
+                     z * scale,w * scale );
+    }
+
+    Quat& operator+=(const Quat &r) {
+         x += r.x; y += r.y;
+         z += r.z; w += r.w;
+
+         return *this;
+    }
+
+    Quat& operator-=(const Quat &r) {
+         x -= r.x; y -= r.y;
+         z -= r.z; w -= r.w;
+
+         return *this;
+    }
+
+    Quat& operator*=(const Quat &r) {
+        x = w * r.w - x * r.x - y * r.y - z * r.z;
+        y = w * r.x + x * r.w + y * r.z - z * r.y;
+        z = w * r.y - x * r.z + y * r.w + z * r.x;
+        w = w * r.z + x * r.y - y * r.x + z * r.w;
+        
+        return *this;
+    }
+
+    Quat& operator*=(float scale) {
+         x *= scale; y *= scale;
+         z *= scale; w *= scale;
+         
+         return *this;
+    }
+
+    Quat& operator/=(float scale) {
+        x /= scale; y /= scale;
+        z /= scale; w /= scale;
+
+        return *this;
+    }
+
+
+    Quat operator-() const {
+        return Quat( x, y, z, w );
+    }
+
+
+
     bool operator==(const Quat &other ) const {
-      return x == other.x && y == other.y && z == other.z && w == other.w;
+        return x == other.x && y == other.y && z == other.z && w == other.w;
     }
     
     bool operator!=(const Quat &other ) const  {
-      return !(*this == other);
+        return !(*this == other);
     }
 
     bool nearEqual(const Quat &other, float epsilon = 1e-5f) const {
-      return std::abs(x - other.x) <= epsilon &&
-             std::abs(y - other.y) <= epsilon &&
-             std::abs(z - other.z) <= epsilon &&
-             std::abs(w - other.w) <= epsilon ;
+        return std::abs(x - other.x) <= epsilon &&
+               std::abs(y - other.y) <= epsilon &&
+               std::abs(z - other.z) <= epsilon &&
+               std::abs(w - other.w) <= epsilon ;
     }
 
 
@@ -65,16 +111,14 @@ struct Quat
         return Quat(-x, -y, -z, w);
     }
 
-    static Quat fromAxisAngleDeg(const Vector3& axis, float deg)
-    {
+    static Quat fromAxisAngleDeg(const Vector3& axis, float deg) {
         float half = deg * 3.14159265359f / 180.0f * 0.5f;
         float s = std::sin(half);
         Vector3 n = axis.normalized();
         return Quat(n.x * s, n.y * s, n.z * s, std::cos(half));
     }
 
-    Vector3 rotate(const Vector3& v)  const
-    {
+    Vector3 rotate(const Vector3& v)  const {
 
         Vector3 qVec(x, y, z);
         Vector3 uv = qVec.cross(v);
@@ -102,8 +146,7 @@ struct Quat
     }
 
   
-    Vector3 toEulerDeg() const
-    {
+    Vector3 toEulerDeg() const {
         Vector3 e;
 
         // pitch (X)
@@ -127,8 +170,7 @@ struct Quat
     }
 
   
-    static Quat fromEulerDeg(const Vector3& e)
-    {
+    static Quat fromEulerDeg(const Vector3& e) {
         float cx = std::cos(e.x * 3.14159265359f / 180.0f * 0.5f);
         float sx = std::sin(e.x * 3.14159265359f / 180.0f * 0.5f);
         float cy = std::cos(e.y * 3.14159265359f / 180.0f * 0.5f);
@@ -143,5 +185,8 @@ struct Quat
             cx * cy * cz + sx * sy * sz   // w
         ).normalized();
     }
+};
 
+inline Quat operator*(float scalar, const Quat &other) {
+    return other * scalar;
 };
