@@ -43,7 +43,7 @@ struct Quat
     }
 
     Quat operator/(float scale) const {
-        assert(scale > 1e-8f && "Division by zero or near-zero");
+        assert(std::abs(scale) > 1e-8f && "Division by zero or near-zero");
         return Quat( x / scale, y / scale,
                      z / scale, w / scale );
     }
@@ -84,7 +84,7 @@ struct Quat
     }
 
     Quat &operator/=(float scale) {
-        assert(scale > 1e-8 && "Division by zero or near-zero");
+        assert(std::abs(scale) > 1e-8 && "Division by zero or near-zero");
         x /= scale; y /= scale;
         z /= scale; w /= scale;
 
@@ -114,16 +114,34 @@ struct Quat
     }
 
 
-    Quat conjugate() {
-        return Quat(-x, -y, -z, w);
+    float length()        const { return std::sqrt( x * x + y * y + z * z + w * w); }
+    float lengthSquared() const { return x * x + y * y + z * z + w * w; }
+
+    void normalize() {
+        float len = length();
+        assert(len > 1e-8f && "Cannot normalize near-zero Quat");
+
+        float inv = 1.0f / len;
+
+        x *= inv;  y *= inv;
+        z *= inv;  w *= inv;
     }
 
-    static Quat fromAxisAngleDeg(const Vector3& axis, float deg) {
-        float half = deg * 3.14159265359f / 180.0f * 0.5f;
-        float s = std::sin(half);
-        Vector3 n = axis.normalized();
-        return Quat(n.x * s, n.y * s, n.z * s, std::cos(half));
+    
+    Quat normalized() const {
+        float len = length();
+        assert(len > 1e-8f && "Cannot normalize near-zero Quat");
+
+        return Quat(x / len, y / len, z / len, w / len);
     }
+
+    float dot(const Quat &other) const {
+        return x * other.x + y * other.y + z * other.z + w * other.w;
+    }
+
+    Quat conjugate() const { return Quat(-x, -y, -z, w); }
+
+    Quat inverse() const { return Quat{}; }
 
     Vector3 rotate(const Vector3& v)  const {
 
@@ -134,25 +152,8 @@ struct Quat
         return (v + (uv * (2.0f * w))) + (uuv * (2.0f));
     }
 
-    void Normalize() {
-        float len = std::sqrt(x * x + y * y + z * z + w * w);
-        if (len == 0.0f) return;
-
-        float inv = 1.0f / len;
-        x *= inv;
-        y *= inv;
-        z *= inv;
-        w *= inv;
-    }
-
+    Vector3 inverseRotate(const Vector3 &) const { return Vector3{}; }
     
-    Quat normalized() const {
-        float len = std::sqrt(x * x + y * y + z * z + w * w);
-        if (len == 0.0f) return *this;
-        return Quat(x / len, y / len, z / len, w / len);
-    }
-
-  
     Vector3 toEulerDeg() const {
         Vector3 e;
 
@@ -192,6 +193,16 @@ struct Quat
             cx * cy * cz + sx * sy * sz   // w
         ).normalized();
     }
+
+
+    static Quat fromAxisAngleDeg(const Vector3& axis, float deg) {
+        float half = deg * 3.14159265359f / 180.0f * 0.5f;
+        float s = std::sin(half);
+        Vector3 n = axis.normalized();
+        return Quat(n.x * s, n.y * s, n.z * s, std::cos(half));
+    }
+
+    
 };
 
 inline Quat operator*(float scalar, const Quat &other) {
