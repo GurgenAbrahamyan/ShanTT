@@ -113,6 +113,10 @@ struct Quat
                std::abs(w - other.w) <= epsilon ;
     }
 
+    bool sameRotation(const Quat& other, float epsilon = 1e-5f) const {
+        return nearEqual(other, epsilon) ||
+               nearEqual(-other, epsilon);
+    }
 
     float length()        const { return std::sqrt( x * x + y * y + z * z + w * w); }
     float lengthSquared() const { return x * x + y * y + z * z + w * w; }
@@ -140,8 +144,14 @@ struct Quat
     }
 
     Quat conjugate() const { return Quat(-x, -y, -z, w); }
+    Quat inverse() const {
+        float lenSquared = lengthSquared();
 
-    Quat inverse() const { return Quat{}; }
+        assert(lenSquared > 1e-8f && "Cannot invert near-zero Quat");
+
+        return Quat( -x / lenSquared, -y / lenSquared,
+                     -z / lenSquared,  w / lenSquared);  
+      }
 
     Vector3 rotate(const Vector3& v)  const {
 
@@ -152,7 +162,7 @@ struct Quat
         return (v + (uv * (2.0f * w))) + (uuv * (2.0f));
     }
 
-    Vector3 inverseRotate(const Vector3 &) const { return Vector3{}; }
+    Vector3 inverseRotate(const Vector3& v) const { return inverse().rotate(v);}
     
     Vector3 toEulerDeg() const {
         Vector3 e;
