@@ -7,7 +7,7 @@ TEST(QuatTest, EmptyConstructor) {
     EXPECT_FLOAT_EQ(q.x, 0.0f);
     EXPECT_FLOAT_EQ(q.y, 0.0f);
     EXPECT_FLOAT_EQ(q.z, 0.0f);
-    EXPECT_FLOAT_EQ(q.w, 0.0f);
+    EXPECT_FLOAT_EQ(q.w, 1.0f);
   
 }
 

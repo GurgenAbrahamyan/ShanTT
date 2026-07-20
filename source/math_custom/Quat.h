@@ -17,19 +17,6 @@ struct Quat
         : x(_x), y(_y), z(_z), w(_w) {
     }
 
-    void Normalize()
-    {
-        float len = std::sqrt(x * x + y * y + z * z + w * w);
-        if (len == 0.0f) return;
-
-        float inv = 1.0f / len;
-        x *= inv;
-        y *= inv;
-        z *= inv;
-        w *= inv;
-    }
-
-
     Quat operator*(const Quat& r) const
     {
         return Quat(
@@ -58,13 +45,25 @@ struct Quat
         );
     }
 
+    bool operator==(const Quat &other ) const {
+      return x == other.x && y == other.y && z == other.z && w == other.w;
+    }
+    
+    bool operator!=(const Quat &other ) const  {
+      return !(*this == other);
+    }
+
+    bool nearEqual(const Quat &other, float epsilon = 1e-5f) const {
+      return std::abs(x - other.x) <= epsilon &&
+             std::abs(y - other.y) <= epsilon &&
+             std::abs(z - other.z) <= epsilon &&
+             std::abs(w - other.w) <= epsilon ;
+    }
+
 
     Quat conjugate() {
         return Quat(-x, -y, -z, w);
     }
-
-
-   
 
     static Quat fromAxisAngleDeg(const Vector3& axis, float deg)
     {
@@ -84,6 +83,18 @@ struct Quat
         return (v + (uv * (2.0f * w))) + (uuv * (2.0f));
     }
 
+    void Normalize() {
+        float len = std::sqrt(x * x + y * y + z * z + w * w);
+        if (len == 0.0f) return;
+
+        float inv = 1.0f / len;
+        x *= inv;
+        y *= inv;
+        z *= inv;
+        w *= inv;
+    }
+
+    
     Quat normalized() const {
         float len = std::sqrt(x * x + y * y + z * z + w * w);
         if (len == 0.0f) return *this;
