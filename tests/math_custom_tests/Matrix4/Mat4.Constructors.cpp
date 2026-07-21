@@ -36,6 +36,28 @@ TEST(Mat4Test, FullConstructor)
     }
 }
 
+TEST(Mat4Test, 4Vec4Constructor)
+{
+    Mat4 mat{{1,  2,  3,  4}, 
+             {5,  6,  7,  8}, 
+             {9,  10, 11, 12},
+             {13, 14, 15, 16}
+            };
+
+    constexpr float expected[16] =
+    {
+         1,  2,  3,  4,
+         5,  6,  7,  8,
+         9, 10, 11, 12,
+        13, 14, 15, 16
+    };
+
+    for (int i = 0; i < 16; ++i)
+    {
+        EXPECT_FLOAT_EQ(mat[i], expected[i]);
+    }
+}
+
 TEST(Mat4Test, CopyConstructor)
 {
     Mat4 original({

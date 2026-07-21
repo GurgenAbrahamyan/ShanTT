@@ -1,7 +1,7 @@
 #pragma once
 #include <cmath>
 #include "Vector3.h"
-//#include "Vector4.h"
+#include "Vector4.h"
 #include "Quat.h"
 #include <cassert>
 // Column-major matrix
@@ -23,6 +23,8 @@ public:
         for (int i = 0; i < 16; i++)
             data[i] = arr[i];
     }
+
+    Mat4(Vector4, Vector4, Vector4, Vector4){}
 
     Mat4 operator+(const Mat4 &other) const { 
         Mat4 r{};
@@ -79,13 +81,12 @@ public:
         return *this;
     }
 
-     Mat4& operator*=(const Mat4 &other) {
-        for(size_t i{}; i < 16; ++i)
-            data[i] *= other[i];
-        
+    Mat4& operator*=(const Mat4& other){
+        *this = *this * other;
         return *this;
     }
-     Mat4& operator*=(float scalar) {
+
+    Mat4& operator*=(float scalar) {
         for(size_t i{}; i < 16; ++i)
             data[i] *= scalar;
         
