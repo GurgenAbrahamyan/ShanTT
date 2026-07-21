@@ -24,6 +24,8 @@ public:
             data[i] = arr[i];
     }
 
+    Mat4 operator+(const Mat4 &) const { return Mat4{}; }
+    Mat4 operator-(const Mat4 &) const { return Mat4{}; }
     Mat4 operator*(const Mat4& other) const {
         Mat4 r;
         for (int col = 0; col < 4; col++)
@@ -34,6 +36,20 @@ public:
             }
         return r;
     }
+
+    Mat4 operator*(float) const { return Mat4{}; }
+    Mat4 operator/(float) const { return Mat4{}; }
+
+    Mat4& operator+=(const Mat4 &) { return *this;}
+    Mat4& operator-=(const Mat4 &) { return *this;}
+    Mat4& operator*=(const Mat4 &) { return *this;}
+    Mat4& operator*=(float) { return *this;}
+    Mat4& operator/=(float) { return *this;}
+
+    Mat4 operator-() { return Mat4{}; }
+
+
+    
 
     bool operator==(const Mat4 &other) const {
       
@@ -286,3 +302,5 @@ public:
         return result;
     }
 };
+
+inline Mat4 operator*(float, const Mat4 &){ return Mat4{}; }
