@@ -39,8 +39,8 @@ public:
       
         bool equal{true};
       
-        for (int x{}; x < 16; ++x) {
-            if (data[x] == other[x])
+        for (int i{}; i < 16; ++i) {
+            if (data[i] == other[i])
                continue;
             
             equal = false;
@@ -49,14 +49,35 @@ public:
         return equal;
     }
 
-    bool operator!=(const Mat4 &other) {
+    bool operator!=(const Mat4 &other) const {
         return !(*this == other);
     }
 
-    float operator[](short index) const {
-        assert(index >= 0 && "Negative Index Provided");
+    bool nearEqual(const Mat4 &other, float epsilon = 1e-5f) const {
+
+        bool equal{true};
+
+        for(int i {}; i < 16; i++) {
+            if(std::abs(data[i] - other[i]) < epsilon)
+                continue;
+                
+            equal = false;
+            break;
+        }
+        return equal;
+    }
+
+    
+
+    float operator[](std::size_t index) const {
+        assert(index < 16);
         return data[index];
     }
+
+    float& operator[](std::size_t index) {
+        assert(index < 16);
+        return data[index];
+    }   
 
     // Translation
     // Column-major: Tx Ty Tz live in last COLUMN -> indices 12, 13, 14
