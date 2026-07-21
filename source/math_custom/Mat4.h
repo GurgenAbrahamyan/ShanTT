@@ -9,7 +9,7 @@
 // Multiply as: M * v  (column vector on right)
 // TRS order: T * R * S
 // Upload to GLSL/MSL: memcpy directly, no transpose needed
-
+constexpr float EPSILON {1e-8f};
 class Mat4 {
 public:
     float data[16];
@@ -24,10 +24,22 @@ public:
             data[i] = arr[i];
     }
 
-    Mat4 operator+(const Mat4 &) const { return Mat4{}; }
-    Mat4 operator-(const Mat4 &) const { return Mat4{}; }
-    Mat4 operator*(const Mat4& other) const {
-        Mat4 r;
+    Mat4 operator+(const Mat4 &other) const { 
+        Mat4 r{};
+        for(size_t i{}; i < 16; ++i){
+            r[i] = data[i] + other[i];
+        }
+        return r; 
+    }
+    Mat4 operator-(const Mat4 &other) const { 
+        Mat4 r{};
+        for(size_t i{}; i < 16; ++i){
+            r[i] = data[i] - other[i];
+        }
+        return r; 
+    }
+    Mat4 operator*(const Mat4 &other) const {
+        Mat4 r{};
         for (int col = 0; col < 4; col++)
             for (int row = 0; row < 4; row++) {
                 r.data[col * 4 + row] = 0;
@@ -37,16 +49,63 @@ public:
         return r;
     }
 
-    Mat4 operator*(float) const { return Mat4{}; }
-    Mat4 operator/(float) const { return Mat4{}; }
+    Mat4 operator*(float scalar) const { 
+        Mat4 r{};
+        for(size_t i{}; i < 16; ++i)
+            r[i] = data[i] * scalar;
+        
+        return r;
+    }
+    Mat4 operator/(float scalar) const { 
+        assert( std::abs(scalar) > EPSILON && "Division by zero or near-zero" );
+        Mat4 r{};
+        for(size_t i{}; i < 16; ++i)
+            r[i] = data[i] / scalar;
 
-    Mat4& operator+=(const Mat4 &) { return *this;}
-    Mat4& operator-=(const Mat4 &) { return *this;}
-    Mat4& operator*=(const Mat4 &) { return *this;}
-    Mat4& operator*=(float) { return *this;}
-    Mat4& operator/=(float) { return *this;}
+        return r;
+    }
 
-    Mat4 operator-() { return Mat4{}; }
+    Mat4& operator+=(const Mat4 &other) {
+        for(size_t i{}; i < 16; ++i)
+            data[i] += other[i];
+        
+        return *this;
+    }
+
+    Mat4& operator-=(const Mat4 &other) {
+        for(size_t i{}; i < 16; ++i)
+            data[i] -= other[i];
+        
+        return *this;
+    }
+
+     Mat4& operator*=(const Mat4 &other) {
+        for(size_t i{}; i < 16; ++i)
+            data[i] *= other[i];
+        
+        return *this;
+    }
+     Mat4& operator*=(float scalar) {
+        for(size_t i{}; i < 16; ++i)
+            data[i] *= scalar;
+        
+        return *this;
+    }
+    Mat4& operator/=(float scalar) { 
+        assert( std::abs(scalar) > EPSILON && "Division by zero or near-zero" );
+        for(size_t i{}; i < 16; ++i)
+            data[i] /= scalar;
+    
+        return *this;
+    }
+
+    Mat4 operator-() const { 
+        Mat4 r{};
+        for(size_t i{}; i < 16; ++i)
+            r[i] = -data[i];
+        
+        return r;
+    }
 
 
     
@@ -303,4 +362,9 @@ public:
     }
 };
 
-inline Mat4 operator*(float, const Mat4 &){ return Mat4{}; }
+inline Mat4 operator*(float scalar, const Mat4 &other){ 
+    Mat4 r{};
+    for(size_t i{}; i < 16; ++i)
+        r[i] = other[i] * scalar;
+    return r;
+}
