@@ -105,7 +105,7 @@ void Shader::setMat4(const char* name, const Mat4 mat) {
     if (loc == -1) return;
 
    
-    glUniformMatrix4fv(loc, 1, GL_FALSE, mat.data);
+    glUniformMatrix4fv(loc, 1, GL_FALSE, mat.getData());
      
 
 }
