@@ -11,8 +11,9 @@
 // Upload to GLSL/MSL: memcpy directly, no transpose needed
 constexpr float EPSILON {1e-8f};
 class Mat4 {
+    float data[16]{};
 public:
-    float data[16];
+    
 
     Mat4() {
         for (int i = 0; i < 16; i++) data[i] = 0.0f;
@@ -20,63 +21,77 @@ public:
     }
 
     Mat4(const float (&arr)[16]) {
-        for (int i = 0; i < 16; i++)
-            data[i] = arr[i];
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col )
+                data[4 * col + row] = arr[4 * row + col];
     }
 
-    Mat4(Vector4, Vector4, Vector4, Vector4){}
+    Mat4(const Vector4 &row0, const Vector4 &row1, const Vector4 &row2, const Vector4 &row3){
+        data[0]  = row0.x, data[1]  = row1.x, data[2]  = row2.x, data[3]  = row3.x;
+        data[4]  = row0.y, data[5]  = row1.y, data[6]  = row2.y, data[7]  = row3.y;
+        data[8]  = row0.z, data[9]  = row1.z, data[10] = row2.z, data[11] = row3.z;
+        data[12] = row0.w, data[13] = row1.w, data[14] = row2.w, data[15] = row3.w;
+    }
 
     Mat4 operator+(const Mat4 &other) const { 
         Mat4 r{};
-        for(size_t i{}; i < 16; ++i){
-            r[i] = data[i] + other[i];
-        }
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col)
+                r(row, col) = (*this)(row, col) + other(row, col);
         return r; 
     }
     Mat4 operator-(const Mat4 &other) const { 
+        
         Mat4 r{};
-        for(size_t i{}; i < 16; ++i){
-            r[i] = data[i] - other[i];
-        }
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col)
+                r(row, col) = (*this)(row, col) - other(row, col);
         return r; 
     }
     Mat4 operator*(const Mat4 &other) const {
         Mat4 r{};
-        for (int col = 0; col < 4; col++)
-            for (int row = 0; row < 4; row++) {
-                r.data[col * 4 + row] = 0;
-                for (int k = 0; k < 4; k++)
-                    r.data[col * 4 + row] += data[k * 4 + row] * other.data[col * 4 + k];
+        for (size_t row = 0; row < 4; ++row)
+            for (size_t col = 0; col < 4; ++col){
+
+                float sum = 0.0f;
+                for (size_t k = 0; k < 4; ++k)
+                    sum += (*this)(row, k) * other(k, col);
+            r(row, col) = sum;
+            
             }
         return r;
     }
 
     Mat4 operator*(float scalar) const { 
         Mat4 r{};
-        for(size_t i{}; i < 16; ++i)
-            r[i] = data[i] * scalar;
+        for (size_t row{}; row < 4; ++row)
+            for (size_t col{}; col < 4; ++col)
+                r(row, col) = (*this)(row, col) * scalar;
         
         return r;
     }
     Mat4 operator/(float scalar) const { 
         assert( std::abs(scalar) > EPSILON && "Division by zero or near-zero" );
         Mat4 r{};
-        for(size_t i{}; i < 16; ++i)
-            r[i] = data[i] / scalar;
+        for (size_t row{}; row < 4; ++row)
+            for (size_t col{}; col < 4; ++col)
+                r(row, col) = (*this)(row, col) / scalar;
 
         return r;
     }
 
     Mat4& operator+=(const Mat4 &other) {
-        for(size_t i{}; i < 16; ++i)
-            data[i] += other[i];
+        for (size_t row{}; row < 4; ++row)
+            for (size_t col{}; col < 4; ++col)
+                (*this)(row, col) += other(row, col);
         
         return *this;
     }
 
     Mat4& operator-=(const Mat4 &other) {
-        for(size_t i{}; i < 16; ++i)
-            data[i] -= other[i];
+        for (size_t row{}; row < 4; ++row)
+            for (size_t col{}; col < 4; ++col)
+               (*this)(row, col) -= other(row, col); 
         
         return *this;
     }
@@ -102,8 +117,9 @@ public:
 
     Mat4 operator-() const { 
         Mat4 r{};
-        for(size_t i{}; i < 16; ++i)
-            r[i] = -data[i];
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col)
+                r(row, col) = -(*this)(row, col);
         
         return r;
     }
@@ -111,18 +127,12 @@ public:
 
     
 
-    bool operator==(const Mat4 &other) const {
-      
-        bool equal{true};
-      
-        for (int i{}; i < 16; ++i) {
-            if (data[i] == other[i])
-               continue;
-            
-            equal = false;
-            break;
-        }
-        return equal;
+    bool operator==(const Mat4& other) const {
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col)
+                if ((*this)(row, col) != other(row, col))
+                    return false;
+        return true;
     }
 
     bool operator!=(const Mat4 &other) const {
@@ -130,30 +140,25 @@ public:
     }
 
     bool nearEqual(const Mat4 &other, float epsilon = 1e-5f) const {
-
-        bool equal{true};
-
-        for(int i {}; i < 16; i++) {
-            if(std::abs(data[i] - other[i]) < epsilon)
-                continue;
-                
-            equal = false;
-            break;
-        }
-        return equal;
+        for (size_t row {}; row < 4; ++row)
+            for (size_t col {}; col < 4; ++col)
+                if (std::abs((*this)(row, col) - other(row, col)) > epsilon)
+                    return false;
+        return true;
     }
 
     
 
-    float operator[](std::size_t index) const {
-        assert(index < 16);
-        return data[index];
+    float operator()(std::size_t row_index, std::size_t col_index ) const {
+        assert(row_index < 4 && col_index < 4 );
+        return data[col_index * 4 + row_index];
     }
 
-    float& operator[](std::size_t index) {
-        assert(index < 16);
-        return data[index];
-    }   
+    float& operator()(std::size_t row_index, std::size_t col_index ) {
+        assert(row_index < 4 && col_index < 4 );
+        return data[col_index * 4 + row_index];
+    }
+
 
     // Translation
     // Column-major: Tx Ty Tz live in last COLUMN -> indices 12, 13, 14
@@ -365,7 +370,8 @@ public:
 
 inline Mat4 operator*(float scalar, const Mat4 &other){ 
     Mat4 r{};
-    for(size_t i{}; i < 16; ++i)
-        r[i] = other[i] * scalar;
+    for (size_t row{}; row < 4; ++row)
+        for (size_t col{}; col < 4; ++col)
+            r(row, col) = other(row, col) * scalar;
     return r;
 }

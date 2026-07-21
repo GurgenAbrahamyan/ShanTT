@@ -9,7 +9,7 @@ TEST(Mat4Test, EqualOperator){
 
     EXPECT_TRUE(mat1 == mat2);
 
-    mat2[6] = 7.0f;
+    mat2(1, 2) = 7.0f;
 
     EXPECT_FALSE ( mat1 == mat2);
 }
@@ -21,7 +21,7 @@ TEST(Mat4Test, InEqualOperator){
 
     EXPECT_FALSE(mat1 != mat2);
 
-    mat2[6] = 7.0f;
+    mat2(3, 2) = 7.0f;
     
     EXPECT_TRUE ( mat1 != mat2);
 }
@@ -44,7 +44,7 @@ TEST(Mat4Test, NearEqual){
     
     EXPECT_TRUE ( mat1.nearEqual(mat2, 1e-5f));
 
-    mat2[0] = 1.0001f;
+    mat2(0, 0) = 1.0001f;
 
     EXPECT_FALSE ( mat1.nearEqual(mat2, 1e-5f));
 

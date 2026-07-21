@@ -12,10 +12,9 @@ TEST(Mat4Test, DefaultConstructor)
         0,0,1,0,
         0,0,0,1
     };
-    for (int i = 0; i < 16; ++i)
-    {
-        EXPECT_FLOAT_EQ(mat[i], expected[i]);
-    }
+    for(size_t row {}; row < 4; ++row)
+        for(size_t col {}; col < 4; ++col)
+            EXPECT_FLOAT_EQ(mat(row, col), expected[row * 4 + col]);
 }
 
 TEST(Mat4Test, FullConstructor)
@@ -30,10 +29,9 @@ TEST(Mat4Test, FullConstructor)
 
     Mat4 mat(values);
 
-    for (int i = 0; i < 16; ++i)
-    {
-        EXPECT_FLOAT_EQ(mat[i], values[i]);
-    }
+    for(size_t row {}; row < 4; ++row)
+        for(size_t col {}; col < 4; ++col)
+            EXPECT_FLOAT_EQ(mat(row, col), values[row * 4 + col]);
 }
 
 TEST(Mat4Test, 4Vec4Constructor)
@@ -52,10 +50,9 @@ TEST(Mat4Test, 4Vec4Constructor)
         13, 14, 15, 16
     };
 
-    for (int i = 0; i < 16; ++i)
-    {
-        EXPECT_FLOAT_EQ(mat[i], expected[i]);
-    }
+    for(size_t row {}; row < 4; ++row)
+        for(size_t col {}; col < 4; ++col)
+            EXPECT_FLOAT_EQ(mat(row, col), expected[row * 4 + col]);
 }
 
 TEST(Mat4Test, CopyConstructor)

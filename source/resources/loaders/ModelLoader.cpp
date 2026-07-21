@@ -406,9 +406,9 @@ Mat4 ModelLoader::fromArray(const json& arr)
 {
     
         Mat4 m;
-        for (int row = 0; row < 4; ++row)
-            for (int col = 0; col < 4; ++col)
-                m.data[row * 4 + col] = arr[col * 4 + row];
+        for(size_t row {}; row < 4; ++row)
+            for(size_t col {}; col < 4; ++col)
+                m(row, col) = arr [row * 4 + col];
         return m;
     
 }
