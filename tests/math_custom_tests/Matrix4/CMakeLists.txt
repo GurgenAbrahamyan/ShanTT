@@ -5,4 +5,5 @@ target_sources(ShanTT_Tests PRIVATE
     Mat4.Arithmetics.cpp
     Mat4.Transforms.cpp
     Mat4.Utility.cpp
+    Mat4.GraphicsTest.cpp
 )

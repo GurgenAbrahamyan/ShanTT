@@ -421,6 +421,15 @@ public:
         return r;
     }
 
+    Vector4 multiplyVec(const Vector4& v) const {
+        Vector4 r;
+        r.x = data[0] * v.x + data[4] * v.y + data[8]  * v.z + data[12] * v.w;
+        r.y = data[1] * v.x + data[5] * v.y + data[9]  * v.z + data[13] * v.w;
+        r.z = data[2] * v.x + data[6] * v.y + data[10] * v.z + data[14] * v.w;
+        r.w = data[3] * v.x + data[7] * v.y + data[11] * v.z + data[15] * v.w;
+        return r;
+    }
+
     float* getData() { return data; }
     const float* getData() const { return data; }
 
