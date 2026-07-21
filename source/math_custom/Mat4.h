@@ -3,7 +3,7 @@
 #include "Vector3.h"
 //#include "Vector4.h"
 #include "Quat.h"
-
+#include <cassert>
 // Column-major matrix
 // Memory: 0-3 = col0, 4-7 = col1, 8-11 = col2, 12-15 = col3
 // Multiply as: M * v  (column vector on right)
@@ -19,7 +19,11 @@ public:
         data[0] = data[5] = data[10] = data[15] = 1.0f;
     }
 
-    // Multiplication
+    Mat4(const float (&arr)[16]) {
+        for (int i = 0; i < 16; i++)
+            data[i] = arr[i];
+    }
+
     Mat4 operator*(const Mat4& other) const {
         Mat4 r;
         for (int col = 0; col < 4; col++)
@@ -29,6 +33,29 @@ public:
                     r.data[col * 4 + row] += data[k * 4 + row] * other.data[col * 4 + k];
             }
         return r;
+    }
+
+    bool operator==(const Mat4 &other) const {
+      
+        bool equal{true};
+      
+        for (int x{}; x < 16; ++x) {
+            if (data[x] == other[x])
+               continue;
+            
+            equal = false;
+            break;
+        }
+        return equal;
+    }
+
+    bool operator!=(const Mat4 &other) {
+        return !(*this == other);
+    }
+
+    float operator[](short index) const {
+        assert(index >= 0 && "Negative Index Provided");
+        return data[index];
     }
 
     // Translation
