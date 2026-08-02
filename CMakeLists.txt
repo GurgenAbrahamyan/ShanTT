@@ -275,7 +275,7 @@ target_include_directories(ShanTT_Lib PUBLIC
     ${CMAKE_SOURCE_DIR}/source
 )
 
-target_include_directories(ShanTT_Lib SYSTEM PRIVATE
+target_include_directories(ShanTT_Lib SYSTEM PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/glad
     ${CMAKE_SOURCE_DIR}/include/glfw

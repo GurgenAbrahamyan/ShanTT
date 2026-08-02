@@ -1,32 +1,85 @@
 #pragma once
-#include "EnTT/entt.hpp"
+
+#include <entt/entt.hpp>
 #include <memory>
-#include "../resources/managers/TextureManager.h"
-#include "../resources/managers/MaterialManager.h"
-#include "../resources/managers/ModelManager.h"
-#include "../resources/managers/MeshManager.h"
+#include <vector>
 
-class Texture;
-class EventBus;
-class CubeMap;
+#include "../core/ecs_systems/ISystem.h"
+#include "SceneContext.h"
 
-class Scene {
+class Scene
+{
 public:
-    Scene(EventBus* bus);
-    ~Scene();
 
-    void initObjects();
+    virtual ~Scene() = default;
 
-    entt::registry& getRegistry() { return registry; }
-    CubeMap* getSkybox() const { return skybox; }
-    Texture* getBRDF();
-    ModelManager* getModelManager() const;
+
+    void Initialize(SceneContext& ctx);
+
+    void Update(float dt);
+
+    void FixedUpdate(float dt);
+
+    void Shutdown();
+
+
+    entt::registry& Registry()
+    {
+        return registry;
+    }
+
+    template <typename T>
+    T* GetSystem();
+
+protected:
+
+    virtual void OnCreate() = 0;
+
+    virtual void OnDestroy(){}
+
+
+    template<typename T, typename... Args>
+    T& AddSystem(Args&&... args);
+
+
+    template<typename T>
+    void RemoveSystem();
+
+
 private:
-    entt::registry   registry;
-    CubeMap* skybox = nullptr;
 
-    std::unique_ptr<TextureManager> textureManager = nullptr;
-    std::unique_ptr<MaterialManager> materialManager = nullptr;
-    std::unique_ptr<MeshManager> meshManager = nullptr;
-    std::unique_ptr<ModelManager> modelManager = nullptr;
+    entt::registry registry;
+
+    std::vector<std::unique_ptr<ISystem>> systems;
+
+    SceneContext* context = nullptr;
 };
+
+
+
+template<typename T, typename... Args>
+T& Scene::AddSystem(Args&&... args)
+{
+    auto system = std::make_unique<T>(
+        std::forward<Args>(args)...
+    );
+
+    T& ref = *system;
+
+    systems.push_back(
+        std::move(system)
+    );
+
+    return ref;
+}
+
+template<typename T>
+T* Scene::GetSystem()
+{
+    for (auto& system : systems) {
+        if (auto* castedSystem = dynamic_cast<T*>(system.get())) {
+            return castedSystem;
+        }
+    }
+    return nullptr;
+}

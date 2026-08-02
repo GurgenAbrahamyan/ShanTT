@@ -29,7 +29,7 @@ private:
    
     MouseInput* mouseInput;
     KeyboardInput* keyboardInput;
-    CameraSystem* cameraSystem;
+    [[maybe_unused]] CameraSystem* cameraSystem;
 	ShadowSystem* shadowSystem;
 	RenderContext* renderContext;
     GLFWwindow* window;

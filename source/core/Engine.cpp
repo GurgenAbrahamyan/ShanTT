@@ -16,9 +16,9 @@
 
 Engine::Engine()
     : bus(new EventBus()),
-      scene(new Scene(bus)),
+      scene(/*new Scene(bus)*/),
       physicsEngine(new PhysicsEngine()),
-      cameraSystem(new CameraSystem (bus, scene->getRegistry())),
+      cameraSystem(/*new CameraSystem (bus, scene->getRegistry())*/),
       shadowSystem(new ShadowSystem()),
       running(true),
       accumulator(0.0f),
@@ -31,11 +31,12 @@ Engine::Engine()
     window = EngineContext::get().getWindow();
    
     keyboardInput = new KeyboardInput(bus);
-    mouseInput = new MouseInput(bus),
+    mouseInput = new MouseInput(bus); 
+    /*
     scene->initObjects();
 	renderContext->registry = &scene->getRegistry();
     renderContext->brdfTexture = scene->getBRDF();
-    renderContext->modelManager = scene->getModelManager();
+    renderContext->modelManager = scene->getModelManager();*/
 }
 
 Engine::~Engine() {
@@ -64,14 +65,14 @@ void Engine::run() {
 
         while (accumulator >= PHYSICS_STEP) {
             
-            physicsEngine->update(scene->getRegistry(), PHYSICS_STEP);
+           // physicsEngine->update(scene->getRegistry(), PHYSICS_STEP);
             accumulator -= PHYSICS_STEP;
         }
 
         EngineContext::get().deltaTime = frameTime;
 
         keyboardInput->processInput();
-        cameraSystem->update(scene->getRegistry(), frameTime);
+       // cameraSystem->update(scene->getRegistry(), frameTime);
         mouseInput->proccessInput(renderContext->windowWidth, renderContext->windowHeight);
         
         glfwPollEvents();          
