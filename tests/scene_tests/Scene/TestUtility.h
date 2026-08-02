@@ -2,6 +2,7 @@
 
 #include "scene/Scene.h"
 
+
 struct TestContext
 {
     EventBus events;
@@ -16,11 +17,11 @@ struct TestContext
     }
 };
 
+
 class TestSystem : public ISystem
 {
 public:
     inline static bool shutdownCalled = false;
-
     bool initialized = false;
     bool updated = false;
     bool fixedUpdated = false;
@@ -30,15 +31,18 @@ public:
         initialized = true;
     }
 
+
     void Update(SceneContext&, float) override
     {
         updated = true;
     }
 
+
     void FixedUpdate(SceneContext&, float) override
     {
         fixedUpdated = true;
     }
+
 
     void Shutdown(SceneContext&) override
     {
@@ -46,28 +50,48 @@ public:
     }
 };
 
+
+
 class TestScene : public Scene
 {
 public:
+
     bool created = false;
-    bool exited = false;
     bool entered = false;
-    
+    bool exited = false;
+    bool paused = false;
+    bool resumed = false;
+
 
 protected:
+
     void OnCreate() override
     {
+        created = true;
         AddSystem<TestSystem>();
     }
+
 
     void OnEnter() override
     {
         entered = true;
     }
 
+
     void OnExit() override
     {
         exited = true;
     }
-    
+
+
+    void OnPause() override
+    {
+        paused = true;
+    }
+
+
+    void OnResume() override
+    {
+        resumed = true;
+    }
 };
