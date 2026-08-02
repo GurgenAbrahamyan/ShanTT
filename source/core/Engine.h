@@ -1,7 +1,7 @@
 #pragma once
-
+#include <memory>
+class IPlatform;
 class EventBus;
-class Scene;
 class Renderer;
 class PhysicsEngine;
 class UiInput;
@@ -10,7 +10,9 @@ class KeyboardInput;
 struct GLFWwindow;
 class CameraSystem;
 class ShadowSystem;
+
 struct RenderContext;
+
 
 class Engine {
 public:
@@ -22,8 +24,9 @@ public:
     long long getTimeMicro();
 
 private:
-    EventBus* bus;
-    Scene* scene;
+    std::unique_ptr<IPlatform> platform;
+    std::unique_ptr<EventBus> bus;
+
     Renderer* renderer;
     PhysicsEngine* physicsEngine;
    
@@ -32,7 +35,7 @@ private:
     [[maybe_unused]] CameraSystem* cameraSystem;
 	ShadowSystem* shadowSystem;
 	RenderContext* renderContext;
-    GLFWwindow* window;
+    
 
     bool running;
     float accumulator;

@@ -1,27 +1,27 @@
 #pragma once
-#include <glfw/glfw3.h>
+class AssetManager;
+class InputManager;
+struct GLFWwindow;
+class EventBus;
+class Renderer;
+class PhysicsEngine;
 
-class EngineContext {
-public:
-    float deltaTime = 0.0f;
-    float totalTime = 0.0f;
-   
-
-	
-    static EngineContext& get() {
-        static EngineContext instance;
-        return instance;
-    }
-
-    void setWindow(GLFWwindow* win) { window = win; }
-    GLFWwindow* getWindow() { return window; }
-
-private:
-    EngineContext() = default;
-    EngineContext (const EngineContext&) = delete;
-    EngineContext &operator=(const EngineContext &) = delete;
-    EngineContext (EngineContext &&) = delete;
-    EngineContext &operator=(EngineContext&&) = delete;
-    
+struct EngineContext
+{
     GLFWwindow* window = nullptr;
+
+    float deltaTime = 0.0f;
+
+    float totalTime = 0.0f;
+
+
+    EventBus& events;
+
+    Renderer& renderer;
+
+    PhysicsEngine& physics;
+
+    AssetManager& assets;
+
+    InputManager& input;
 };

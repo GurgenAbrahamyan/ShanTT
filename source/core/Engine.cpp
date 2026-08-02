@@ -1,8 +1,7 @@
 #include "Engine.h"
 
-
+#include "platform/IPlatform.h"
 #include "EventBus.h"
-#include "../scene/Scene.h"
 #include "../render/Renderer.h"
 #include "../physics/PhysicsEngine.h"
 //#include "../input/UIInput.h"
@@ -15,7 +14,8 @@
 
 
 Engine::Engine()
-    : bus(new EventBus()),
+    : platform(CreatePlatform()),
+      bus(new EventBus()),
       scene(/*new Scene(bus)*/),
       physicsEngine(new PhysicsEngine()),
       cameraSystem(/*new CameraSystem (bus, scene->getRegistry())*/),
@@ -28,7 +28,7 @@ Engine::Engine()
     renderContext = new RenderContext(),
     renderer = new Renderer(bus, renderContext);
 
-    window = EngineContext::get().getWindow();
+    
    
     keyboardInput = new KeyboardInput(bus);
     mouseInput = new MouseInput(bus); 

@@ -15,6 +15,9 @@ FetchContent_Declare(
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
+set(ENGINE_PLATFORM_BACKEND "GLFW" CACHE STRING "Platform backend: GLFW | SDL | WIN32")
+set_property(CACHE ENGINE_PLATFORM_BACKEND PROPERTY STRINGS GLFW SDL WIN32)
+
 # Windows users
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
@@ -82,13 +85,16 @@ set(ECS_FACTORY_HEADERS
 
 # Input system
 set(INPUT_SOURCES
-    source/input/MouseInput.cpp
-    source/input/UiInput.cpp
+    source/input/Keyboard/Keyboard.cpp
+    source/input/Mouse/Mouse.cpp
+    source/input/InputManager.cpp
+    source/input/UIInput.cpp
 )
 
 set(INPUT_HEADERS
-    source/input/KeyBoardInput.h
-    source/input/MouseInput.h
+    source/input/Keyboard/Keyboard.h
+    source/input/Mouse/Mouse.h
+    source/input/InputManager.h
     source/input/UIInput.h
 )
 
@@ -212,6 +218,25 @@ set(RESOURCE_HEADERS
     source/resources/managers/ModelManager.h
     source/resources/managers/TextureManager.h
 )
+# Platform-specific headers
+set(PLATFORM_HEADERS
+    source/platform/IPlatform.h
+)
+set(PLATFORM_SOURCES "")
+
+if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
+    list(APPEND PLATFORM_HEADERS
+        source/platform/GLFW/PlatformGLFW.h
+    )
+    list(APPEND PLATFORM_SOURCES
+        source/platform/GLFW/PlatformGLFW.cpp
+        source/platform/GLFW/CreatePlatform.cpp
+    )
+elseif(ENGINE_PLATFORM_BACKEND STREQUAL "SDL")
+    message(FATAL_ERROR "SDL backend not implemented yet")
+elseif(ENGINE_PLATFORM_BACKEND STREQUAL "WIN32")
+    message(FATAL_ERROR "WIN32 native backend not implemented yet")
+endif()
 
 # Scene system
 set(SCENE_SOURCES
@@ -231,8 +256,6 @@ set(SCENE_HEADERS
 set(THIRD_PARTY_HEADERS
     include/EnTT/entt.hpp
     include/glad/glad.h
-    include/glfw/glfw3.h
-    include/glfw/glfw3native.h
     include/imgui/imconfig.h
     include/imgui/imgui.h
     include/imgui/imgui_impl_glfw.h
@@ -260,6 +283,8 @@ add_library(ShanTT_Lib STATIC
     ${MATH_HEADERS}
     ${PHYSICS_SOURCES}
     ${PHYSICS_HEADERS}
+    ${PLATFORM_HEADERS}
+    ${PLATFORM_SOURCES}
     ${RENDER_SOURCES}
     ${RENDER_HEADERS}
     ${RESOURCE_SOURCES}
@@ -281,7 +306,6 @@ target_include_directories(ShanTT_Lib PUBLIC
 target_include_directories(ShanTT_Lib SYSTEM PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/glad
-    ${CMAKE_SOURCE_DIR}/include/glfw
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/EnTT
     ${CMAKE_SOURCE_DIR}/include/json
@@ -300,10 +324,18 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(ShanTT_Lib PRIVATE OpenGL::GL)
 
 # Link GLFW
-if(WIN32)
-    target_link_libraries(ShanTT_Lib PRIVATE
-        ${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.lib
+if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.4
     )
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(glfw)
+
+    target_link_libraries(ShanTT_Lib PRIVATE glfw)
 endif()
 
 
@@ -351,14 +383,5 @@ set_target_properties(ShanTT PROPERTIES
 )
 
 
-
-if(WIN32)
-    add_custom_command(TARGET ShanTT POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.dll"
-        $<TARGET_FILE_DIR:ShanTT>
-        COMMENT "Copying GLFW DLL to output directory"
-    )
-endif()
 
 add_subdirectory(tests)
