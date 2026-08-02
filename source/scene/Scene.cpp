@@ -1,9 +1,7 @@
-// Scene.cpp
-
 #include "Scene.h"
 #include "SceneContext.h"
 #include "../core/ecs_systems/ISystem.h"
-
+#include <iostream>
 
 void Scene::Initialize(SceneContext& ctx)
 {
@@ -15,20 +13,92 @@ void Scene::Initialize(SceneContext& ctx)
     {
         system->Initialize(ctx);
     }
+
+    state = SceneState::Exited;
 }
 
+void Scene::Shutdown()
+{
+    if(!context) return;
+
+
+    for(auto it = systems.rbegin(); it != systems.rend(); ++it)
+        (*it)->Shutdown(*context);
+    
+
+    OnDestroy();
+
+    systems.clear();
+
+    context = nullptr;
+
+    state = SceneState::Destroyed;
+}
+
+void Scene::Enter()
+{
+    std::cout << "Scene::Enter state: "
+              << static_cast<int>(state)
+              << "\n";
+
+    if(state != SceneState::Exited)
+        return;
+
+    std::cout << "Calling OnEnter\n";
+
+    OnEnter();
+
+    state = SceneState::Active;
+}
+
+void Scene::Exit()
+{
+    if(state == SceneState::Exited) 
+        return;
+
+    OnExit();
+
+    state = SceneState::Exited;
+}
 
 void Scene::Update(float dt)
 {
+    if (state != SceneState::Active)
+         return;
+
+
     for(auto& system : systems)
     {
         system->Update(*context, dt);
     }
 }
 
+void Scene::Pause(){
+
+    if(state != SceneState::Active) 
+        return;
+
+    OnPause();
+
+    state = SceneState::Paused;
+
+}
+
+void Scene::Resume(){
+
+    if(state != SceneState::Paused)
+        return;
+
+    OnResume();
+
+    state = SceneState::Active;
+}
 
 void Scene::FixedUpdate(float dt)
 {
+    if (state != SceneState::Active)
+         return;
+
     for(auto& system : systems)
     {
         system->FixedUpdate(*context, dt);
@@ -36,13 +106,4 @@ void Scene::FixedUpdate(float dt)
 }
 
 
-void Scene::Shutdown()
-{
-    for(auto& system : systems)
-    {
-        system->Shutdown(*context);
-    }
-
-    OnDestroy();
-}
 

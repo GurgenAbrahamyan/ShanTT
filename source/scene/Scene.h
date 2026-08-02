@@ -9,18 +9,33 @@
 
 class Scene
 {
+
 public:
+
+    enum class SceneState {
+        Created,
+        Active,
+        Paused,
+        Exited,
+        Destroyed
+    };
 
     virtual ~Scene() = default;
 
 
     void Initialize(SceneContext& ctx);
+    void Shutdown();
+
+    void Enter();
+    void Exit();
+
+    void Pause();
+    void Resume();
 
     void Update(float dt);
-
     void FixedUpdate(float dt);
 
-    void Shutdown();
+    
 
 
     entt::registry& Registry()
@@ -31,11 +46,25 @@ public:
     template <typename T>
     T* GetSystem();
 
+
+    SceneState GetState() const
+    {
+        return state;
+    }
+
 protected:
 
-    virtual void OnCreate() = 0;
+    virtual void OnCreate() {}
 
     virtual void OnDestroy(){}
+
+    virtual void OnEnter()  {};
+
+    virtual void OnExit()   {};
+
+    virtual void OnPause()  {}
+
+    virtual void OnResume() {}
 
 
     template<typename T, typename... Args>
@@ -47,6 +76,7 @@ protected:
 
 
 private:
+    SceneState state { SceneState::Created };
 
     entt::registry registry;
 
@@ -60,6 +90,13 @@ private:
 template<typename T, typename... Args>
 T& Scene::AddSystem(Args&&... args)
 {
+
+    static_assert(
+        std::is_base_of_v<ISystem, T>,
+        "T must derive from ISystem"
+    );
+
+
     auto system = std::make_unique<T>(
         std::forward<Args>(args)...
     );
