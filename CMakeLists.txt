@@ -216,11 +216,14 @@ set(RESOURCE_HEADERS
 # Scene system
 set(SCENE_SOURCES
     source/scene/Scene.cpp
+    source/scene/SceneManager.cpp
     source/scene/loaders/SceneLoader.cpp
+    
 )
 
 set(SCENE_HEADERS
     source/scene/Scene.h
+    source/scene/SceneManager.h
     source/scene/loaders/SceneLoader.h
 )
 

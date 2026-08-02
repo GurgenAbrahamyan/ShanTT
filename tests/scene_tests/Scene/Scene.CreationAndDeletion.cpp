@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "TestUtility.h"
+#include "../TestUtility.h"
 
 
 TEST(SceneSystemManagement, AddsAndInitializesSystem)
