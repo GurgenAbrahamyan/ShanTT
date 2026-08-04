@@ -3,10 +3,11 @@
 
 struct GLFWwindow;
 class EventBus;
-
+class WindowGLFW;
 class PlatformGLFW final : public IPlatform {
 public:
-    bool Init(const WindowDesc& desc, EventBus& bus) override;
+    bool Init(const WindowDesc&, EventBus& bus) override;
+
     void Shutdown() override;
 
     void PollEvents() override;

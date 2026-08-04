@@ -89,7 +89,7 @@ MouseButton TranslateMouseButton(int glfwButton)
     }
 }
 
-} // namespace
+} 
 
 bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
 {
@@ -99,8 +99,13 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
     }
 
     if (desc.api == GraphicsAPI::OpenGL) {
+         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    
+   
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_SAMPLES, 8);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     } else if (desc.api == GraphicsAPI::Vulkan) {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -113,7 +118,7 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
         return false;
     }
 
-    // EventBus& stashed as user pointer so static callbacks can reach it.
+   
     glfwSetWindowUserPointer(window, &bus);
 
     if (desc.api == GraphicsAPI::OpenGL) {
@@ -143,7 +148,7 @@ void PlatformGLFW::Shutdown()
 
 void PlatformGLFW::PollEvents()
 {
-    glfwPollEvents(); // triggers the static callbacks below
+    glfwPollEvents(); 
 }
 
 void PlatformGLFW::SwapBuffers()
@@ -182,7 +187,7 @@ double PlatformGLFW::GetTime() const
 
 void PlatformGLFW::KeyCallback(GLFWwindow* w, int key, int, int action, int)
 {
-    if (action == GLFW_REPEAT) return; // Keyboard already tracks held state; no repeat events needed
+    if (action == GLFW_REPEAT) return; 
 
     auto& bus = *static_cast<EventBus*>(glfwGetWindowUserPointer(w));
     bus.publish<KeyEvent>(KeyEvent{

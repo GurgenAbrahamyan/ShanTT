@@ -1,14 +1,14 @@
 #pragma once
-class AssetManager;
-class InputManager;
-struct GLFWwindow;
-class EventBus;
-class Renderer;
-class PhysicsEngine;
 
+#include "input/InputManager.h"
+#include "core/EventBus.h"
+#include "render/Renderer.h"
+#include "physics/PhysicsEngine.h"
+#include "resources/managers/AssetManager.h"
+#include "platform/IPlatform.h"
 struct EngineContext
 {
-    GLFWwindow* window = nullptr;
+    IPlatform& platform;
 
     float deltaTime = 0.0f;
 

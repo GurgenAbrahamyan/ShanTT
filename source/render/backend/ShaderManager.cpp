@@ -7,7 +7,7 @@ ShaderManager::ShaderManager(EventBus* bus)
     : bus(bus)
 {
    
-    bus->subscribe<InitShader>([this](InitShader& event) {
+    bus->subscribe<InitShader>( [this](const InitShader& event) {
         std::cout << "[ShaderManager] Initializing shader: " << event.data->name << "\n";
         Shader* shader = this->load(
             event.data->name,
@@ -19,7 +19,7 @@ ShaderManager::ShaderManager(EventBus* bus)
         });
 
  
-    bus->subscribe<GetDefaultShader>([this](GetDefaultShader& event) {
+    bus->subscribe<GetDefaultShader>([this](const GetDefaultShader& event) {
         std::cout << "[ShaderManager] Getting default shader \n";
         event.shader = getDefaultShader();
         });

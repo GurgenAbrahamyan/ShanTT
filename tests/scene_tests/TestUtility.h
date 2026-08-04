@@ -5,16 +5,35 @@
 
 struct TestContext
 {
-    EventBus events;
+    EngineContext events;
     entt::registry registry;
 
     SceneContext Create()
     {
         return SceneContext{
-            events,
-            registry
+            event(),
+            &registry
         };
     }
+
+    private:
+        EngineContext event() { return 
+
+            EngineContext{
+                nullptr,
+                0.0f,
+                0.0f,
+                events.events,
+                events.renderer,
+                events.physics,
+                events.assets,
+                events.input
+            };
+        
+        
+        }
+
+
 };
 
 

@@ -592,15 +592,19 @@ void UiInput::DrawRenderPassWindow(RenderPass* pass,
 
 {
 
+    const float windowWidth = ctx->windowSizes.x;
+
     const float pad = 10.f;
 
-    const float w = (float)ctx->windowWidth / 5.f;
+    const float w = windowWidth / 5.f;
+
+
 
     ImGui::SetNextWindowSize(ImVec2(w, 0), ImGuiCond_FirstUseEver);
 
     ImGui::SetNextWindowPos(
 
-        ImVec2((float)ctx->windowWidth - 2.f * w - 2.f * pad, pad),
+        ImVec2( windowWidth - 2.f * w - 2.f * pad, pad),
 
         ImGuiCond_FirstUseEver);
 
@@ -623,16 +627,18 @@ void UiInput::DrawRenderPassWindow(RenderPass* pass,
 void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry, RenderContext* ctx)
 
 {
+    const float windowWidth = ctx->windowSizes.x;
+    const float windowHeight = ctx->windowSizes.y;
 
     const float pad = 10.f;
 
-    const float w = (float)ctx->windowWidth / 5.f;
+    const float w = windowWidth / 5.f;
 
-    float gbufH = (float)ctx->windowHeight / 2.f;
+    float gbufH = windowHeight / 2.f;
 
     ImGui::SetNextWindowPos(
 
-        ImVec2((float)ctx->windowWidth - 2 * w - 2 * pad, (float)ctx->windowHeight - gbufH - pad),
+        ImVec2(windowWidth - 2 * w - 2 * pad, windowHeight - gbufH - pad),
 
         ImGuiCond_FirstUseEver);
 
@@ -749,18 +755,20 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
     auto* modelMgr = ctx->modelManager;
 
 
+    const float windowWidth = ctx->windowSizes.x;
+    const float windowHeight = ctx->windowSizes.y;
 
     const float pad    = 10.f;
 
-    const float panelW = (float)ctx->windowWidth / 5.f;
+    const float panelW = windowWidth / 5.f;
 
-    const float inspW  = (float)ctx->windowWidth / 5.f;
+    const float inspW  = windowWidth / 5.f;
 
-    const float gbufW  = (float)ctx->windowWidth / 5.f;
+    const float gbufW  = windowHeight / 5.f;
 
     const float usableW = panelW - 2.f * pad;
 
-    const float usableH = (float)ctx->windowHeight - 2.f * pad;
+    const float usableH = windowHeight - 2.f * pad;
 
 
 
@@ -1024,7 +1032,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
         ImGui::SetNextWindowSize(ImVec2(inspW, usableH / 2), ImGuiCond_FirstUseEver);
 
-        ImGui::SetNextWindowPos(ImVec2((float)ctx->windowWidth - inspW - pad, pad), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(windowWidth - inspW - pad, pad), ImGuiCond_FirstUseEver);
 
         bool windowOpen = true;
 
@@ -1050,13 +1058,13 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
 
 
-    float gbufH = (float)ctx->windowHeight / 2.f;
+    float gbufH = windowHeight / 2.f;
 
     ImGui::SetNextWindowSize(ImVec2(gbufW - pad, gbufH), ImGuiCond_FirstUseEver);
 
     ImGui::SetNextWindowPos(
 
-        ImVec2((float)ctx->windowWidth - gbufW - pad, (float)ctx->windowHeight - gbufH - pad),
+        ImVec2(windowWidth - gbufW - pad, windowHeight - gbufH - pad),
 
         ImGuiCond_FirstUseEver);
 

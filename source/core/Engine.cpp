@@ -1,100 +1,84 @@
 #include "Engine.h"
 
-#include "platform/IPlatform.h"
-#include "EventBus.h"
 #include "../render/Renderer.h"
 #include "../physics/PhysicsEngine.h"
-//#include "../input/UIInput.h"
-#include "../input/KeyBoardInput.h"
-#include "ecs_systems/CameraSystem.h"
-#include "../render/ecs_systems/ShadowSystem.h"
-#include "../input/MouseInput.h"
-#include "EngineContext.h"
-#include <chrono>
 
+#include <chrono>
+#include <iostream>
 
 Engine::Engine()
     : platform(CreatePlatform()),
-      bus(new EventBus()),
-      scene(/*new Scene(bus)*/),
-      physicsEngine(new PhysicsEngine()),
-      cameraSystem(/*new CameraSystem (bus, scene->getRegistry())*/),
-      shadowSystem(new ShadowSystem()),
+      bus(),
+      input(bus),
+      renderer( &bus, &renderContext),
+      physicsEngine(PhysicsEngine()),
+    //  cameraSystem(CameraSystem(&bus, *renderContext.registry)),   
+     // shadowSystem(ShadowSystem()),
+      engineContext({*platform.get(),
+                    0.0f,
+                    0.0f, 
+                    bus,
+                    renderer,
+                    physicsEngine,
+                    assetManager,
+                    input}),
+      sceneContext({engineContext}),
+      sceneManager(sceneContext),
       running(true),
       accumulator(0.0f),
       framesThisSecond(0),
       timeSinceLastFpsPrint(0.0f)
-{
-    renderContext = new RenderContext(),
-    renderer = new Renderer(bus, renderContext);
 
-    
-   
-    keyboardInput = new KeyboardInput(bus);
-    mouseInput = new MouseInput(bus); 
-    /*
-    scene->initObjects();
-	renderContext->registry = &scene->getRegistry();
-    renderContext->brdfTexture = scene->getBRDF();
-    renderContext->modelManager = scene->getModelManager();*/
+{
+    WindowDesc desc;
+    desc.width = 1920;
+    desc.height = 1200;
+    desc.title = "ShanTT";
+    desc.api = GraphicsAPI::OpenGL;
+
+    if (!platform->Init(desc, bus)) {
+        throw std::runtime_error("Platform init failed");
+    }
 }
 
 Engine::~Engine() {
-    delete bus;
-    delete scene;
-    delete renderer;
-    delete physicsEngine;
-   
-    delete keyboardInput;
-    delete mouseInput;
+    platform->Shutdown();
 }
 
 void Engine::run() {
-    auto lastTime = std::chrono::high_resolution_clock::now();
+    while (!platform->ShouldClose() && running) {
 
-    while (!glfwWindowShouldClose(window)) {
+        double frameStart = platform->GetTime();
+        static double lastTime = frameStart;
+        float frameTime = static_cast<float>(frameStart - lastTime);
+        lastTime = frameStart;
 
-        auto now = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> delta = now - lastTime;
-        lastTime = now;
-        float frameTime = delta.count();
-
+        platform->PollEvents(); // triggers GLFW callbacks -> publishes KeyEvent/MouseMoveEvent/etc -> InputManager updates
 
         accumulator += frameTime;
-
-
         while (accumulator >= PHYSICS_STEP) {
-            
-           // physicsEngine->update(scene->getRegistry(), PHYSICS_STEP);
+            physicsEngine.update(sceneManager.Current()->Registry(), PHYSICS_STEP);
             accumulator -= PHYSICS_STEP;
         }
 
-        EngineContext::get().deltaTime = frameTime;
-
-        keyboardInput->processInput();
-       // cameraSystem->update(scene->getRegistry(), frameTime);
-        mouseInput->proccessInput(renderContext->windowWidth, renderContext->windowHeight);
-        
-        glfwPollEvents();          
-
-       
-        renderer->rebuildContext(renderContext);
-        shadowSystem->update(renderContext);
-        renderer->render();       
+        sceneManager.Update(frameTime);
 
         
+        // cameraSystem->update(scene->getRegistry(), frameTime);
 
-        glfwSwapBuffers(window);
-     
+        renderer.rebuildContext(&renderContext);
+        //shadowSystem.update(&renderContext);
+        renderer.render();
+
+        platform->SwapBuffers();
+        input.EndFrame(); // clear pressed/released edge flags -- must run AFTER render, BEFORE next PollEvents
 
         framesThisSecond++;
         timeSinceLastFpsPrint += frameTime;
-
         if (timeSinceLastFpsPrint >= 1.0f) {
             std::cout << "FPS: " << framesThisSecond << "\n";
             framesThisSecond = 0;
             timeSinceLastFpsPrint = 0.0f;
-
         }
     }
 }

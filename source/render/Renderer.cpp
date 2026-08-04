@@ -12,10 +12,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <iostream>
-
-#include "../core/EngineContext.h"
-
 #include "data/BatchMap.h"
 #include "data/MeshBatch.h"
 #include "data/ShaderType.h"
@@ -37,44 +33,10 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     shaderManager = new ShaderManager(bus);
 
-    if (!glfwInit()) {
-        std::cout << "Failed to initialize GLFW\n";
-        return;
-    }
-
-    int samples = 8;
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_SAMPLES, samples);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    window = glfwCreateWindow(
-        ctx->windowWidth,
-        ctx->windowHeight,
-        "Hexium",
-        nullptr,
-        nullptr
-    );
-
-
-    if (!window) {
-        std::cout << "Failed to create GLFW window\n";
-        glfwTerminate();
-        return;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD\n";
-        return;
-    }
-
     ui = new UiInput(window, bus);
 
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    EngineContext::get().setWindow(window);
+    
+    
 
     m_ShadowFrameBuffer = std::make_unique<FrameBuffer>(
         1024, 1024
@@ -87,7 +49,9 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     m_ShadowFrameBuffer->disableColor();
     m_ShadowFrameBuffer->unbind();
 
-
+    auto fbWidth { static_cast<uint32_t>(ctx->windowSizes.x) };
+    auto fbHeight { static_cast<uint32_t>(ctx->windowSizes.x) };
+     
     m_MainFrameBuffer = std::make_unique<FrameBuffer>(
         fbWidth,
         fbHeight
@@ -318,12 +282,6 @@ void Renderer::render()
 
 }
 
-
-
-GLFWwindow* Renderer::getWindow() const {
-    return window;
-}
-
 void Renderer::framebuffer_size_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -508,7 +466,7 @@ void Renderer::clearFramebuffers()
         glViewport(0, 0, m_ShadowFrameBuffer->getWidth(), m_ShadowFrameBuffer->getHeight());
         glClearDepth(1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, ctx->windowWidth, ctx->windowHeight);
+        glViewport(0, 0, ctx->windowSizes.x, ctx->windowSizes.y);
         m_ShadowFrameBuffer->unbind();
     }
 
@@ -517,7 +475,7 @@ void Renderer::clearFramebuffers()
         m_LightFrameBuffer->bind();
         glViewport(0, 0, m_LightFrameBuffer->getWidth(), m_LightFrameBuffer->getHeight());
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // ? depth never cleared!
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
         m_LightFrameBuffer->unbind();
 
 

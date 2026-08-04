@@ -61,7 +61,7 @@ public:
         }
 
         fb->unbind();
-        glViewport(0, 0, ctx.windowWidth, ctx.windowHeight);
+        glViewport(0, 0, ctx.windowSizes.x, ctx.windowSizes.y);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glDisable(GL_POLYGON_OFFSET_FILL);

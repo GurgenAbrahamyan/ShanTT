@@ -9,6 +9,8 @@
 #include "../../ecs/components/graphics/CubeMapComponent.h"
 #include "../../resources/assets/Texture.h"
 #include "../../resources/managers/ModelManager.h"
+#include "math_custom/Vector2.h"
+
 struct DebugTexture {
     std::string name;
     unsigned int textureID = 0;
@@ -18,21 +20,20 @@ struct RenderContext {
 
 
 
-    entt::registry* registry = nullptr;
+    entt::registry* registry {nullptr};
 
-    CameraComponent* camera = nullptr;
-    TransformComponent* cameraTransform = nullptr;
-    CubeMapComponent* cubeMapComp = nullptr;
+    CameraComponent* camera {nullptr};
+    TransformComponent* cameraTransform {nullptr};
+    CubeMapComponent* cubeMapComp {nullptr};
 
     MaterialBatchMap batches;
 
     std::vector<GPULight> lights;
     std::vector<GPULight*> shadowCasters;
-    int windowWidth = 1920;
-    int windowHeight = 1200;
+    Vector2 windowSizes{};
 
 
-    int shadowSlots;
+    int shadowSlots{};
 
 
     std::vector<ShadowData> shadowData;

@@ -11,15 +11,15 @@
 
 
 CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(registry) {
-    bus->subscribe<PressedKey>([this](PressedKey& event) {
+    bus->subscribe<PressedKey>([this](const PressedKey& event) {
         this->processKeyboard(this->registry, event.key, EngineContext::get().deltaTime);
         });
 
-    bus->subscribe<CameraMode>([this](CameraMode& event) {
+    bus->subscribe<CameraMode>([this](const CameraMode& event) {
         camMode = event.key;
         });
 
-    bus->subscribe<MouseDragged>([this](MouseDragged& event) {
+    bus->subscribe<MouseDragged>([this](const MouseDragged& event) {
         processMouse(this->registry, static_cast<float> (event.x), static_cast<float>(event.y));
         });
 }

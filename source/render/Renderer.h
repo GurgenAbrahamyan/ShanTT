@@ -1,7 +1,7 @@
 #pragma once
 
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
+
 #include "../math_custom/Mat4.h"
 #include "backend/Shader.h"
 
@@ -33,12 +33,8 @@ public:
 	FrameBuffer* getShadowFrameBuffer() const { return m_ShadowFrameBuffer.get(); }
 	void rebuildContext(RenderContext* ctx);
 	RenderGraph* getRenderGraph() const { return graph; }
-
-    GLFWwindow* getWindow() const;
-
     
     
-
 private:
 
 	Mat4 getWorldTransform(entt::entity entity, entt::registry& registry);

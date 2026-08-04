@@ -1,23 +1,15 @@
 #pragma once
 #include "../math_custom/Vector2.h"
-
-class EventBus;
-
-enum class GraphicsAPI { None, OpenGL, Vulkan };
-
-struct WindowDesc {
-    int width = 1280;
-    int height = 720;
-    const char* title = "Hexium";
-    GraphicsAPI api = GraphicsAPI::OpenGL;
-    bool vsync = true;
-};
+#include "core/EventBus.h"
+#include "WindowDesc.h"
 
 class IPlatform {
 public:
     virtual ~IPlatform() = default;
 
     virtual bool Init(const WindowDesc& desc, EventBus& bus) = 0;
+
+  
     virtual void Shutdown() = 0;
 
     virtual void PollEvents() = 0;      
