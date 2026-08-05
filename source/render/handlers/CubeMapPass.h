@@ -6,7 +6,7 @@ public:
 
     }
 
-    void execute(RenderContext& context) override {
+    void execute(const FrameRenderData& frameData, const EngineResources&, const  DebugRenderData&) override {
 
         if (outputs.empty() || inputs.empty()) return;
         FrameBuffer* fb = outputs[0]->framebuffer;
@@ -24,13 +24,13 @@ public:
             GL_DEPTH_BUFFER_BIT, GL_NEAREST
         );
 
-        auto* cam = context.camera;
-        auto* camTrans = context.cameraTransform;
+        auto* cam = frameData.camera;
+        auto* camTrans = frameData.cameraTransform;
         if (!cam || !camTrans) return;
 
 
-        if (!context.cubeMapComp) return;
-        CubeMapComponent& cmc = *context.cubeMapComp;
+        if (!frameData.cubeMapComp) return;
+        CubeMapComponent& cmc = *frameData.cubeMapComp;
         if (!cmc.cubeMap) return;
 
         shader->Activate();

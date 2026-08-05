@@ -1,86 +1,45 @@
 ﻿#pragma once
 
 #include <vector>
-
 #include <unordered_map>
-
 #include <typeindex>
-
 #include <functional>
-
 #include <algorithm>
-
 #include <string>
-
 #include <cctype>
 
-
-
 #include "../render/RenderGraph.h"
-
 #include "../core/EventBus.h"
-
-#include "../render/data/RenderContext.h"
-
-
-
+#include "../render/data/DebugRenderData.h"
+#include "../render/data/EngineResources.h"
 #include <imgui/imgui.h>
-
 #include <imgui/imgui_impl_opengl3.h>
-
 #include <imgui/imgui_impl_glfw.h>
-
-
-
 #include <GLFW/glfw3.h>
-
 #include <glad/glad.h>
 
-
-
 #include "../ecs/components/core/TagComponent.h"
-
 #include "../ecs/components/core/ParentComponent.h"
-
 #include "../ecs/components/core/TransformComponent.h"
-
 #include "../ecs/components/core/WorldMatrixComponent.h"
-
 #include "../ecs/components/graphics/ActiveCameraTag.h"
-
 #include "../ecs/components/graphics/CameraComponent.h"
-
 #include "../ecs/components/graphics/CubeMapComponent.h"
-
 #include "../ecs/components/graphics/LightComponent.h"
-
 #include "../ecs/components/graphics/MaterialComponent.h"
-
 #include "../ecs/components/graphics/MeshComponent.h"
-
 #include "../ecs/components/graphics/ModelComponent.h"
-
 #include "../ecs/components/physics/CollisionShapeComponent.h"
-
 #include "../ecs/components/physics/RigidBodyComponent.h"
-
 #include "../ecs/components/physics/SoftBodyComponent.h"
 
-
-
-
-
+#include "platform/IPlatform.h"
 
 using ComponentTypes = std::tuple<
-
     TagComponent, ParentComponent, TransformComponent, WorldMatrixComponent,
-
     ActiveCameraTag, CameraComponent, CubeMapComponent, LightComponent,
-
     MaterialComponent, MeshComponent, ModelComponent,
-
     CollisionShapeComponent, RigidBodyComponent, SoftBodyComponent
-
 >;
 
 
@@ -97,7 +56,6 @@ struct DebugWindow {
 
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 
 
@@ -315,13 +273,16 @@ class UiInput {
 
 public:
 
-    UiInput(GLFWwindow* window, EventBus* bus);
+    UiInput(IPlatform& platform, EventBus* bus);
 
 
 
     void startNewFrame();
 
-    void buildUI(RenderContext* ctx, RenderGraph* rendergraph);
+    void buildUI(entt::registry& registry,
+                       const EngineResources& resources,
+                       const DebugRenderData& debugData,
+                       RenderGraph* rendergraph);
 
     void render();
 
@@ -377,15 +338,15 @@ private:
 
     void createWindow(const std::string& title, std::function<void(bool&)> drawFunc);
 
-    void DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry, RenderContext* ctx);
+    void DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry, Vector2 windowSizes);
 
-    void DrawRenderPassWindow(RenderPass* pass, const std::function<void(RenderPass*)>& drawFn, RenderContext* ctx);
+    void DrawRenderPassWindow(RenderPass* pass, const std::function<void(RenderPass*)>& drawFn, Vector2 windowSizes);
 
 
 
     [[maybe_unused]] EventBus* bus;
 
-    GLFWwindow* window;
+    IPlatform& window;
 
     std::vector<DebugWindow> windows;
 

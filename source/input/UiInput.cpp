@@ -8,7 +8,7 @@
 #include "../render/handlers/FXAAPass.h"
 
 
-UiInput::UiInput(GLFWwindow* window, EventBus* bus) :  bus(bus), window(window)
+UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platform)
 
 {
 
@@ -20,7 +20,7 @@ UiInput::UiInput(GLFWwindow* window, EventBus* bus) :  bus(bus), window(window)
 
     ApplyEditorStyle();
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(window.GetNativeWindowHandle()), true);
 
     ImGui_ImplOpenGL3_Init("#version 330");
 
@@ -510,10 +510,11 @@ void UiInput::render()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    int w, h;
+    
 
-    glfwGetFramebufferSize(window, &w, &h);
+    Vector2 windowSize{window.GetFramebufferSize()};
 
+    float w {windowSize.x}, h {windowSize.y};
     glViewport(0, 0, w, h);
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -586,13 +587,11 @@ void UiInput::createWindow(const std::string& title, std::function<void(bool&)> 
 
 void UiInput::DrawRenderPassWindow(RenderPass* pass,
 
-    const std::function<void(RenderPass*)>& drawFn,
-
-    RenderContext* ctx)
+    const std::function<void(RenderPass*)>& drawFn, Vector2 windowSizes)
 
 {
 
-    const float windowWidth = ctx->windowSizes.x;
+    const float windowWidth = windowSizes.x;
 
     const float pad = 10.f;
 
@@ -624,11 +623,11 @@ void UiInput::DrawRenderPassWindow(RenderPass* pass,
 
 
 
-void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry, RenderContext* ctx)
+void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry, Vector2 windowSizes)
 
 {
-    const float windowWidth = ctx->windowSizes.x;
-    const float windowHeight = ctx->windowSizes.y;
+    const float windowWidth = windowSizes.x;
+    const float windowHeight = windowSizes.y;
 
     const float pad = 10.f;
 
@@ -728,11 +727,11 @@ void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry
 
             std::advance(it, selectedModel);
 
-            auto entity = registry->create();
+            auto entity = registry.create();
 
-            registry->emplace<TagComponent>(entity, std::string(entityName));
+            registry.emplace<TagComponent>(entity, std::string(entityName));
 
-            mgr->instantiateModel(it->first, *registry, entity);
+            mgr->instantiateModel(it->first, registry, entity);
 
             activeInspectorEntity = entity;
 
@@ -746,17 +745,16 @@ void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry* registry
 
 
 
-void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
-
+void UiInput::buildUI(entt::registry& registry,
+                       const EngineResources& resources,
+                       const DebugRenderData& debugData,
+                       RenderGraph* rendergraph)
 {
 
-    auto* registry = ctx->registry;
+    ModelManager* modelMgr {resources.modelManager};
 
-    auto* modelMgr = ctx->modelManager;
-
-
-    const float windowWidth = ctx->windowSizes.x;
-    const float windowHeight = ctx->windowSizes.y;
+    const float windowWidth = resources.windowSize.x;
+    const float windowHeight = resources.windowSize.y;
 
     const float pad    = 10.f;
 
@@ -786,13 +784,13 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     ImGui::BeginChild("##compadder", ImVec2(0.f, 0.f), true);
 
-    if (registry->valid(activeInspectorEntity)) {
+    if (registry.valid(activeInspectorEntity)) {
 
         std::string activeName = "Entity " + std::to_string((uint32_t)activeInspectorEntity);
 
-        if (registry->all_of<TagComponent>(activeInspectorEntity))
+        if (registry.all_of<TagComponent>(activeInspectorEntity))
 
-            activeName = registry->get<TagComponent>(activeInspectorEntity).tag;
+            activeName = registry.get<TagComponent>(activeInspectorEntity).tag;
 
         ImGui::TextColored(ImVec4(0.40f, 0.80f, 1.f, 1.f), "%s %s",
 
@@ -810,7 +808,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     ImGui::Spacing();
 
-    if (registry->valid(activeInspectorEntity))
+    if (registry.valid(activeInspectorEntity))
 
         for (auto& [name, adderFn] : componentAdderMap) {
 
@@ -818,7 +816,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
             ImGui::PushID(name.c_str());
 
-            if (ImGui::Selectable(("  + " + name).c_str())) adderFn(*registry, activeInspectorEntity);
+            if (ImGui::Selectable(("  + " + name).c_str())) adderFn(registry, activeInspectorEntity);
 
             ImGui::PopID();
 
@@ -848,17 +846,17 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     entt::entity toDestroy = entt::null;
 
-    auto view = registry->view<entt::entity>();
+    auto view = registry.view<entt::entity>();
 
     for (auto entity : view) {
 
-        if (!registry->valid(entity)) continue;
+        if (!registry.valid(entity)) continue;
 
         std::string displayName = "Entity " + std::to_string((uint32_t)entity);
 
-        if (registry->all_of<TagComponent>(entity))
+        if (registry.all_of<TagComponent>(entity))
 
-            displayName = registry->get<TagComponent>(entity).tag;
+            displayName = registry.get<TagComponent>(entity).tag;
 
         if (!StrContainsCI(displayName, entityFilter)) continue;
 
@@ -884,11 +882,11 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     }
 
-    if (registry->valid(toDestroy)) {
+    if (registry.valid(toDestroy)) {
 
         if (activeInspectorEntity == toDestroy) activeInspectorEntity = entt::null;
 
-        registry->destroy(toDestroy);
+        registry.destroy(toDestroy);
 
     }
 
@@ -912,9 +910,9 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
         if (confirm && newEntityNameBuf[0] != '\0') {
 
-            auto e = registry->create();
+            auto e = registry.create();
 
-            registry->emplace<TagComponent>(e, std::string(newEntityNameBuf));
+            registry.emplace<TagComponent>(e, std::string(newEntityNameBuf));
 
             activeInspectorEntity = e;
 
@@ -1012,7 +1010,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
             if (it != passRenderMap.end())
 
-                DrawRenderPassWindow(pass, it->second, ctx);
+                DrawRenderPassWindow(pass, it->second, resources.windowSize);
 
         }
 
@@ -1020,13 +1018,13 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
 
 
-    if (registry->valid(activeInspectorEntity)) {
+    if (registry.valid(activeInspectorEntity)) {
 
         std::string entityName = "Entity " + std::to_string((uint32_t)activeInspectorEntity);
 
-        if (registry->all_of<TagComponent>(activeInspectorEntity))
+        if (registry.all_of<TagComponent>(activeInspectorEntity))
 
-            entityName = registry->get<TagComponent>(activeInspectorEntity).tag;
+            entityName = registry.get<TagComponent>(activeInspectorEntity).tag;
 
         std::string title = std::string(reinterpret_cast<const char*>(u8"\u2605 ")) + entityName + "##insp";
 
@@ -1042,7 +1040,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
         ImGui::Separator();
 
-        renderComponents<ComponentTypes>(*registry, activeInspectorEntity, componentRenderMap);
+        renderComponents<ComponentTypes>(registry, activeInspectorEntity, componentRenderMap);
 
         ImGui::End();
 
@@ -1054,7 +1052,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     if (modelManagerOpen && modelMgr)
 
-        DrawModelManagerWindow(modelMgr, registry, ctx);
+        DrawModelManagerWindow(modelMgr, registry, resources.windowSize);
 
 
 
@@ -1074,7 +1072,7 @@ void UiInput::buildUI(RenderContext* ctx, RenderGraph* rendergraph)
 
     const float thumbH = thumbW * (9.f / 16.f);
 
-    for (auto& dt : ctx->debugTextures) {
+    for (auto& dt : debugData.debugTextures) {
 
         if (dt.textureID == 0) continue;
 

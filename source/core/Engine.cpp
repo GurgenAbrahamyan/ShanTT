@@ -10,7 +10,8 @@ Engine::Engine()
     : platform(CreatePlatform()),
       bus(),
       input(bus),
-      renderer( &bus, &renderContext),
+      debugUi(*platform.get(), &bus), 
+      renderer( &bus, &rendererResources),
       physicsEngine(PhysicsEngine()),
     //  cameraSystem(CameraSystem(&bus, *renderContext.registry)),   
      // shadowSystem(ShadowSystem()),
@@ -53,7 +54,7 @@ void Engine::run() {
         float frameTime = static_cast<float>(frameStart - lastTime);
         lastTime = frameStart;
 
-        platform->PollEvents(); // triggers GLFW callbacks -> publishes KeyEvent/MouseMoveEvent/etc -> InputManager updates
+        platform->PollEvents();
 
         accumulator += frameTime;
         while (accumulator >= PHYSICS_STEP) {
@@ -66,13 +67,19 @@ void Engine::run() {
         
         // cameraSystem->update(scene->getRegistry(), frameTime);
 
-        renderer.rebuildContext(&renderContext);
+        renderer.rebuildContext(frameData);
         //shadowSystem.update(&renderContext);
-        renderer.render();
+        renderer.render(frameData);
 
         platform->SwapBuffers();
-        input.EndFrame(); // clear pressed/released edge flags -- must run AFTER render, BEFORE next PollEvents
+        input.EndFrame(); 
 
+        debugUi.startNewFrame();
+        debugUi.buildUI(sceneManager.Current()->Registry(),
+                      rendererResources, 
+                      renderer.getDebugRenderData(), 
+                      renderer.getRenderGraph());
+                      
         framesThisSecond++;
         timeSinceLastFpsPrint += frameTime;
         if (timeSinceLastFpsPrint >= 1.0f) {

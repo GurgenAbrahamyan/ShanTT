@@ -11,19 +11,14 @@
 
 
 #include <vector>
-#include <unordered_map>
-#include "data/BatchMap.h"
-#include "data/MeshBatch.h"
 #include "data/ShaderType.h"
 
 
 
-Renderer::Renderer(EventBus* bus, RenderContext* ctx)
-    : window(nullptr),
+Renderer::Renderer( EventBus* bus, EngineResources* ctx) :
     bus(bus),
     shaderManager(nullptr),
     ctx(ctx),
-    ui(nullptr),
     blurResource(nullptr),
     shadowResource(nullptr),
     lightResource(nullptr),
@@ -33,10 +28,8 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     shaderManager = new ShaderManager(bus);
 
-    ui = new UiInput(window, bus);
+   
 
-    
-    
 
     m_ShadowFrameBuffer = std::make_unique<FrameBuffer>(
         1024, 1024
@@ -49,8 +42,8 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
     m_ShadowFrameBuffer->disableColor();
     m_ShadowFrameBuffer->unbind();
 
-    auto fbWidth { static_cast<uint32_t>(ctx->windowSizes.x) };
-    auto fbHeight { static_cast<uint32_t>(ctx->windowSizes.x) };
+    auto fbWidth { static_cast<uint32_t>(ctx->windowSize.x) };
+    auto fbHeight { static_cast<uint32_t>(ctx->windowSize.y) };
      
     m_MainFrameBuffer = std::make_unique<FrameBuffer>(
         fbWidth,
@@ -250,171 +243,23 @@ Renderer::Renderer(EventBus* bus, RenderContext* ctx)
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+   
 }
 
 Renderer::~Renderer() {
 
     delete shaderManager;
-
-    if (window) {
-        glfwDestroyWindow(window);
-        glfwTerminate();
-    }
 }
 
 
 
-
-
-
-
-
-void Renderer::render()
+void Renderer::render(const FrameRenderData& frameData) const
 {
     clearFramebuffers();
 
-    graph->execute(*ctx);
-
-
-
-    ui->render();
+    graph->execute(frameData, *ctx , debugData );
 
 }
-
-void Renderer::framebuffer_size_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
-void Renderer::rebuildContext(RenderContext* ctx)
-{
-
-
-
-
-    if (!ctx || !ctx->registry) return;
-
-
-    auto& registry = *ctx->registry;
-
-
-
-    ctx->camera = nullptr;
-    ctx->cameraTransform = nullptr;
-    ctx->cubeMapComp = nullptr;
-
-    // find active camera
-    for (auto entity : registry.view<ActiveCameraTag>())
-    {
-
-        ctx->camera = registry.try_get<CameraComponent>(entity);
-        ctx->cameraTransform = registry.try_get<TransformComponent>(entity);
-        break;
-    }
-
-    ctx->batches.clear();
-
-    auto view = registry.view<
-        TransformComponent,
-        ModelComponent>();
-
-    for (auto entity : view)
-    {
-        for (auto submesh : view.get<ModelComponent>(entity).asset->meshes)
-        {
-            Mat4 entityWorld = getWorldTransform(entity, registry);
-            auto& meshComp = submesh.mesh;
-            auto& matComp = submesh.material;
-            if (!meshComp || !matComp)
-                continue;
-            Mat4 model = submesh.localTransform;
-            auto& meshMap = ctx->batches[matComp];
-            auto& batch = meshMap[meshComp];
-            batch.instances.push_back(entityWorld*model);
-        }
-
-    }
-
-    ctx->lights.clear();
-    int shadowIndex = 0;
-    float sunElevation = 1.0f;
-    registry.view<LightComponent, TransformComponent>().each(
-        [&]([[maybe_unused]] entt::entity entity, LightComponent& lc, TransformComponent& tc)
-        {
-            GPULight l{};
-
-            l.type = static_cast<int>(lc.type);
-            if (lc.castsShadow) {
-
-                l.shadowIndex = shadowIndex;
-                if (lc.type == LightType::Point) {
-                    shadowIndex += 6;
-                }
-                else {
-                    shadowIndex += 1;
-                }
-            }
-            l.intensity = lc.intensity;
-            
-
-            l.color = lc.color;
-            l.position = tc.position;
-            l.direction = Mat4::fromQuat(tc.rotation).multiplyVec({ 0.0f, 0.0f, -1.0f }, 0.0f);
-            
-
-            constexpr float SUN_DISTANCE = 100.0f;
-            
-            if (lc.type == LightType::Directional) {
-              
-         
-                l.position = Vector3(
-                    -l.direction.x * SUN_DISTANCE,
-                    -l.direction.y * SUN_DISTANCE,
-                    -l.direction.z * SUN_DISTANCE
-                );
-
-         
-
-                float elevation = -l.direction.y;
-                float t = std::max(0.0f, elevation);
-
-                l.intensity = lc.intensity * (t * t * std::sqrt(t));
-                sunElevation = t;
-            }
-         
-           
-            l.innerCone = lc.innerConeAngle;
-            l.outerCone = lc.outerConeAngle;
-
-            ctx->lights.push_back(l);
-        });
-
-    auto skyView = registry.view<CubeMapComponent>();
-    if (skyView.empty()) return;
-    ctx->cubeMapComp = &registry.get<CubeMapComponent>(skyView.front());
-    ctx->cubeMapComp->dirLightInfluence = std::sqrt(sunElevation);
-
-    ctx->debugTextures.clear();
-    if (m_MainFrameBuffer) {
-        ctx->debugTextures.push_back({ "Albedo",    m_MainFrameBuffer->getColorAttachment(0) });
-        ctx->debugTextures.push_back({ "Position",  m_MainFrameBuffer->getColorAttachment(1) });
-        ctx->debugTextures.push_back({ "Normal",    m_MainFrameBuffer->getColorAttachment(2) });
-        ctx->debugTextures.push_back({ "ARM",       m_MainFrameBuffer->getColorAttachment(3) });
-        ctx->debugTextures.push_back({ "Emissive",  m_MainFrameBuffer->getColorAttachment(4) });
-    }
-    if (m_LightFrameBuffer)
-        ctx->debugTextures.push_back({ "Light Pass", m_LightFrameBuffer->getColorAttachment(0) });
-    if (m_BlurFrameBuffer)
-        ctx->debugTextures.push_back({ "Blur / Final", m_BlurFrameBuffer->getColorAttachment(0) });
-    if (m_ShadowFrameBuffer)
-        ctx->debugTextures.push_back({ "Shadow Depth", m_ShadowFrameBuffer->getDepthAttachment() });
-
-    ui->startNewFrame();
-
-    ui->buildUI(ctx, graph);
-
-  
-};
 
 Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) {
 
@@ -440,7 +285,7 @@ Mat4 Renderer::getWorldTransform(entt::entity entity, entt::registry& registry) 
     return  local;
 }
 
-void Renderer::clearFramebuffers()
+void Renderer::clearFramebuffers() const
 {
 
     if (m_MainFrameBuffer) {
@@ -466,7 +311,7 @@ void Renderer::clearFramebuffers()
         glViewport(0, 0, m_ShadowFrameBuffer->getWidth(), m_ShadowFrameBuffer->getHeight());
         glClearDepth(1.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, ctx->windowSizes.x, ctx->windowSizes.y);
+        glViewport(0, 0, ctx->windowSize.x, ctx->windowSize.y);
         m_ShadowFrameBuffer->unbind();
     }
 

@@ -131,6 +131,7 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
         }
     }
 
+    glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
     glfwSetKeyCallback(window, KeyCallback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, CursorPosCallback);
@@ -215,4 +216,10 @@ void PlatformGLFW::ScrollCallback(GLFWwindow* w, double xoff, double yoff)
 {
     auto& bus = *static_cast<EventBus*>(glfwGetWindowUserPointer(w));
     bus.publish(ScrollEvent{ xoff, yoff });
+}
+
+void PlatformGLFW::FramebufferSizeCallback(GLFWwindow*, int width, int height) {
+    //auto* platform = static_cast<PlatformGLFW*>(glfwGetWindowUserPointer(window));
+   // platform->m_eventBus->publish(WindowResizeEvent{width, height});
+   glViewport(0, 0, width, height);
 }

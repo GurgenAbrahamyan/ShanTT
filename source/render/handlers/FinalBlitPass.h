@@ -32,7 +32,9 @@ public:
         quadVBO.Unbind();
     }
 
-    void execute([[maybe_unused]] RenderContext& context) override
+    void execute(const FrameRenderData&, 
+                const EngineResources&, 
+                const DebugRenderData&) override
     {
         if (inputs.size() == 0) return;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderPass.h"
+#include "render/backend/containers/GlobalUniformBuffer.h"
 class LightingPass : public RenderPass {
 public:
     LightingPass(Shader* s) : RenderPass(s), quadVBO(quadVertices, sizeof(quadVertices), false) {
@@ -18,10 +19,13 @@ public:
         quadVBO.Unbind();
     }
 
-    void execute(RenderContext& ctx) override {
+    void execute(const FrameRenderData& frameData, 
+                const EngineResources& resources, 
+                const DebugRenderData&) override {
         if (outputs.empty() || inputs.empty()) return;
-        if (!ctx.camera)
+        if (!frameData.camera)
             return;
+        const CameraComponent& camera {*frameData.camera};
         FrameBuffer* fb = outputs[0]->framebuffer;
         fb->bind();
         glViewport(0, 0, fb->getWidth(), fb->getHeight());
@@ -29,9 +33,9 @@ public:
         shader->Activate();
 
 
-        shader->setVec3("cameraPos", ctx.cameraTransform->position);
-        shader->setMat4("invView", ctx.camera->viewMatrix.inverse());
-        shader->setMat4("invProjection", ctx.camera->projectionMatrix.inverse());
+        shader->setVec3("cameraPos", frameData.cameraTransform->position);
+        shader->setMat4("invView", camera.viewMatrix.inverse());
+        shader->setMat4("invProjection", camera.projectionMatrix.inverse());
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(0)); // gAlbedo
@@ -44,15 +48,17 @@ public:
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, inputs[0]->framebuffer->getColorAttachment(4)); // gEmissive
 
-        if (ctx.cubeMapComp) {
-            glActiveTexture(GL_TEXTURE10);
-            ctx.cubeMapComp->cubeMap->bindIrrTexture(10);
-            glActiveTexture(GL_TEXTURE11);
-            ctx.cubeMapComp->cubeMap->bindPreFilterTexture(11);
-            glActiveTexture(GL_TEXTURE12);
-            ctx.brdfTexture->Bind(12);
+        if (frameData.cubeMapComp) {
+            const CubeMapComponent& cubeMap {*frameData.cubeMapComp};
 
-            shader->setFloat("envIntensity", ctx.cubeMapComp->intensity*ctx.cubeMapComp->dirLightInfluence);
+            glActiveTexture(GL_TEXTURE10);
+            cubeMap.cubeMap->bindIrrTexture(10);
+            glActiveTexture(GL_TEXTURE11);
+            cubeMap.cubeMap->bindPreFilterTexture(11);
+            glActiveTexture(GL_TEXTURE12);
+            resources.brdfTexture->Bind(12);
+
+            shader->setFloat("envIntensity", frameData.cubeMapComp->intensity * cubeMap.dirLightInfluence);
 
         }
         shader->setInt("gAlbedo", 0);
@@ -65,8 +71,8 @@ public:
         shader->setInt("brdfLUT", 12);
 
 
-        uploadLights(&ctx);
-        uploadLightMatrices(&ctx);
+        uploadLights(frameData);
+        uploadLightMatrices(frameData);
 
 
         if (inputs.size() > 1) {
@@ -74,7 +80,7 @@ public:
             glBindTexture(GL_TEXTURE_2D, inputs[1]->framebuffer->getDepthAttachment());
             shader->setInt("shadowsEnabled", 1);
             shader->setInt("shadowMap", 20);
-            shader->setInt("shadowCasterCount", (int)ctx.shadowData.size());
+            shader->setInt("shadowCasterCount", static_cast<int> (frameData.shadowData.size()));
         }
         else {
             shader->setInt("shadowsEnabled", 0);
@@ -95,20 +101,25 @@ private:
     UniformBuffer* lightsUBO = new UniformBuffer(sizeof(GPULight) * 32 + sizeof(int) + 12, 1);
     UniformBuffer* lightMatricesUBO = new UniformBuffer(sizeof(Mat4) * 162, 2);
 
-    void uploadLights(RenderContext* ctx) {
+    void uploadLights(const FrameRenderData& frameData) {
+
         lightsUBO->bind();
-        if (!ctx->lights.empty()) {
-            lightsUBO->update(ctx->lights.data(), ctx->lights.size() * sizeof(GPULight), 0);
-        }
-        int lightCount = (int)ctx->lights.size();
+
+        if (!frameData.lights.empty()) 
+            lightsUBO->update(frameData.lights.data(), frameData.lights.size() * sizeof(GPULight), 0);
+        
+
+        auto lightCount = static_cast<size_t>(frameData.lights.size());
         lightsUBO->update(&lightCount, sizeof(int), sizeof(GPULight) * 32);
     }
 
-    void uploadLightMatrices(RenderContext* ctx) {
+    void uploadLightMatrices(const FrameRenderData& frameData) {
+
         lightMatricesUBO->bind();
-        if (!ctx->shadowData.empty()) {
-            lightMatricesUBO->update(ctx->shadowData.data(), ctx->shadowData.size() * sizeof(ShadowData), 0);
-        }
+
+        if (frameData.shadowData.empty()) 
+            lightMatricesUBO->update(frameData.shadowData.data(), frameData.shadowData.size() * sizeof(ShadowData), 0);
+        
     }
 
     static constexpr float quadVertices[16] = {

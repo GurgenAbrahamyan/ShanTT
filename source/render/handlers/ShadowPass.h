@@ -11,8 +11,10 @@ public:
 
     }
 
-    void execute(RenderContext& ctx) override {
-        if (outputs.empty() || ctx.shadowCasters.empty()) return;
+    void execute(const FrameRenderData& frameData, 
+                const EngineResources& resources, 
+                const DebugRenderData&) override {
+        if (outputs.empty() || frameData.shadowData.empty()) return;
 
         
 
@@ -32,7 +34,7 @@ public:
         glPolygonOffset(2.0f, 4.0f);
 
 
-        for (ShadowData& data : ctx.shadowData) {
+        for (const ShadowData& data : frameData.shadowData) {
 
             int x = int(data.uvMin.x * ShadowAtlas::ATLAS_SIZE);
             int y = int(data.uvMin.y * ShadowAtlas::ATLAS_SIZE);
@@ -43,7 +45,7 @@ public:
             shader->setMat4("lightSpaceMatrix", data.lightMatrix);
 
 
-            for (auto& [mat, meshMap] : ctx.batches) {
+            for (auto& [mat, meshMap] : frameData.batches) {
                 for (auto& [mesh, batch] : meshMap) {
                     if (batch.instances.empty()) continue;
                     mesh->bind();
@@ -61,7 +63,7 @@ public:
         }
 
         fb->unbind();
-        glViewport(0, 0, ctx.windowSizes.x, ctx.windowSizes.y);
+        glViewport(0, 0, resources.windowSize.x, resources.windowSize.y);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glDisable(GL_POLYGON_OFFSET_FILL);

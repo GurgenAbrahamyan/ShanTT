@@ -162,7 +162,9 @@ set(RENDER_HEADERS
     source/render/data/BatchMap.h
     source/render/data/GPULight.h
     source/render/data/MeshBatch.h
-    source/render/data/RenderContext.h
+    source/render/data/DebugRenderData.h
+    source/render/data/EngineResources.h
+    source/render/data/FrameRenderData.h
     source/render/data/RenderResource.h
     source/render/data/ShaderType.h
     source/render/data/ShadowData.h
@@ -242,13 +244,14 @@ endif()
 set(SCENE_SOURCES
     source/scene/Scene.cpp
     source/scene/SceneManager.cpp
+    source/scene/SceneExtractor.cpp
     source/scene/loaders/SceneLoader.cpp
-    
 )
 
 set(SCENE_HEADERS
     source/scene/Scene.h
     source/scene/SceneManager.h
+    source/scene/SceneExtractor.h
     source/scene/loaders/SceneLoader.h
 )
 

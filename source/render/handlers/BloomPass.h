@@ -27,7 +27,7 @@ public:
         quadVBO.Unbind();
     }
 
-    void execute( [[maybe_unused]] RenderContext& context) override
+    void execute(const  FrameRenderData&,const  EngineResources&, const DebugRenderData&) override
     {
         if (inputs.empty() || outputs.empty()) return;
 

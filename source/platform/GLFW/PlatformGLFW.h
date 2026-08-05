@@ -25,6 +25,8 @@ private:
     static void MouseButtonCallback(GLFWwindow* w, int button, int action, int mods);
     static void CursorPosCallback(GLFWwindow* w, double x, double y);
     static void ScrollCallback(GLFWwindow* w, double xoff, double yoff);
+    static void FramebufferSizeCallback(GLFWwindow* w, int width, int height);
 
     GLFWwindow* window = nullptr;
+
 };

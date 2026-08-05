@@ -19,10 +19,10 @@ public:
 
     bool alreadySwapped = false;
 
-    void execute(RenderContext& context) override {
+    void execute(const FrameRenderData& frameData, const  EngineResources&, const DebugRenderData&) override {
 
 
-        auto* cam = context.camera;
+        auto* cam = frameData.camera;
         if (!cam || inputs.empty() || outputs.empty()) return;
 
         if (!blurFB) blurFB = outputs[0]->framebuffer;

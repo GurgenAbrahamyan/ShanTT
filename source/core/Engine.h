@@ -9,10 +9,11 @@ class Renderer;
 class PhysicsEngine;
 class AssetManager;
 
-
 #include "EngineContext.h"
 #include "scene/SceneContext.h"
-#include "render/data/RenderContext.h"
+#include "render/data/EngineResources.h"  
+#include "input/UiInput.h"
+
 class Engine {
 public:
     Engine();
@@ -23,12 +24,15 @@ public:
     long long getTimeMicro();
 
 private:
-
     std::unique_ptr<IPlatform> platform;
     EventBus bus;
     InputManager input;
-   
-    RenderContext renderContext;
+
+    UiInput debugUi;
+
+    EngineResources rendererResources;   
+    FrameRenderData frameData;          
+
     Renderer renderer;
 
     PhysicsEngine physicsEngine;
@@ -38,8 +42,6 @@ private:
     SceneContext sceneContext;
 
     SceneManager sceneManager;
-
-    
 
     bool running;
     float accumulator;

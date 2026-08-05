@@ -12,8 +12,8 @@
 #include "../core/EventBus.h"
 
 
-#include "data/RenderContext.h"
-
+#include "data/EngineResources.h"
+#include "data/FrameRenderData.h"
 
 #include "backend/ShaderManager.h"
 #include "../render/RenderGraph.h"
@@ -24,28 +24,29 @@ class Camera;
 
 class Renderer {
 public:
-    Renderer(EventBus* bus, RenderContext* ctx);
+    Renderer(EventBus* bus, EngineResources* ctx);
     ~Renderer();
 
-    void render();
-	FrameBuffer* getMainFrameBuffer() const { return m_MainFrameBuffer.get(); }
+    void render (const FrameRenderData& frameData) const;
+	void rebuildContext(FrameRenderData& ctx);
+
+    const DebugRenderData& getDebugRenderData() const {return debugData; }
+	RenderGraph* getRenderGraph() const { return graph; }
+    FrameBuffer* getMainFrameBuffer() const { return m_MainFrameBuffer.get(); }
 	FrameBuffer* getBlurFrameBuffer() const { return m_BlurFrameBuffer.get(); }
 	FrameBuffer* getShadowFrameBuffer() const { return m_ShadowFrameBuffer.get(); }
-	void rebuildContext(RenderContext* ctx);
-	RenderGraph* getRenderGraph() const { return graph; }
-    
     
 private:
 
 	Mat4 getWorldTransform(entt::entity entity, entt::registry& registry);
-    void clearFramebuffers();
-    GLFWwindow* window;
+
+    void clearFramebuffers() const;
+
    [[maybe_unused]] EventBus* bus;
     ShaderManager* shaderManager;
 
-    RenderContext *ctx;
-     UiInput* ui;
-
+    EngineResources* ctx;
+    DebugRenderData debugData;
     
     std::unique_ptr<FrameBuffer> m_MainFrameBuffer;
 	std::unique_ptr<FrameBuffer> m_BlurFrameBuffer;
@@ -60,5 +61,4 @@ private:
    
     RenderGraph* graph;
    
-    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 };

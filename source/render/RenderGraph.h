@@ -2,7 +2,10 @@
 #include <vector>
 #include <memory>
 #include "handlers/RenderPass.h"
-#include "data/RenderContext.h"
+#include "data/FrameRenderData.h"
+#include "data/EngineResources.h"
+#include "data/DebugRenderData.h"
+
 class RenderGraph
 {
 private:
@@ -17,11 +20,11 @@ public:
         return pass;
     }
 
-    void execute(RenderContext& ctx)
+    void execute(const FrameRenderData& frameData, const EngineResources& resources, const DebugRenderData& debugData)
     {
         for (auto& p : passes)
-            p->execute(ctx);
+            p->execute(frameData, resources, debugData);
     }
-    const std::vector<std::unique_ptr<RenderPass>>& getPasses() const { 
-        return passes; }
+
+    const std::vector<std::unique_ptr<RenderPass>>& getPasses() const { return passes; }
 };
