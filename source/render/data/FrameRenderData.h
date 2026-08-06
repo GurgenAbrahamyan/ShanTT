@@ -28,21 +28,20 @@ public:
 
 
     template<typename T, typename... Args>
-    T& Emplace(Args&&... args)
+        T& Emplace(Args&&... args)
     {
-        auto [it, inserted] =
-            m_Data.emplace(
-                std::type_index(typeid(T)),
-                T(std::forward<Args>(args)...)
-            );
+        auto [it, inserted] = m_Data.try_emplace(
+            std::type_index(typeid(T)),
+            std::in_place_type<T>,
+            std::forward<Args>(args)...
+        );
 
         if (!inserted)
             throw std::runtime_error("FrameData: type already exists");
 
         return std::any_cast<T&>(it->second);
     }
-
-
+    
     template<typename T>
     T& Get()
     {
@@ -70,7 +69,9 @@ public:
     }
 
 
-    void Clear();
+    void Clear() {
+        m_Data.clear();
+    }
 
 
 private:

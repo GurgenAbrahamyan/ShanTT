@@ -14,7 +14,6 @@ struct EngineContext
 
     float totalTime = 0.0f;
 
-
     EventBus& events;
 
     Renderer& renderer;

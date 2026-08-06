@@ -59,16 +59,19 @@ void Engine::run() {
         accumulator += frameTime;
         while (accumulator >= PHYSICS_STEP) {
             physicsEngine.update(sceneManager.Current()->Registry(), PHYSICS_STEP);
+            sceneManager.FixedUpdate(PHYSICS_STEP);
             accumulator -= PHYSICS_STEP;
         }
 
         sceneManager.Update(frameTime);
 
-        
+
         // cameraSystem->update(scene->getRegistry(), frameTime);
 
-        renderer.rebuildContext(frameData);
+        //renderer.rebuildContext(frameData);
+        sceneManager.Current()->GetExtractor().extract(sceneManager.Current()->Registry(), frameData);
         //shadowSystem.update(&renderContext);
+
         renderer.render(frameData);
 
         platform->SwapBuffers();

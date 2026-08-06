@@ -9,7 +9,7 @@ class EventBus;
 
 class InputManager {
 public:
-    explicit InputManager(EventBus& bus);
+    explicit InputManager(EventBus& eventBus);
 
     const Keyboard& Keys() const    { return keyboard; }
     const Mouse& Cursor() const     { return mouse; }

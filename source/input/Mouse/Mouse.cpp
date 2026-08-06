@@ -18,7 +18,7 @@ void Mouse::OnMoveEvent(const MouseMoveEvent& e)
 
 void Mouse::OnScrollEvent(const ScrollEvent& e)
 {
-    scroll = Vector2(static_cast<float>(e.xoffset), static_cast<float>(e.yoffset));
+    scroll  = Vector2(static_cast<float>(e.xoffset), static_cast<float>(e.yoffset));
 }
 
 void Mouse::EndFrame()

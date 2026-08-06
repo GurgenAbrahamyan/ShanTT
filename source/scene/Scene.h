@@ -6,6 +6,7 @@
 
 #include "../core/ecs_systems/ISystem.h"
 #include "SceneContext.h"
+#include "SceneExtractor.h"
 
 class Scene
 {
@@ -52,6 +53,11 @@ public:
         return state;
     }
 
+    SceneExtractor& GetExtractor()
+    {
+        return sceneExtractor;
+    }
+
 protected:
 
     virtual void OnCreate() {}
@@ -74,6 +80,8 @@ protected:
     template<typename T>
     void RemoveSystem();
 
+    SceneContext& Context() { return *context; }
+
 
 private:
     SceneState state { SceneState::Created };
@@ -81,6 +89,8 @@ private:
     entt::registry registry;
 
     std::vector<std::unique_ptr<ISystem>> systems;
+
+    SceneExtractor sceneExtractor;
 
     SceneContext* context = nullptr;
 };

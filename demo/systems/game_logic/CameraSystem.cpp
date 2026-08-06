@@ -1,38 +1,38 @@
-
 #include "CameraSystem.h"
 #include <cmath>
 
-#include "../../ecs/components/core/TransformComponent.h"
-#include "../../ecs/components/graphics/CameraComponent.h"
-#include "../../ecs/components/graphics/ActiveCameraTag.h"
-#include "../../core/Event.h"
-#include "../EngineContext.h"
-#include "../../math_custom/Mat4.h"
+#include "ecs/components/core/TransformComponent.h"
+#include "ecs/components/graphics/CameraComponent.h"
+#include "ecs/components/graphics/ActiveCameraTag.h"
+#include "core/Event.h"
+#include "math_custom/Mat4.h"
 
+void CameraSystem::Initialize(SceneContext& sceneCtx)
+{
+    ctx = &sceneCtx;
 
-CameraSystem::CameraSystem(EventBus* bus, entt::registry& registry) : registry(registry) {
-    bus->subscribe<PressedKey>([this](const PressedKey& event) {
-        this->processKeyboard(this->registry, event.key, EngineContext::get().deltaTime);
-        });
+    ctx->engine.events.subscribe<PressedKey>(this, [this](const PressedKey& event) {
+        processKeyboard(ctx->registry, event.key, ctx->engine.deltaTime);
+    });
 
-    bus->subscribe<CameraMode>([this](const CameraMode& event) {
+    ctx->engine.events.subscribe<CameraMode>(this, [this](const CameraMode& event) {
         camMode = event.key;
-        });
+    });
 
-    bus->subscribe<MouseDragged>([this](const MouseDragged& event) {
-        processMouse(this->registry, static_cast<float> (event.x), static_cast<float>(event.y));
-        });
+    ctx->engine.events.subscribe<MouseDragged>(this, [this](const MouseDragged& event) {
+        processMouse(ctx->registry, static_cast<float>(event.x), static_cast<float>(event.y));
+    });
 }
 
-// --- Update loop ---
-void CameraSystem::update(entt::registry& registry, float) {
-    updateVectors(registry);
-    updateMatrices(registry);
+void CameraSystem::Update(SceneContext& sceneCtx, float)
+{
+    updateVectors(sceneCtx.registry);
+    updateMatrices(sceneCtx.registry);
 }
 
-// --- Input ---
-void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt) {
-    auto camEntity = getActiveCamera();
+void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt)
+{
+    auto camEntity = getActiveCamera(registry);
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
@@ -48,10 +48,11 @@ void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt)
     if (key == 'E') transform->position += cam->up * velocity;
 }
 
-void CameraSystem::processMouse(entt::registry& registry, float xoffset, float yoffset) {
+void CameraSystem::processMouse(entt::registry& registry, float xoffset, float yoffset)
+{
     if (!camMode) return;
 
-    auto camEntity = getActiveCamera();
+    auto camEntity = getActiveCamera(registry);
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
@@ -69,45 +70,46 @@ void CameraSystem::processMouse(entt::registry& registry, float xoffset, float y
     if (cam->yaw < -360.f) cam->yaw += 360.f;
 }
 
-// --- Vector updates in engine coordinates ---
-void CameraSystem::updateVectors(entt::registry& registry) {
-    auto camEntity = getActiveCamera();
+void CameraSystem::updateVectors(entt::registry& registry)
+{
+    auto camEntity = getActiveCamera(registry);
     if (camEntity == entt::null) return;
+
     auto* cam = registry.try_get<CameraComponent>(camEntity);
     if (!cam) return;
-
 
     float yawRad = Mat4::radians(cam->yaw);
     float pitchRad = Mat4::radians(cam->pitch);
 
-    // Y-up, X-right, Z-toward-camera (OpenGL right-handed)
-    cam->front.x =  cos(yawRad)* cos(pitchRad);
+    cam->front.x = cos(yawRad) * cos(pitchRad);
     cam->front.y = sin(pitchRad);
-    cam->front.z = sin(yawRad)*cos(pitchRad);  
+    cam->front.z = sin(yawRad) * cos(pitchRad);
     cam->front = cam->front.normalized();
 
-
-
-	cam->right = cam->front.cross(Vector3(0, 1, 0)).normalized();
+    cam->right = cam->front.cross(Vector3(0, 1, 0)).normalized();
     cam->up = cam->right.cross(cam->front).normalized();
 }
 
-// --- Matrices for OpenGL ---
-void CameraSystem::updateMatrices(entt::registry& registry) {
-    auto camEntity = getActiveCamera();
+void CameraSystem::updateMatrices(entt::registry& registry)
+{
+    auto camEntity = getActiveCamera(registry);
     if (camEntity == entt::null) return;
 
     auto* cam = registry.try_get<CameraComponent>(camEntity);
     auto* transform = registry.try_get<TransformComponent>(camEntity);
     if (!cam || !transform) return;
 
-   
     cam->viewMatrix = Mat4::lookAt(transform->position, transform->position + cam->front, cam->up);
     cam->projectionMatrix = Mat4::perspective(cam->fov, cam->aspectRatio, cam->nearPlane, cam->farPlane);
 }
 
-// --- Helper ---
-entt::entity CameraSystem::getActiveCamera() {
+entt::entity CameraSystem::getActiveCamera(entt::registry& registry)
+{
     for (auto entity : registry.view<ActiveCameraTag>()) return entity;
-    return entt::null;
+        return entt::null;
+}
+
+void CameraSystem::Shutdown(SceneContext& sceneCtx)
+{
+    sceneCtx.engine.events.unsubscribeAll(this);
 }

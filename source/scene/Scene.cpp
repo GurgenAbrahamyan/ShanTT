@@ -1,7 +1,6 @@
 #include "Scene.h"
 #include "SceneContext.h"
 #include "../core/ecs_systems/ISystem.h"
-#include <iostream>
 
 void Scene::Initialize(SceneContext& ctx)
 {
@@ -13,6 +12,8 @@ void Scene::Initialize(SceneContext& ctx)
     {
         system->Initialize(ctx);
     }
+
+    sceneExtractor.OnCreate(ctx.registry);
 
     state = SceneState::Exited;
 }
@@ -37,14 +38,9 @@ void Scene::Shutdown()
 
 void Scene::Enter()
 {
-    std::cout << "Scene::Enter state: "
-              << static_cast<int>(state)
-              << "\n";
 
     if(state != SceneState::Exited)
         return;
-
-    std::cout << "Calling OnEnter\n";
 
     OnEnter();
 

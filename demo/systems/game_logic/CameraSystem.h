@@ -1,26 +1,26 @@
 #pragma once
 
-#include "EnTT/entt.hpp"
-#include "../../core/EventBus.h"
+#include <entt/entt.hpp>
+#include "core/ecs_systems/ISystem.h"
+#include "scene/SceneContext.h"
 
-class CameraSystem {
+class CameraSystem : public ISystem
+{
 public:
-    CameraSystem(EventBus* bus, entt::registry& registry);
-
-    void update(entt::registry& registry, float dt);
-
+    void Initialize(SceneContext& ctx) override;
+    void Update(SceneContext& ctx, float dt) override;
+    void Shutdown(SceneContext& ctx) override;
 private:
     void processKeyboard(entt::registry& registry, char key, float dt);
     void processMouse(entt::registry& registry, float xoffset, float yoffset);
     void updateVectors(entt::registry& registry);
     void updateMatrices(entt::registry& registry);
 
-    // Helper to get active camera entity
-    entt::entity getActiveCamera();
+    entt::entity getActiveCamera(entt::registry& registry);
 
     bool  camMode = false;
     float movementSpeed = 10.0f;
     float mouseSensitivity = 0.1f;
 
-    entt::registry& registry;
+    SceneContext* ctx = nullptr; 
 };

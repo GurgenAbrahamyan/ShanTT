@@ -1,6 +1,9 @@
+// RenderGraph.h
 #pragma once
 #include <vector>
 #include <memory>
+#include <string>
+
 #include "handlers/RenderPass.h"
 #include "data/FrameRenderData.h"
 #include "data/EngineResources.h"
@@ -8,23 +11,32 @@
 
 class RenderGraph
 {
-private:
-    std::vector<std::unique_ptr<RenderPass>> passes;
-
 public:
     template<typename T, typename... Args>
     T* addPass(Args&&... args)
     {
-        T* pass = new T(std::forward<Args>(args)...);
-        passes.emplace_back(pass);
-        return pass;
+        auto pass = std::make_unique<T>(std::forward<Args>(args)...);
+        T* ptr = pass.get();
+        passes.emplace_back(std::move(pass));
+        dirty = true;
+        return ptr;
     }
 
-    void execute(const FrameRenderData& frameData, const EngineResources& resources, const DebugRenderData& debugData)
+   
+    bool compile(std::vector<std::string>& outErrors);
+
+    void execute(const FrameRenderData& frameData,
+                 const EngineResources& resources,
+                 const DebugRenderData& debugData)
     {
-        for (auto& p : passes)
+        for (RenderPass* p : executionOrder)
             p->execute(frameData, resources, debugData);
     }
 
     const std::vector<std::unique_ptr<RenderPass>>& getPasses() const { return passes; }
+
+private:
+    std::vector<std::unique_ptr<RenderPass>> passes;
+    std::vector<RenderPass*> executionOrder; 
+    bool dirty = true;
 };

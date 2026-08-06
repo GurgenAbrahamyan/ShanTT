@@ -6,7 +6,7 @@
 MeshManager::MeshManager(EventBus* bus)
     : bus(bus)
 {
-    bus->subscribe<InitMesh>([this](InitMesh& event) {
+    bus->subscribe<InitMesh>([this](const InitMesh& event) {
 
         std::cout << "Initializing mesh: " << event.data->name << "\n";
         MeshID id = this->addMesh(

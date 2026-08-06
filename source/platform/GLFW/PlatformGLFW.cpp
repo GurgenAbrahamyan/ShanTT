@@ -99,7 +99,7 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
     }
 
     if (desc.api == GraphicsAPI::OpenGL) {
-         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     
    

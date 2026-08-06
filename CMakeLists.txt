@@ -44,7 +44,6 @@ set(MAIN_SOURCES
 # Core engine sources
 set(CORE_SOURCES
     source/core/Engine.cpp
-    source/core/ecs_systems/CameraSystem.cpp
 )
 
 set(CORE_HEADERS
@@ -52,7 +51,6 @@ set(CORE_HEADERS
     source/core/EngineContext.h
     source/core/Event.h
     source/core/EventBus.h
-    source/core/ecs_systems/CameraSystem.h
 )
 
 # ECS Components (header-only)
