@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include <string>
 #include "../../math_custom/Mat4.h"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
@@ -15,9 +14,7 @@ public:
         int id;
         RenderMesh* mesh = nullptr;
         Material* material = nullptr;
-
-
-
+        Mat4 transform{};
     };
 
     Model() {

@@ -1,30 +1,33 @@
 #pragma once
-#include <vector>
+#include <array>
 
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Vector4.h"
+#include "resources/managers/TextureHandleTypes.h"
+
+#include "resources/data/MaterialSlot.h"
+
 class Texture;
 class Shader;
+class TextureManager;
+
 class Material {
 public:
     Material() = default;
 
-    void SetTexture(unsigned int slot, Texture* texture);
-    Texture* GetTexture(unsigned int slot) const;
+    void SetTexture(MaterialSlot slot, TextureID id) { textures[static_cast<size_t>(slot)] = id; }
+    TextureID GetTexture(MaterialSlot slot) const { return textures[static_cast<size_t>(slot)]; }
 
     float metallic = 1.0f;
     float roughness = 1.0f;
     float ao = 1.0f;
     float heightScale = 0.005f;
 
-    Vector4 baseColorFactor = {1.0f, 1.0f, 1.0f, 1.0f};
+    Vector4 baseColorFactor = { 1.0f, 1.0f, 1.0f, 1.0f };
     Vector3 emissiveFactor = { 1.0f, 1.0f, 1.0f };
 
-    void Bind(Shader* shader) const;
-    int  getID() const { return ID; }
-    void setID(int id) { ID = id; }
-    void setHeightScale(float scale) { heightScale = scale; }
+    void Bind(Shader* shader, TextureManager& tm) const;
+
 private:
-    std::vector<Texture*> textures;
-    int ID = -1;
+    std::array<TextureID, static_cast<size_t>(MaterialSlot::Count)> textures{};
 };

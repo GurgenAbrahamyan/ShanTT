@@ -12,16 +12,6 @@ enum class LightType;
 namespace GraphicsEntityFactory {
 
     // Primitives only real models go through ModelManager::loadModel()
-
-    entt::entity createRectangle(
-        entt::registry& registry,
-        MeshManager& meshManager,
-        MaterialManager& textureManager,
-        const std::string& tag,
-        Vector3 pos = Vector3(0, 0, 0),
-        Vector3 scale = Vector3(1, 1, 1)
-    );
-
     entt::entity createLight(
         entt::registry& registry,
         Vector3 position,

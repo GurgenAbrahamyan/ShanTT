@@ -1,16 +1,18 @@
 #pragma once
+#include <memory>
+#include "platform/IPlatform.h"
+#include "EventBus.h"
+#include "input/InputManager.h"
+#include "scene/SceneManager.h"
 
-class EventBus;
-class Scene;
 class Renderer;
 class PhysicsEngine;
-class UiInput;
-class MouseInput;
-class KeyboardInput;
-struct GLFWwindow;
-class CameraSystem;
-class ShadowSystem;
-struct RenderContext;
+class AssetManager;
+
+#include "EngineContext.h"
+#include "scene/SceneContext.h"
+#include "render/data/EngineResources.h"  
+#include "input/UiInput.h"
 
 class Engine {
 public:
@@ -21,26 +23,33 @@ public:
     void stop();
     long long getTimeMicro();
 
+    SceneContext& getSceneContext(){ return sceneContext; }
+
 private:
-    EventBus* bus;
-    Scene* scene;
-    Renderer* renderer;
-    PhysicsEngine* physicsEngine;
-   
-    MouseInput* mouseInput;
-    KeyboardInput* keyboardInput;
-    CameraSystem* cameraSystem;
-	ShadowSystem* shadowSystem;
-	RenderContext* renderContext;
-    GLFWwindow* window;
+    std::unique_ptr<IPlatform> platform;
+    EventBus bus;
+    InputManager input;
+
+    AssetManager assetManager;
+    
+    UiInput debugUi;
+
+    EngineResources rendererResources;   
+    FrameRenderData frameData;          
+
+    Renderer renderer;
+
+    PhysicsEngine physicsEngine;
+
+    EngineContext engineContext;
+    SceneContext sceneContext;
+
+    SceneManager sceneManager;
 
     bool running;
     float accumulator;
-    const float PHYSICS_STEP = 1.0f / 60.0f;
+    static constexpr float PHYSICS_STEP = 1.0f / 60.0f;
 
-  
     int framesThisSecond;
     float timeSinceLastFpsPrint;
-
-    
 };

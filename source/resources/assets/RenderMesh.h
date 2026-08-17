@@ -1,48 +1,50 @@
 #pragma once
 
-#include "../../math_custom/Vector3.h"
+#include <cstddef>
 #include <vector>
 
-#include "../../math_custom/Mat4.h"
+#include "../../render/backend/containers/VAO.h"
+#include "../../render/backend/containers/VBO.h"
+#include "../../render/backend/containers/EBO.h"
 
-#include "glad/glad.h"
+#include "../data/Vertex.h"
+#include "../../math_custom/Vector3.h"
+#include "../../math_custom/Mat4.h"
 
 class RenderMesh {
 public:
-    virtual ~RenderMesh() = default;
+    RenderMesh(
+        const std::vector<Vertex>& vertices,
+        const std::vector<unsigned int>& indices
+    );
 
-    virtual void bind() = 0;
+    ~RenderMesh();
 
-    virtual void setupBuffers() = 0;
-    virtual int indexCount() const = 0;
+    RenderMesh(const RenderMesh&) = delete;
+    RenderMesh& operator=(const RenderMesh&) = delete;
 
-    virtual void setColor(const Vector3& col) = 0;
+    RenderMesh(RenderMesh&&) = delete;
+    RenderMesh& operator=(RenderMesh&&) = delete;
 
-    //virtual Vertex& getVertex(int i) { return Vertex(); };
-   
-   // std::vector<Vertex>& getVertexes() { return []{} };
-   
-    
+    void bind() const;
 
-    void setID(int i) {
-        ID = i;
-    }
-    int getID() {
-       return ID;
-    }
+    int indexCount() const;
 
-    virtual void setupInstanceVBO([[maybe_unused]]size_t maxInstances) { /*TO:DO*/};
-    virtual void updateInstanceVBO([[maybe_unused]] const std::vector<Mat4>& matrices) {/*TO:DO*/};
-    virtual GLuint getInstanceVBO() { return 0; };
-    
+    void setupInstanceVBO(std::size_t instanceCount);
+    GLuint getInstanceVBO() const;
 
+private:
+    void setupBuffers();
+    void calculateTangents();
 
+private:
+    VAO* vao = nullptr;
+    VBO* vbo = nullptr;
+    EBO* ebo = nullptr;
 
-protected:
-  
+    GLuint instanceVBO = 0;
+    std::size_t instanceVBOCapacity = 0;
 
-   
-    int ID = -1;
-
-   
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
 };

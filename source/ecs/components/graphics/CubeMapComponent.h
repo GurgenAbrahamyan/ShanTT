@@ -1,9 +1,11 @@
 #pragma once
 #pragma once
-#include "../../../resources/assets/CubeMap.h"
+#include "resources/managers/EnvironmentMap.h"
 
-struct CubeMapComponent {
-    CubeMap* cubeMap = nullptr;
+struct CubeMapComponent
+{
+    EnvironmentMap environment;
+
     float intensity = 1.0f;
-    float dirLightInfluence = 0.0f;
+    float dirLightInfluence = 1.0f;
 };

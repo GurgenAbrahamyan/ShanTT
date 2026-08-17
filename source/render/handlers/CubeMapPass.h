@@ -1,57 +1,191 @@
 #pragma once
+
 #include "RenderPass.h"
-class CubeMapPass : public RenderPass {
+#include "../RenderGraphBuilder.h"
+#include "../PassResources.h"
+
+#include "../backend/containers/FrameBuffer.h"
+#include "../backend/Shader.h"
+#include "resources/assets/Texture.h"
+
+#include "scene/EnvironmentRenderData.h"
+#include "render/data/FrameRenderData.h"
+#include "scene/SceneRenderData.h"
+
+#include "resources/assets/Texture.h"
+
+static constexpr float kCubeVertices[] = {
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
+
+class CubeMapPass : public RenderPass
+{
 public:
-    CubeMapPass(Shader* s) : RenderPass(s) {
 
-    }
+    struct CubeMapPassSettings
+    {
+        Shader* shader;
+        ResourceId lightingColor; 
+        ResourceId hardwareDepth;
+    };
 
-    void execute(RenderContext& context) override {
+    CubeMapPass(
+        RenderGraphBuilder& builder,
+        const CubeMapPassSettings& settings
+    )
+        : RenderPass(builder, "CubeMap")
+        , m_CubeVAO()
+        , m_CubeVBO(kCubeVertices, sizeof(kCubeVertices), false)
+        , m_Shader(settings.shader)
+    {
+        colorRW = builder.write(settings.lightingColor);
+        ResourceId depthRO = builder.read(settings.hardwareDepth);
 
-        if (outputs.empty() || inputs.empty()) return;
-        FrameBuffer* fb = outputs[0]->framebuffer;
-        fb->bind();
-        glViewport(0, 0, fb->getWidth(), fb->getHeight());
+        FrameBufferResourceDesc framebufferDesc;
+        framebufferDesc.colorAttachments = { colorRW };
+        framebufferDesc.depthAttachment  = depthRO;
 
-        //   glDisable(GL_CULL_FACE);
-
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, inputs[0]->framebuffer->getID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb->getID());
-        glBlitFramebuffer(
-            0, 0, inputs[0]->framebuffer->getWidth(), inputs[0]->framebuffer->getHeight(),
-            0, 0, fb->getWidth(), fb->getHeight(),
-            GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        m_Output = builder.create(
+            "CubeMapPass.Framebuffer",
+            framebufferDesc
         );
 
-        auto* cam = context.camera;
-        auto* camTrans = context.cameraTransform;
-        if (!cam || !camTrans) return;
+        hasSideEffect = true;
+
+        genCubeMesh();
+
+        hasSideEffect = true;
+    }
+
+    ResourceId framebuffer() const
+    {
+        return m_Output;
+    }
+
+    ResourceId output() const
+    {
+        return colorRW;
+    }
+
+    void execute(
+        const FrameRenderData& frameData,
+        PassResources& resources,
+        const DebugRenderData&
+    ) override
+    {
+        if (!m_Shader)
+            return;
+
+        if (!frameData.Has<SceneRenderData>())
+            return;
+
+        if (!frameData.Has<EnvironmentRenderData>())
+            return;
+
+        const auto& scene = frameData.Get<SceneRenderData>();
+        const auto& environment = frameData.Get<EnvironmentRenderData>();
+
+        if (!scene.camera)
+            return;
+
+        if (!environment.env)
+            return;
+
+        FrameBuffer* target = resources.get<FrameBuffer>(m_Output);
+        Texture* targetTexture = resources.get<Texture>(colorRW);
+
+        if (!target)
+            return;
+
+        target->bind();
+        glViewport(0, 0, targetTexture->getWidth(), targetTexture->getHeight());
+
+        BindCubeMesh();
+        m_Shader->Activate();
+
+        environment.env->bind(0);
+        m_Shader->setInt("skybox", 0);
+
+        m_Shader->setMat4("projection", scene.camera->projectionMatrix);
+        m_Shader->setMat4("view", scene.camera->viewMatrix);
+
+        m_Shader->setFloat(
+            "envIntensity",
+            environment.intensity * environment.dirLightInfluence
+        );
 
 
-        if (!context.cubeMapComp) return;
-        CubeMapComponent& cmc = *context.cubeMapComp;
-        if (!cmc.cubeMap) return;
-
-        shader->Activate();
-
+        glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
 
-
-        Mat4 view_mat = cam->viewMatrix;
-
-
-        shader->setInt("skybox", 0);
-        shader->setMat4("projection", cam->projectionMatrix);
-        shader->setFloat("envIntensity", cmc.intensity*cmc.dirLightInfluence);
-        shader->setMat4("view", view_mat);
-
-        cmc.cubeMap->bind();
-        cmc.cubeMap->bindEnvTexture(0);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glDepthFunc(GL_LESS);
-        // glEnable(GL_CULL_FACE);
-        fb->unbind();
+        glDepthMask(GL_TRUE);
+
+        target->unbind();
     }
+
+private:
+
+    void genCubeMesh()
+    {
+        m_CubeVAO.Bind();
+        m_CubeVAO.LinkAttrib(m_CubeVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+        m_CubeVAO.Unbind();
+    }
+
+    void BindCubeMesh()
+    {
+        m_CubeVAO.Bind();
+    }
+
+    VAO m_CubeVAO;
+    VBO m_CubeVBO;
+
+    Shader* m_Shader = nullptr;
+
+    ResourceId m_Output = INVALID_RESOURCE_ID;
+    
+    ResourceId colorRW = INVALID_RESOURCE_ID;
 };

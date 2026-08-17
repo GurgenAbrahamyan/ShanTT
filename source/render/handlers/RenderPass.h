@@ -1,24 +1,31 @@
 #pragma once
-#include "../data/RenderContext.h"
-#include "../backend/Shader.h"
-#include "../data/RenderResource.h"
+#include <vector>
+#include <string>
+#include "RenderId.h"
+#include "../RenderGraphBuilder.h"
+#include "../data/FrameRenderData.h"
+#include "../data/DebugRenderData.h"
 
-
+class PassResources;
 
 class RenderPass
 {
-protected:
-    Shader* shader;
-
 public:
-    std::vector<RenderResource*> inputs;
-    std::vector<RenderResource*> outputs;
+    const PassId id;
+    std::string name;
 
-    RenderPass(Shader* s) : shader(s) {}
+    RenderPass(RenderGraphBuilder& builder, std::string passName)
+        : id(builder.currentPass()), name(std::move(passName)){}
 
-    virtual void execute(RenderContext& ctx) = 0;
-    virtual const char *passName() const { return "RenderPass"; }
+    virtual void execute(const FrameRenderData& frameData,
+                          PassResources& resources,
+                          const DebugRenderData& debugData) = 0;
+
+    virtual const char* passName() const { return name.c_str(); }
+
+    bool hasSideEffect = false;
+    bool active = true;
+    std::vector<PassId> orderAfter;
 
     virtual ~RenderPass() = default;
 };
-

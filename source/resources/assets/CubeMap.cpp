@@ -1,73 +1,64 @@
 #include "CubeMap.h"
-// Simple cube vertices for a cubemap (only positions, no normals/UVs)
-float cubeVertices[] = {
-    // positions          
-    -1.0f,  1.0f, -1.0f,
-    -1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
 
-    -1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
+CubeMap::CubeMap(int size, GLenum internalFormat, int mipLevels)
+    : size(size),  mipLevels(mipLevels), internalFormat(internalFormat) {
+        
+    glGenTextures(1, &ID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
+    for (int face = 0; face < 6; ++face) {
+        for (int mip = 0; mip < mipLevels; ++mip) {
+            int mipSize = size >> mip;
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mip,
+                         internalFormat, mipSize, mipSize, 0,
+                         GL_RGB, GL_FLOAT, nullptr);
+        }
+    }
 
-    -1.0f, -1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER,
+                     mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    -1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f, -1.0f,
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
 
-    -1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f
-};
+CubeMap::CubeMap(CubeMap&& other) noexcept
+    : ID(other.ID), size(other.size), mipLevels(other.mipLevels), internalFormat(other.internalFormat) {
+    other.ID = 0;
+}
 
-CubeMap::CubeMap() :  VAO1(new VAO()), VBO1( new VBO(cubeVertices, sizeof(cubeVertices), false)) {
-   
-
-    VAO1->Bind();
-    VAO1->LinkAttrib(*VBO1, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
-    VAO1->Unbind();
+CubeMap& CubeMap::operator=(CubeMap&& other) noexcept {
+    if (this != &other) {
+        if (ID) glDeleteTextures(1, &ID);
+        ID = other.ID;
+        size = other.size;
+        mipLevels = other.mipLevels;
+        internalFormat = other.internalFormat;
+        other.ID = 0;
+    }
+    return *this;
 }
 
 CubeMap::~CubeMap() {
-    delete VBO1;
-    delete VAO1;
-    if(EnvTexID)
-    glDeleteTextures(1, &EnvTexID);
-    if(IrrTexID)
-    glDeleteTextures(1, &IrrTexID);
-    if(PreFilterTexId)
-    glDeleteTextures(1, &PreFilterTexId);
+    if (ID) glDeleteTextures(1, &ID);
 }
 
-void CubeMap::bind() const {
-    VAO1->Bind();
+void CubeMap::bind(int slot) const {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 }
 
 void CubeMap::unbind() const {
-	VAO1->Unbind();
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+void CubeMap::uploadFace(int faceIndex, int mip, GLenum format, GLenum type, const void* data) {
+    glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
+    int mipSize = size >> mip;
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, mip,
+                 internalFormat, mipSize, mipSize, 0, format, type, data);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

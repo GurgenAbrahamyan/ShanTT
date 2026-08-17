@@ -1,6 +1,6 @@
 #pragma once
 #include "../../math_custom/Vector3.h"
-#include "../../math_custom/Mat4.h"
+
 struct GPULight {
     int type;
     float intensity;
@@ -11,5 +11,4 @@ struct GPULight {
     float innerCone, outerCone;
     int shadowIndex = -1; // index into ShadowAtlas::tiles, -1 = no shadow
     int pad5;
-
 };

@@ -3,36 +3,9 @@
 #include "../components/core/TagComponent.h"
 #include "../components/graphics/LightComponent.h"
 #include "../components/graphics/CubeMapComponent.h"
-#include "../components/graphics/MeshComponent.h"
-#include "../../resources/managers/MeshManager.h"
-#include "../../resources/managers/MaterialManager.h"
 #include "../components/graphics/CameraComponent.h"
 #include "../components/graphics/ActiveCameraTag.h"
-#include "../components/graphics/ModelComponent.h"
-#include "../../resources/data/ModelAsset.h"
 namespace GraphicsEntityFactory {
-
-    entt::entity createRectangle(
-        entt::registry& registry,
-        MeshManager& meshManager,
-        MaterialManager& materialManager,
-        const std::string& tag,
-        Vector3 position,
-        Vector3 scale
-        )
-    {
-        auto entity = registry.create();
-        registry.emplace<TagComponent>(entity, tag);
-      //  registry.emplace<TransformComponent>(entity, position, Quat(), scale);
-        ModelComponent component;
-        
-        ModelAsset* asset = new ModelAsset();
-        asset->meshes.push_back({ meshManager.getRectangleMesh(),materialManager.getRectangleMaterial(), Mat4()});
-        component.asset = asset;
-        registry.emplace<ModelComponent>(entity, component);
-        registry.emplace<TransformComponent>(entity,  position, Quat(), scale );
-        return entity;
-    }
 
     entt::entity createLight(
         entt::registry& registry,
@@ -50,13 +23,11 @@ namespace GraphicsEntityFactory {
 
     entt::entity createSkybox(
         entt::registry& registry,
-        CubeMap* cubeMap)
+        EnvironmentMap& map)
     {
-        auto view = registry.view<CubeMapComponent>();
-        assert(view.size() == 0 && "Only one skybox allowed!");
         auto entity = registry.create();
         registry.emplace<TagComponent>(entity, "skybox");
-        registry.emplace<CubeMapComponent>(entity, cubeMap);
+        registry.emplace<CubeMapComponent>(entity, map);
         return entity;
     }
 

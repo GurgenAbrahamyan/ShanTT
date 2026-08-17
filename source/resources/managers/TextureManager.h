@@ -3,87 +3,81 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include <memory>
+#include "ResourcePool.h"
+#include "TextureHandleTypes.h"
 #include "../../resources/assets/Texture.h"
-#include "../../resources/assets/CubeMap.h"
+#include "resources/assets/CubeMap.h"
 #include "../data/TextureType.h"
-#include "../../render/backend/Shader.h"
-using TextureID = uint32_t;
 
 class EventBus;
 
 struct TextureKey {
     std::string path;
-    bool operator==(const TextureKey& other) const {
-        return path == other.path;
-    }
+    bool operator==(const TextureKey& other) const { return path == other.path; }
 };
-
 struct TextureKeyHash {
-    std::size_t operator()(const TextureKey& key) const {
-        return std::hash<std::string>()(key.path);
-    }
+    std::size_t operator()(const TextureKey& key) const { return std::hash<std::string>()(key.path); }
 };
 
 struct TextureRecord {
     std::unique_ptr<Texture> texture;
     std::string path;
-    TextureType type;
+    TextureType type = TextureType::Albedo;
+};
 
+struct CubeMapRecord {
+    std::unique_ptr<CubeMap> cubeMap;
+    std::string path;
 };
 
 class TextureManager {
 public:
     TextureManager();
+    ~TextureManager();
 
-    TextureID addTexture(const std::string& path,const TextureType& type);
-    Texture* getTexture(TextureID id);
+    
+    TextureID addTexture    (const std::string& path, const TextureType& type);
+    Texture*  getTexture    (TextureID id);
+    Texture*  getTexture    (TextureID id) const;
+    void      removeTexture (TextureID id);
+    TextureID getID         (const std::string& path) const;
 
-    TextureID getID(const std::string& path) const;
+    
+    CubeMapID addCubeMap    (std::unique_ptr<CubeMap> cubeMap, const std::string& key);
+    CubeMap*  getCubeMap    (CubeMapID id);
+    CubeMap*  getCubeMap    (CubeMapID id) const;
+    void      removeCubeMap (CubeMapID id);
+    CubeMapID getCubeMapID  (const std::string& key) const;
+
+    TextureID addGeneratedTexture (const std::string& syntheticKey, std::unique_ptr<Texture> tex, TextureType type);
+
+    size_t getTextureCount() const { return texturePool.size(); }
+    bool isSRGB(TextureType type) const;
+
+    
+    void initDefaults();
+    TextureID getDefaultWhite()  const { return defaultWhite; }
+    TextureID getDefaultAlbedo() const { return defaultWhite; }
+    TextureID getDefaultNormal() const { return defaultFlatNormal; }
+    TextureID getDefaultBlack()  const { return defaultBlack; }
+
+    
+    TextureID loadARM(const std::string& aoPath, const std::string& armPath);
+
     void NextTexture(EventBus* bus);
 
-    size_t getTextureCount() const { return textures.size(); }
-
-    
-    CubeMap* loadCubeMapArray(std::vector<std::string> filepaths);
-    
-	bool isSRGB(TextureType type) const;
-
-   
-    Texture* getDefaultWhite()   const { return defaultWhite.get(); }
-    Texture* getDefaultAlbedo()  const { return defaultWhite.get(); }
-    Texture* getDefaultNormal()  const { return defaultFlatNormal.get(); }
-    Texture* getDefaultBlack()   const { return defaultBlack.get(); }
-
-    Texture* loadARM(const std::string& aoPath, const std::string& armPath);
-    void initDefaults();
-    CubeMap* loadCubeMapHDR(std::string filepath);
-    Texture* getBRDF();
-
 private:
+    std::unique_ptr<Texture> createSinglePixel(unsigned char* data, int channels, GLenum internalFormat);
 
-    void generateBRDF();
-    void renderCube();
-    void renderQuad();
-	void  equirectToCubemap(const std::string& hdrPath);
-    
-    std::vector<TextureRecord> textures;
-    std::unordered_map<TextureKey, TextureID, TextureKeyHash> lookup;
+    ResourcePool<TextureRecord, TextureTag> texturePool;
+    ResourcePool<CubeMapRecord, CubeMapTag> cubeMapPool;
+    std::unordered_map<TextureKey, TextureID, TextureKeyHash> textureLookup;
+    std::unordered_map<TextureKey, CubeMapID, TextureKeyHash> cubeMapLookup;
 
-	std::unique_ptr<CubeMap> cubeMap;
-    std::unique_ptr<Texture> brdfTexture;
+    TextureID defaultWhite;
+    TextureID defaultFlatNormal;
+    TextureID defaultBlack;
 
-    std::unique_ptr<Texture> defaultWhite;
-    std::unique_ptr<Texture> defaultFlatNormal;
-    std::unique_ptr<Texture> defaultBlack;
-
-    std::unique_ptr<Shader> equirectShader;
-    std::unique_ptr<Shader> irradianceShader;
-    std::unique_ptr<Shader> prefilterShader;
-
-    std::unique_ptr<Shader> brdfShader;
-
-    std::unique_ptr<Texture> createSinglePixel(unsigned char* data, int channels, GLenum internal);
-
+    uint32_t debugCycleIndex = 0;
 };

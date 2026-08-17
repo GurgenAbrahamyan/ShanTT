@@ -1,19 +1,21 @@
 #pragma once
 
 #include "../../math_custom/Mat4.h"
-#include "../assets/Material.h"
-#include "../assets/RenderMesh.h"
+#include "../managers/MeshHandleTypes.h"
+#include "../managers/MaterialHandleTypes.h"
+
 #include <string>
+#include <vector>
 
 struct MeshEntry {
-    RenderMesh* mesh = nullptr;
-    Material* material = nullptr;
+    MeshID mesh;
+    MaterialID material;
     Mat4 localTransform = Mat4();
 };
 
-struct ModelAsset
-{
+struct ModelAsset {
     std::string name;
     std::string path;
+
     std::vector<MeshEntry> meshes;
 };

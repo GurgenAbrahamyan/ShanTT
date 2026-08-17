@@ -1,37 +1,34 @@
-
 #include "Material.h"
 #include "Texture.h"
-
+#include "resources/managers/TextureManager.h"
 #include "../../render/backend/Shader.h"
 
-
-void Material::SetTexture(unsigned int slot, Texture* texture) {
-    if (static_cast<size_t>(slot) >= textures.size()) {
-        textures.resize(slot + 1, nullptr);
-    }
-    textures[slot] = texture;
-}
-
-Texture* Material::GetTexture(unsigned int slot) const {
-    if (static_cast<size_t>(slot) >= 0 && slot < textures.size()) {
-        return textures[slot];
-    }
-    return nullptr;
-}
-
-void Material::Bind(Shader* shader) const {
+void Material::Bind(Shader* shader, TextureManager& tm) const {
     if (!shader) return;
-    static const char* slotNames[] = {
-        "albedoMap",    // 0 BASE_COLOR
-        "armMap",       // 1 ARM
-        "normalMap",    // 2 NORMAL_MAP
-        "emissiveMap",  // 3 EMISSIVE
-        "heightMap",    // 4 HEIGHT
+
+    static const char* slotNames[static_cast<size_t>(MaterialSlot::Count)] = {
+        "albedoMap",   // Albedo
+        "armMap",      // ARM
+        "normalMap",   // Normal
+        "emissiveMap", // Emissive
+        "heightMap",   // Height
     };
-    for (int i = 0; i < (int)textures.size(); i++) {
-        if (!textures[i]) continue;
-        textures[i]->Bind(i);
-        shader->setInt(slotNames[i], i);
+
+    for (size_t i = 0; i < textures.size(); ++i) {
+        MaterialSlot slot = static_cast<MaterialSlot>(i);
+        Texture* tex = tm.getTexture(textures[i]);
+
+        if (!tex) {
+            TextureID fallback = (slot == MaterialSlot::Normal)
+                ? tm.getDefaultNormal()
+                : tm.getDefaultWhite();
+            tex = tm.getTexture(fallback);
+        }
+
+        if (!tex) continue; 
+
+        tex->Bind(static_cast<int>(i));
+        shader->setInt(slotNames[i], static_cast<int>(i));
     }
 
     shader->setFloat("metallicFactor", metallic);

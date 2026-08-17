@@ -1,12 +1,7 @@
-# ============================================================================
-# ShanTT Game Engine - CMake Configuration
-# ============================================================================
 cmake_minimum_required(VERSION 3.20)
-project(ShanTT VERSION 1.0.0 LANGUAGES CXX C)
 
-# ============================================================================
-# CMake Modules Path
-# ============================================================================
+project(ShanTT_Engine VERSION 1.0.0 LANGUAGES CXX C)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -15,33 +10,22 @@ FetchContent_Declare(
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
-# Windows users
+set(ENGINE_PLATFORM_BACKEND "GLFW" CACHE STRING "Platform backend: GLFW | SDL | WIN32")
+set_property(CACHE ENGINE_PLATFORM_BACKEND PROPERTY STRINGS GLFW SDL WIN32)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
-# ============================================================================
-# Build Configuration
-# ============================================================================
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ============================================================================
-# Source Files Organization
-# ============================================================================
-
-# Main entry point
-set(MAIN_SOURCES
-    source/ShanTT.cpp
-)
-
-# Core engine sources
 set(CORE_SOURCES
     source/core/Engine.cpp
-    source/core/ecs_systems/CameraSystem.cpp
 )
 
 set(CORE_HEADERS
@@ -49,10 +33,8 @@ set(CORE_HEADERS
     source/core/EngineContext.h
     source/core/Event.h
     source/core/EventBus.h
-    source/core/ecs_systems/CameraSystem.h
 )
 
-# ECS Components (header-only)
 set(ECS_HEADERS
     source/ecs/components/core/ParentComponent.h
     source/ecs/components/core/TagComponent.h
@@ -70,7 +52,6 @@ set(ECS_HEADERS
     source/ecs/components/physics/SoftBodyComponent.h
 )
 
-# ECS Factories
 set(ECS_FACTORY_SOURCES
     source/ecs/factories/GraphicsEntityFactory.cpp
 )
@@ -80,19 +61,20 @@ set(ECS_FACTORY_HEADERS
     source/ecs/factories/PhysicsComponentFactory.h
 )
 
-# Input system
 set(INPUT_SOURCES
-    source/input/MouseInput.cpp
-    source/input/UiInput.cpp
+    source/input/Keyboard/Keyboard.cpp
+    source/input/Mouse/Mouse.cpp
+    source/input/InputManager.cpp
+    source/input/UIInput.cpp
 )
 
 set(INPUT_HEADERS
-    source/input/KeyBoardInput.h
-    source/input/MouseInput.h
+    source/input/Keyboard/Keyboard.h
+    source/input/Mouse/Mouse.h
+    source/input/InputManager.h
     source/input/UIInput.h
 )
 
-# Third-party library implementations
 set(LIBRARY_SOURCES
     source/libraries/stb.cpp
     source/libraries/imgui/imgui.cpp
@@ -105,9 +87,11 @@ set(LIBRARY_SOURCES
     source/libraries/glad.c
 )
 
-set_source_files_properties(source/libraries/glad.c PROPERTIES LANGUAGE C)
+set_source_files_properties(
+    source/libraries/glad.c
+    PROPERTIES LANGUAGE C
+)
 
-# Math library (header-only)
 set(MATH_HEADERS
     source/math_custom/GeneralFunctions.h
     source/math_custom/Mat4.h
@@ -117,7 +101,6 @@ set(MATH_HEADERS
     source/math_custom/Vector4.h
 )
 
-# Physics engine
 set(PHYSICS_SOURCES
     source/physics/PhysicsEngine.cpp
     source/physics/dynamics/ForceGenerator.cpp
@@ -134,17 +117,21 @@ set(PHYSICS_HEADERS
     source/physics/particles/Particle.h
 )
 
-# Rendering system
 set(RENDER_SOURCES
     source/render/Renderer.cpp
+    source/render/RenderGraph.cpp
+    source/render/RenderGraphBuilder.cpp
+    source/render/allocator/RenderResourceAllocator.cpp
     source/render/backend/Shader.cpp
     source/render/backend/ShaderManager.cpp
     source/render/backend/containers/RenderBuffer.cpp
+    source/render/handlers/ShadowPass.cpp
 )
 
 set(RENDER_HEADERS
     source/render/Renderer.h
     source/render/RenderGraph.h
+    source/render/RenderGraphBuilder.h
     source/render/backend/Shader.h
     source/render/backend/ShaderManager.h
     source/render/backend/containers/EBO.h
@@ -153,15 +140,20 @@ set(RENDER_HEADERS
     source/render/backend/containers/RenderBuffer.h
     source/render/backend/containers/VAO.h
     source/render/backend/containers/VBO.h
+    source/render/allocator/RenderResourceAllocator.h
     source/render/data/BatchMap.h
     source/render/data/GPULight.h
     source/render/data/MeshBatch.h
-    source/render/data/RenderContext.h
-    source/render/data/RenderResource.h
+    source/render/data/DebugRenderData.h
+    source/render/data/EngineResources.h
+    source/render/data/FrameRenderData.h
+    source/render/PassResources.h
     source/render/data/ShaderType.h
     source/render/data/ShadowData.h
     source/render/ecs_systems/ShadowAtlas.h
     source/render/ecs_systems/ShadowSystem.h
+    source/render/handlers/ToneMappingPass.h
+    source/render/handlers/CompositePass.h
     source/render/handlers/BloomPass.h
     source/render/handlers/BlurPass.h
     source/render/handlers/CubeMapPass.h
@@ -173,18 +165,19 @@ set(RENDER_HEADERS
     source/render/handlers/ShadowPass.h
 )
 
-# Resource management
 set(RESOURCE_SOURCES
     source/resources/assets/CubeMap.cpp
     source/resources/assets/Material.cpp
-    source/resources/assets/StaticMesh.cpp
     source/resources/assets/Texture.cpp
+    source/resources/assets/RenderMesh.cpp
     source/resources/loaders/ModelLoader.cpp
     source/resources/loaders/TextureLoader.cpp
     source/resources/managers/MaterialManager.cpp
     source/resources/managers/MeshManager.cpp
     source/resources/managers/ModelManager.cpp
     source/resources/managers/TextureManager.cpp
+    source/resources/managers/EnvironmentBaker.cpp
+    source/resources/data/RenderMaterialData.cpp
 )
 
 set(RESOURCE_HEADERS
@@ -192,8 +185,8 @@ set(RESOURCE_HEADERS
     source/resources/assets/Material.h
     source/resources/assets/Model.h
     source/resources/assets/RenderMesh.h
-    source/resources/assets/StaticMesh.h
     source/resources/assets/Texture.h
+    source/resources/data/RenderMaterialData.h
     source/resources/data/GlobalUBOData.h
     source/resources/data/MaterialData.h
     source/resources/data/MaterialTextureInfo.h
@@ -211,25 +204,52 @@ set(RESOURCE_HEADERS
     source/resources/managers/MeshManager.h
     source/resources/managers/ModelManager.h
     source/resources/managers/TextureManager.h
+    source/resources/managers/EnvironmentBaker.h
 )
 
-# Scene system
+set(PLATFORM_HEADERS
+    source/platform/ICursorController.h
+    source/platform/IPlatform.h
+)
+
+set(PLATFORM_SOURCES)
+
+if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
+    list(APPEND PLATFORM_HEADERS
+        source/platform/GLFW/PlatformGLFW.h
+    )
+
+    list(APPEND PLATFORM_SOURCES
+        source/platform/GLFW/PlatformGLFW.cpp
+        source/platform/GLFW/CreatePlatform.cpp
+    )
+elseif(ENGINE_PLATFORM_BACKEND STREQUAL "SDL")
+    message(FATAL_ERROR "SDL backend not implemented yet")
+elseif(ENGINE_PLATFORM_BACKEND STREQUAL "WIN32")
+    message(FATAL_ERROR "WIN32 native backend not implemented yet")
+endif()
+
 set(SCENE_SOURCES
     source/scene/Scene.cpp
+    source/scene/SceneManager.cpp
+    source/scene/GlobalTexturesExtractor.cpp
+    source/scene/EnvironmentExtractor.cpp
+    source/scene/SceneExtractor.cpp
     source/scene/loaders/SceneLoader.cpp
 )
 
 set(SCENE_HEADERS
     source/scene/Scene.h
+    source/scene/SceneManager.h
+    source/scene/SceneExtractor.h
+    source/scene/GlobalTexturesExtractor.h
+    source/scene/EnvironmentExtractor.h
     source/scene/loaders/SceneLoader.h
 )
-
 
 set(THIRD_PARTY_HEADERS
     include/EnTT/entt.hpp
     include/glad/glad.h
-    include/glfw/glfw3.h
-    include/glfw/glfw3native.h
     include/imgui/imconfig.h
     include/imgui/imgui.h
     include/imgui/imgui_impl_glfw.h
@@ -244,8 +264,7 @@ set(THIRD_PARTY_HEADERS
     include/stb/stb_image.h
 )
 
-
-add_library(ShanTT_Lib STATIC
+add_library(ShanTT_Engine STATIC
     ${CORE_SOURCES}
     ${CORE_HEADERS}
     ${ECS_HEADERS}
@@ -257,6 +276,8 @@ add_library(ShanTT_Lib STATIC
     ${MATH_HEADERS}
     ${PHYSICS_SOURCES}
     ${PHYSICS_HEADERS}
+    ${PLATFORM_HEADERS}
+    ${PLATFORM_SOURCES}
     ${RENDER_SOURCES}
     ${RENDER_HEADERS}
     ${RESOURCE_SOURCES}
@@ -265,20 +286,15 @@ add_library(ShanTT_Lib STATIC
     ${SCENE_HEADERS}
 )
 
-add_executable(ShanTT
-    ${MAIN_SOURCES}
-)
+add_library(ShanTT::Engine ALIAS ShanTT_Engine)
 
-target_link_libraries(ShanTT PRIVATE ShanTT_Lib)
-
-target_include_directories(ShanTT_Lib PUBLIC
+target_include_directories(ShanTT_Engine PUBLIC
     ${CMAKE_SOURCE_DIR}/source
 )
 
-target_include_directories(ShanTT_Lib SYSTEM PRIVATE
+target_include_directories(ShanTT_Engine SYSTEM PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/glad
-    ${CMAKE_SOURCE_DIR}/include/glfw
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/EnTT
     ${CMAKE_SOURCE_DIR}/include/json
@@ -286,25 +302,33 @@ target_include_directories(ShanTT_Lib SYSTEM PRIVATE
     ${CMAKE_SOURCE_DIR}/include/KHR
 )
 
-add_custom_command(TARGET ShanTT POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/resource"
-    "$<TARGET_FILE_DIR:ShanTT>/resource"
-    COMMENT "Copying resource to output directory"
-)
-# Find OpenGL
 find_package(OpenGL REQUIRED)
-target_link_libraries(ShanTT_Lib PRIVATE OpenGL::GL)
 
-# Link GLFW
-if(WIN32)
-    target_link_libraries(ShanTT_Lib PRIVATE
-        ${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.lib
+target_link_libraries(ShanTT_Engine
+    PRIVATE
+        OpenGL::GL
+)
+
+if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.4
+    )
+
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+    FetchContent_MakeAvailable(glfw)
+
+    target_link_libraries(ShanTT_Engine
+        PUBLIC
+            glfw
     )
 endif()
 
-
-target_compile_options(ShanTT_Lib PRIVATE
+target_compile_options(ShanTT_Engine PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
     $<$<CXX_COMPILER_ID:MSVC>:/permissive->
 
@@ -318,8 +342,6 @@ target_compile_options(ShanTT_Lib PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wpedantic>
     $<$<CXX_COMPILER_ID:GNU>:-Werror>
 )
-
-
 
 source_group("Source Files\\Core" FILES ${CORE_SOURCES})
 source_group("Header Files\\Core" FILES ${CORE_HEADERS})
@@ -340,22 +362,5 @@ source_group("Source Files\\Scene" FILES ${SCENE_SOURCES})
 source_group("Header Files\\Scene" FILES ${SCENE_HEADERS})
 source_group("Third Party" FILES ${THIRD_PARTY_HEADERS})
 
-
-set_target_properties(ShanTT PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release
-)
-
-
-
-if(WIN32)
-    add_custom_command(TARGET ShanTT POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/libs/GLFW/glfw3.dll"
-        $<TARGET_FILE_DIR:ShanTT>
-        COMMENT "Copying GLFW DLL to output directory"
-    )
-endif()
-
 add_subdirectory(tests)
+add_subdirectory(demo)
