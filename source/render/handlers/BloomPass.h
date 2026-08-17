@@ -1,84 +1,178 @@
 #pragma once
+
 #include "RenderPass.h"
-#include <GLFW/glfw3.h>
+#include "../RenderGraphBuilder.h"
+#include "../PassResources.h"
+
+#include "render/backend/Shader.h"
+#include "render/backend/containers/VAO.h"
+#include "render/backend/containers/VBO.h"
+
 #include <glad/glad.h>
-class BloomPass : public RenderPass {
 
-    struct Settings {
+#include <cstdint>
+#include <vector>
 
+#include "math_custom/Vector2.h"
+
+class BloomPass : public RenderPass
+{
+
+    
+
+public:
+    struct BloomPassSettings
+    {
+        Shader* downScaleShader;
+        Shader* upScaleShader;
+        ResourceId input;
+        uint32_t width;
+        uint32_t height;
         int mipMapLength = 5;
         float filterRadius = 0.005f;
-
     };
-public:
-    BloomPass(Shader* downScaleShader, Shader* upScaleShader, int width, int height)
-        : RenderPass(downScaleShader),
-        windowWidth(width), windowHeight(height), 
-        quadVBO(quadVertices, sizeof(quadVertices), false),  upsampleShader(upScaleShader)
+
+    BloomPass(
+        RenderGraphBuilder& builder,
+        const BloomPassSettings& settings
+    )
+        : RenderPass(builder, "Bloom")
+        , m_DownsampleShader(settings.downScaleShader)
+        , m_UpsampleShader(settings.upScaleShader)
+        , m_Width(settings.width)
+        , m_Height(settings.height)
+        , m_Settings(settings)
+        , m_Input(builder.read(settings.input))
+        , m_Output()
+        , m_QuadVBO(
+            quadVertices,
+            sizeof(quadVertices),
+            false
+        )
     {
-        init( width, height, settings.mipMapLength);
+        if (!m_DownsampleShader || !m_UpsampleShader)
+            return;
 
+        createMipResources(builder);
+       
+        m_Output = builder.create("BloomPass.FrameBuffer", 
+                                FrameBufferResourceDesc{
+                                    {m_MipLevels[0].resource}
+                                });
 
-        quadVAO.Bind();
-        quadVBO.Bind();
-        quadVAO.LinkAttrib(quadVBO, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
-        quadVAO.LinkAttrib(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-        quadVAO.Unbind();
-        quadVBO.Unbind();
+        initializeQuad();
     }
 
-    void execute(const  FrameRenderData&,const  EngineResources&, const DebugRenderData&) override
+    void execute(
+        const FrameRenderData&,
+        PassResources& resources,
+        const DebugRenderData&
+    ) override
     {
-        if (inputs.empty() || outputs.empty()) return;
+        if (m_Input == INVALID_RESOURCE_ID ||
+            m_Output == INVALID_RESOURCE_ID)
+        {
+            return;
+        }
 
-        bloomFB->bind();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        bloomFB->unbind();
+        if (!m_DownsampleShader ||
+            !m_UpsampleShader ||
+            m_MipLevels.empty())
+        {
+            return;
+        }
 
-        downscalePass(inputs[0]->framebuffer);
-        upscalePass(outputs[0], settings.filterRadius);
-
+        downsample(resources);
+        upsample(resources);
     }
 
-    Settings settings;
+    BloomPassSettings& getSettings() { return m_Settings;}
+
+    ResourceId output(){
+        return m_MipLevels[0].resource;
+    }
 
 private:
-    
-    int windowWidth, windowHeight;
-    struct mipLevel {
-        Texture* texture = nullptr;
-        Vector2 size;
+    struct MipLevel
+    {
+        ResourceId resource = INVALID_RESOURCE_ID;
+        uint32_t width = 0;
+        uint32_t height = 0;
     };
 
-    VAO quadVAO;
-    VBO quadVBO;
+    Shader* m_DownsampleShader = nullptr;
+    Shader* m_UpsampleShader = nullptr;
 
-    Shader* upsampleShader;
-    FrameBuffer* bloomFB;
-    std::vector<mipLevel> mipLevels;
+    uint32_t m_Width = 0;
+    uint32_t m_Height = 0;
 
-    static constexpr float quadVertices[16] = {
-  -1.0f,  1.0f,  0.0f, 1.0f,
-  -1.0f, -1.0f,  0.0f, 0.0f,
-   1.0f,  1.0f,  1.0f, 1.0f,
-   1.0f, -1.0f,  1.0f, 0.0f,
+    BloomPassSettings m_Settings;
+
+    ResourceId m_Input = INVALID_RESOURCE_ID;
+    ResourceId m_Output = INVALID_RESOURCE_ID;
+
+
+    std::vector<MipLevel> m_MipLevels;
+
+    VAO m_QuadVAO;
+    VBO m_QuadVBO;
+
+private:
+    static constexpr float quadVertices[16] =
+    {
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f
     };
 
+private:
+    void initializeQuad()
+    {
+        m_QuadVAO.Bind();
+        m_QuadVBO.Bind();
 
+        m_QuadVAO.LinkAttrib(
+            m_QuadVBO,
+            0,
+            2,
+            GL_FLOAT,
+            4 * sizeof(float),
+            (void*)0
+        );
 
-    void init(int windowWidth, int windowHeight, int mipMapLength) {
+        m_QuadVAO.LinkAttrib(
+            m_QuadVBO,
+            1,
+            2,
+            GL_FLOAT,
+            4 * sizeof(float),
+            (void*)(2 * sizeof(float))
+        );
 
-        
-        bloomFB = new FrameBuffer(windowWidth, windowHeight);
-        bloomFB->bind();
+        m_QuadVAO.Unbind();
+        m_QuadVBO.Unbind();
+    }
 
-        Vector2 initialSizeXY = Vector2(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+    void createMipResources(RenderGraphBuilder& builder)
+    {
+        m_MipLevels.clear();
 
-        for (int i = 0; i < mipMapLength; i++) {
-            mipLevel level;
-            level.size = initialSizeXY / pow(2.0f, static_cast<float>(i));
+        if (m_Settings.mipMapLength <= 0)
+            return;
+
+        uint32_t width = m_Width;
+        uint32_t height = m_Height;
+
+        for (int i = 0;
+             i < m_Settings.mipMapLength;
+             ++i)
+        {
+            width = std::max(1u, width);
+            height = std::max(1u, height);
+
             TextureDesc desc;
+
             desc.internalFormat = GL_R11F_G11F_B10F;
             desc.format = GL_RGB;
             desc.type = GL_FLOAT;
@@ -91,96 +185,173 @@ private:
             desc.wrapS = GL_CLAMP_TO_EDGE;
             desc.wrapT = GL_CLAMP_TO_EDGE;
 
-            level.texture = new Texture(
-                (int)level.size.x,
-                (int)level.size.y,
-                nullptr,
-                desc);
+            ResourceId mip =
+                builder.create(
+                    "Bloom.Mip" + std::to_string(i),
+                    TextureResourceDesc{
+                        width,
+                        height,
+                        desc
+                    }
+                );
 
-            mipLevels.push_back(level);
+            m_MipLevels.push_back({
+                mip,
+                width,
+                height
+            });
+
+            width = std::max(1u, width / 2);
+            height = std::max(1u, height / 2);
         }
-
-
-        bloomFB->addColorAttachmentFromTexture(mipLevels[0].texture->getID());
-
-        bloomFB->unbind();
-
-
-
-
     }
-    void downscalePass(FrameBuffer* inputFB) {
 
+    void downsample(PassResources& resources)
+    {
+        Texture* inputTexture =
+            resources.get<Texture>(m_Input);
 
-        bloomFB->bind();
-        Shader* downsampleShader = shader;
+        if (!inputTexture)
+            return;
 
+        m_DownsampleShader->Activate();
 
-        downsampleShader->Activate();
-        downsampleShader->setVec2("srcResolution", { static_cast<float>(windowWidth), static_cast<float>(windowHeight) });
+        m_DownsampleShader->setVec2(
+            "srcResolution",
+            { static_cast<float>(m_Width),
+              static_cast<float>(m_Height)
+            }
+        );
 
+        inputTexture->Bind(0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inputFB->getColorAttachment(0));
+        m_QuadVAO.Bind();
 
-
-        for (size_t i{}; i < mipLevels.size(); ++i)
+        for (size_t i = 0;
+             i < m_MipLevels.size();
+             ++i)
         {
-            const mipLevel& mip = mipLevels[i];
-            glViewport(0, 0, static_cast<GLsizei>(mip.size.x), static_cast<GLsizei>(mip.size.y));
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D, mip.texture->getID(), 0);
+            const MipLevel& mip = m_MipLevels[i];
 
-            quadVAO.Bind();
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            glBindVertexArray(0);
+            Texture* target =
+                resources.get<Texture>(mip.resource);
 
-            downsampleShader->setVec2("srcResolution", mip.size);
+            if (!target)
+                continue;
 
-            mip.texture->Bind(0);
+            glViewport(
+                0,
+                0,
+                static_cast<GLsizei>(mip.width),
+                static_cast<GLsizei>(mip.height)
+            );
+
+            FrameBuffer* framebuffer =
+                resources.get<FrameBuffer>(m_Output);
+
+            if (!framebuffer)
+                continue;
+
+            framebuffer->attachColor(
+                target->getID(),
+                0
+            );
+
+            framebuffer->bind();
+
+            glDrawArrays(
+                GL_TRIANGLE_STRIP,
+                0,
+                4
+            );
+
+            framebuffer->unbind();
+
+            m_DownsampleShader->setVec2(
+                "srcResolution",
+                {
+                    static_cast<float>(mip.width),
+                    static_cast<float>(mip.height)
+                }
+            );
+
+            target->Bind(0);
         }
-
-        bloomFB->unbind();
+        
+        m_QuadVAO.Unbind();
     }
 
-    void upscalePass(RenderResource* outputFB, float filterRadius) {
+    void upsample(PassResources& resources)
+    {
+        FrameBuffer* output =
+            resources.get<FrameBuffer>(m_Output);
 
-        bloomFB->bind();
+        if (!output)
+            return;
 
-        upsampleShader->Activate();
-        upsampleShader->setFloat("filterRadius", filterRadius);
+        m_UpsampleShader->Activate();
 
+        m_UpsampleShader->setFloat(
+            "filterRadius",
+            m_Settings.filterRadius
+        );
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
         glBlendEquation(GL_FUNC_ADD);
 
-        for (int i = static_cast<int>(mipLevels.size()) - 1; i > 0; i--)
+        m_QuadVAO.Bind();
+
+        for (int i =
+                 static_cast<int>(m_MipLevels.size()) - 1;
+             i > 0;
+             --i)
         {
-            const mipLevel& mip = mipLevels[i];
-            const mipLevel& nextMip = mipLevels[i - 1];
+            const MipLevel& current =
+                m_MipLevels[i];
 
+            const MipLevel& next =
+                m_MipLevels[i - 1];
 
-            mip.texture->Bind(0);
+            Texture* currentTexture =
+                resources.get<Texture>(current.resource);
 
+            Texture* nextTexture =
+                resources.get<Texture>(next.resource);
 
-            glViewport(0, 0, static_cast<GLsizei>(nextMip.size.x), static_cast<GLsizei>(nextMip.size.y));
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D, nextMip.texture->getID(), 0);
+            if (!currentTexture ||
+                !nextTexture)
+            {
+                continue;
+            }
 
+            currentTexture->Bind(0);
 
-            quadVAO.Bind();
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            quadVAO.Unbind();
+            output->attachColor(
+                nextTexture->getID(),
+                0
+            );
+
+            output->bind();
+
+            glViewport(
+                0,
+                0,
+                static_cast<GLsizei>(next.width),
+                static_cast<GLsizei>(next.height)
+            );
+
+            glDrawArrays(
+                GL_TRIANGLE_STRIP,
+                0,
+                4
+            );
+
+            output->unbind();
         }
+
+        m_QuadVAO.Unbind();
+
         glDisable(GL_BLEND);
-
-        bloomFB->unbind();
-        outputFB->framebuffer = bloomFB;
-        bloomFB->setColorAttachment(0, mipLevels[0].texture->getID());
-
-
     }
-
-    const char* passName() const override { return "Bloom"; }
 };

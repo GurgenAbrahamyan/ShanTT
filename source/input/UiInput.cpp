@@ -1,67 +1,197 @@
 #include "UiInput.h"
 
 
-#include "../render/handlers/BloomPass.h"
+#include "render/handlers/BloomPass.h"
+#include "render/handlers/CompositePass.h"
+#include "render/handlers/FXAAPass.h"
+#include "render/handlers/ToneMappingPass.h"
 
-#include "../render/handlers/FinalBlitPass.h"
-
-#include "../render/handlers/FXAAPass.h"
-
-
-UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platform)
-
+bool UiInput::Initialize()
 {
+    if (initialized)
+        return true;
+
+    void* nativeHandle = platform.GetNativeWindowHandle();
+
+    if (!nativeHandle)
+    {
+        std::cerr
+            << "UiInput::Initialize(): "
+            << "Platform native window handle is NULL\n";
+
+        return false;
+    }
 
     IMGUI_CHECKVERSION();
 
     ImGui::CreateContext();
 
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
 
     ApplyEditorStyle();
 
-    ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(window.GetNativeWindowHandle()), true);
+    auto* glfwWindow =
+        static_cast<GLFWwindow*>(nativeHandle);
 
-    ImGui_ImplOpenGL3_Init("#version 330");
+    if (!ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true))
+    {
+        std::cerr
+            << "UiInput::Initialize(): "
+            << "Failed to initialize ImGui GLFW backend\n";
 
+        ImGui::DestroyContext();
 
+        return false;
+    }
 
-    // ── Pass render map ───────────────────────────────────────────────────────
+    if (!ImGui_ImplOpenGL3_Init("#version 330"))
+    {
+        std::cerr
+            << "UiInput::Initialize(): "
+            << "Failed to initialize ImGui OpenGL backend\n";
+
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
+        return false;
+    }
+
+    initialized = true;
+
+    return true;
+}
+
+UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager) :  assetManager(assetManager),  bus(bus),  platform(platform)
+
+{
+   // ── Pass render map ───────────────────────────────────────────────────────
 
     passRenderMap = {
 
-        { typeid(FinalBlitPass), [](RenderPass* base) {
-
-            auto* p = static_cast<FinalBlitPass*>(base);
-
-            ImGui::DragFloat("Exposure",        &p->settings.exposure,       0.05f, 0.f, 20.f);
-
-            ImGui::Checkbox ("Bloom",           &p->settings.isBloom);
-
-            if (p->settings.isBloom)
-
-                ImGui::DragFloat("Bloom Intensity", &p->settings.bloomintensity, 0.001f, 0.f, 1.f);
-
-        }},
-
         { typeid(BloomPass), [](RenderPass* base) {
 
-            auto* p = static_cast<BloomPass*>(base);
+        auto* p =
+            static_cast<BloomPass*>(base);
 
-            ImGui::DragFloat("Filter Radius", &p->settings.filterRadius, 0.0001f, 0.f, 0.05f);
+        auto& settings =
+            p->getSettings();
 
-        }},
+        ImGui::DragFloat(
+            "Filter Radius",
+            &settings.filterRadius,
+            0.0001f,
+            0.f,
+            0.05f
+        );
 
-        { typeid(FXAAPass), [](RenderPass* base) {
+        ImGui::DragInt(
+            "Mip Levels",
+            &settings.mipMapLength,
+            1,
+            1,
+            12
+        );
+    }},
 
-            auto* p = static_cast<FXAAPass*>(base);
 
-            ImGui::DragFloat("Edge Threshold", &p->settings.edgeThreshold, 0.001f, 0.f, 1.f);
+    { typeid(CompositePass), [](RenderPass* base) {
 
-            ImGui::DragFloat("Blend Strength", &p->settings.blendStrength, 0.001f, 0.f, 1.f);
+        auto* p =
+            static_cast<CompositePass*>(base);
 
-        }},
+        auto& settings =
+            p->getSettings();
 
+        for (auto& uniform : settings.uniforms)
+        {
+            ImGui::PushID(uniform.name.c_str());
+
+            std::visit(
+                [&](auto& value)
+                {
+                    using T =
+                        std::decay_t<decltype(value)>;
+
+                    if constexpr (
+                        std::is_same_v<T, float>
+                    )
+                    {
+                        ImGui::DragFloat(
+                            uniform.name.c_str(),
+                            &value,
+                            0.001f
+                        );
+                    }
+                    else if constexpr (
+                        std::is_same_v<T, int>
+                    )
+                    {
+                        ImGui::DragInt(
+                            uniform.name.c_str(),
+                            &value
+                        );
+                    }
+                    else if constexpr (
+                        std::is_same_v<T, bool>
+                    )
+                    {
+                        ImGui::Checkbox(
+                            uniform.name.c_str(),
+                            &value
+                        );
+                    }
+                },
+                uniform.value
+            );
+
+            ImGui::PopID();
+        }
+    }},
+
+
+    { typeid(FXAAPass), [](RenderPass* base) {
+
+        auto* p =
+            static_cast<FXAAPass*>(base);
+
+        auto& settings =
+            p->getSettings();
+
+        ImGui::DragFloat(
+            "Edge Threshold",
+            &settings.edgeThreshold,
+            0.001f,
+            0.f,
+            1.f
+        );
+
+        ImGui::DragFloat(
+            "Blend Strength",
+            &settings.blendStrength,
+            0.001f,
+            0.f,
+            1.f
+        );
+    }},
+
+
+    { typeid(ToneMappingPass), [](RenderPass* base) {
+
+        auto* p =
+            static_cast<ToneMappingPass*>(base);
+
+        auto& settings =
+            p->getSettings();
+
+        ImGui::DragFloat(
+            "Exposure",
+            &settings.exposure,
+            0.05f,
+            -20.f,
+            20.f
+        );
+    }},
     };
 
 
@@ -304,6 +434,11 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platfor
 
             ImGui::Checkbox("Casts Shadow", &l.castsShadow);
 
+            ImGui::DragFloat("Shadow near plane", &l.shadowNearPlane);
+            ImGui::DragFloat("Shadow far plane", &l.shadowFarPlane);
+
+            if(l.castsShadow || l.type == LightType::Directional)
+                ImGui::DragFloat("Ortho Size", &l.shadowOrthoSize);
             EndComponentHeader();
 
         }},
@@ -336,7 +471,7 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platfor
 
         }},
 
-        { typeid(ModelComponent), [](entt::registry& r, entt::entity e, bool& del) {
+        { typeid(ModelComponent), [&](entt::registry& r, entt::entity e, bool& del) {
 
             if (!BeginComponentHeader("Model", del)) return;
 
@@ -362,13 +497,16 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platfor
 
                 if (nodeOpen) {
 
-                    ImGui::TextDisabled("Mesh:     %s", entry.mesh     ? "set" : "null");
+                    auto mesh = assetManager.meshes().getMesh(entry.mesh);
+                    auto mat = assetManager.materials().getMaterial(entry.material);
 
-                    ImGui::TextDisabled("Material: %s", entry.material ? "set" : "null");
+                    ImGui::TextDisabled("Mesh:     %s", mesh    ? "set" : "null");
 
-                    if (entry.material) {
+                    ImGui::TextDisabled("Material: %s", mat     ? "set" : "null");
 
-                        Material* mat = entry.material;
+                    if (mat) {
+
+                        
 
                         ImGui::Spacing();
 
@@ -398,7 +536,7 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus) :  bus(bus), window(platfor
 
                         for (int slot = 0; slot < kDisplaySlots; ++slot) {
 
-                            DrawTextureSlot(slotLabels[slot], mat->GetTexture(slot), 56.f);
+                            DrawTextureSlot(slotLabels[slot], assetManager.textures().getTexture(mat->GetTexture(static_cast<MaterialSlot>(slot))), 56.f);
 
                             ImGui::Spacing();
 
@@ -512,7 +650,7 @@ void UiInput::render()
 
     
 
-    Vector2 windowSize{window.GetFramebufferSize()};
+    Vector2 windowSize{platform.GetFramebufferSize()};
 
     float w {windowSize.x}, h {windowSize.y};
     glViewport(0, 0, w, h);
@@ -743,11 +881,27 @@ void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry
 
 }
 
+UiInput::~UiInput()
+{
+    Shutdown();
+}
 
+void UiInput::Shutdown()
+{
+    if (!initialized)
+        return;
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+
+    ImGui::DestroyContext();
+
+    initialized = false;
+}
 
 void UiInput::buildUI(entt::registry& registry,
                        const EngineResources& resources,
-                       const DebugRenderData& debugData,
+                       const DebugRenderData&,
                        RenderGraph* rendergraph)
 {
 
@@ -936,58 +1090,21 @@ void UiInput::buildUI(entt::registry& registry,
 
 
 
-    // ── Column 2: Systems ─────────────────────────────────────────────────────
-
-    ImGui::BeginChild("##systems", ImVec2(0.f, 0.f), true);
-
-    ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Systems");
-
+     ImGui::BeginChild("##systems", ImVec2(0.f, 0.f), true);
+    ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Engine Submodules");
     ImGui::Separator(); ImGui::Spacing();
 
     struct SystemEntry { const char* label; bool* openFlag; };
-
-    SystemEntry systemEntries[] = { { "Model Manager", &modelManagerOpen } };
+    SystemEntry systemEntries[] = {
+        { "Model Manager", &modelManagerOpen },
+        { "Render Graph",  &renderGraphOpen },
+    };
 
     for (auto& entry : systemEntries) {
-
         bool isOpen = *entry.openFlag;
-
         if (isOpen) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
-
         if (ImGui::Selectable(entry.label, isOpen)) *entry.openFlag = !(*entry.openFlag);
-
         if (isOpen) ImGui::PopStyleColor();
-
-    }
-
-    if (rendergraph) {
-
-        ImGui::Spacing();
-
-        ImGui::TextColored(ImVec4(0.75f, 0.55f, 1.00f, 1.f), "Render Passes");
-
-        ImGui::Separator(); ImGui::Spacing();
-
-        const auto& passes = rendergraph->getPasses();
-
-        for (int i = 0; i < (int)passes.size(); i++) {
-
-            RenderPass* pass = passes[i].get();
-
-            if (passRenderMap.find(typeid(*pass)) == passRenderMap.end()) continue;
-
-            bool isOpen = (activePassIndex == i);
-
-            if (isOpen) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 1.00f, 1.f));
-
-            if (ImGui::Selectable(pass->passName(), isOpen))
-
-                activePassIndex = (activePassIndex == i) ? -1 : i;
-
-            if (isOpen) ImGui::PopStyleColor();
-
-        }
-
     }
 
     ImGui::EndChild();
@@ -996,6 +1113,11 @@ void UiInput::buildUI(entt::registry& registry,
 
     ImGui::End();
 
+    if (rendergraph && renderGraphOpen)
+    {
+        DrawRenderGraphWindow(rendergraph, resources.windowSize);
+        DrawFramebufferStatesWindow(rendergraph, resources.windowSize);
+    }
 
 
     if (rendergraph && activePassIndex >= 0) {
@@ -1066,7 +1188,7 @@ void UiInput::buildUI(entt::registry& registry,
 
         ImGuiCond_FirstUseEver);
 
-    ImGui::Begin("Render Passes", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+   /* ImGui::Begin("Render Passes", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
 
     const float thumbW = ImGui::GetContentRegionAvail().x;
 
@@ -1107,7 +1229,7 @@ void UiInput::buildUI(entt::registry& registry,
     }
 
     ImGui::End();
-
+*/
 
 
     for (auto it = windows.begin(); it != windows.end();) {
@@ -1124,4 +1246,200 @@ void UiInput::buildUI(entt::registry& registry,
 
     }
 
+}
+
+void UiInput::DrawRenderGraphWindow(RenderGraph* rendergraph, Vector2 windowSizes)
+{
+    const float windowWidth  = windowSizes.x;
+    const float windowHeight = windowSizes.y;
+    const float pad = 10.f;
+    const float w = windowWidth / 3.5f;
+    const float h = windowHeight - 2.f * pad;
+
+    ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_FirstUseEver);
+
+    bool open = renderGraphOpen;
+    ImGui::Begin("Render Graph", &open, ImGuiWindowFlags_NoCollapse);
+
+    if (!rendergraph)
+    {
+        ImGui::TextDisabled("No render graph attached.");
+        ImGui::End();
+        renderGraphOpen = open;
+        return;
+    }
+
+    auto passInfo = rendergraph->getPassDebugInfo();
+    const auto& passes = rendergraph->getPasses();
+
+    // ── Execution order ──────────────────────────────────────────────────
+    if (ImGui::CollapsingHeader("Execution Order", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        const auto& order = rendergraph->getExecutionOrder();
+
+        if (order.empty())
+        {
+            ImGui::TextDisabled("Not compiled yet, or nothing is live this frame.");
+        }
+        else
+        {
+            for (size_t i = 0; i < order.size(); ++i)
+                ImGui::Text("%2zu.  %s", i + 1, order[i]->passName());
+        }
+    }
+
+    ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+    // ── All registered passes ───────────────────────────────────────────
+    if (ImGui::CollapsingHeader("All Passes", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        for (int i = 0; i < (int)passInfo.size(); ++i)
+        {
+            const auto& info = passInfo[i];
+
+            ImVec4 stateColor;
+            const char* stateLabel;
+
+            if (!info.active)
+            {
+                stateColor = ImVec4(0.6f, 0.6f, 0.6f, 1.f);
+                stateLabel = "inactive";
+            }
+            else if (!info.inExecutionOrder)
+            {
+                stateColor = ImVec4(0.9f, 0.55f, 0.2f, 1.f);
+                stateLabel = "culled";
+            }
+            else
+            {
+                stateColor = ImVec4(0.4f, 0.85f, 0.4f, 1.f);
+                stateLabel = "running";
+            }
+
+            ImGui::PushID(i);
+
+            RenderPass& passRef = *passes[i];
+            bool hasSettings =
+                passRenderMap.find(typeid(passRef)) != passRenderMap.end();
+
+            std::string label =
+                info.name + "  (id " + std::to_string((uint32_t)info.id) + ")";
+
+            bool nodeOpen = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth);
+
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 90.f);
+            ImGui::TextColored(stateColor, "%s", stateLabel);
+
+            if (info.hasSideEffect)
+            {
+                ImGui::SameLine();
+                ImGui::TextDisabled("(side effect)");
+            }
+
+            if (nodeOpen)
+            {
+                if (hasSettings)
+                {
+                    if (ImGui::SmallButton("Open Settings"))
+                        activePassIndex = (activePassIndex == i) ? -1 : i;
+                }
+
+                auto res = rendergraph->getResourcesForPass(info.id);
+
+                if (res.empty())
+                {
+                    ImGui::TextDisabled("No resources attached.");
+                }
+                else
+                {
+                    for (auto& r : res)
+                    {
+                        const char* role = (r.producer == info.id) ? "writes" : "reads";
+
+                        ImGui::BulletText(
+                            "%-6s  %-24s  (res id %u)%s",
+                            role,
+                            r.debugName.c_str(),
+                            (uint32_t)r.id,
+                            r.imported ? "  [imported]" : ""
+                        );
+                    }
+                }
+
+                ImGui::TreePop();
+            }
+
+            ImGui::PopID();
+        }
+    }
+
+    ImGui::End();
+    renderGraphOpen = open;
+}
+
+void UiInput::DrawFramebufferStatesWindow(RenderGraph* rendergraph, Vector2 windowSizes)
+{
+    const float windowWidth  = windowSizes.x;
+    const float windowHeight = windowSizes.y;
+    const float pad = 10.f;
+    const float w = windowWidth / 4.f;
+    const float h = windowHeight - 2.f * pad;
+
+    ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(windowWidth - w - pad, pad), ImGuiCond_FirstUseEver);
+
+    ImGui::Begin("Render Graph Textures", nullptr, ImGuiWindowFlags_HorizontalScrollbar);
+
+    if (!rendergraph)
+    {
+        ImGui::TextDisabled("No render graph attached.");
+        ImGui::End();
+        return;
+    }
+
+    auto resourceInfo = rendergraph->getResourceDebugInfo();
+
+    std::sort(
+        resourceInfo.begin(), resourceInfo.end(),
+        [](const RenderGraph::ResourceDebugInfo& a, const RenderGraph::ResourceDebugInfo& b)
+        { return a.debugName < b.debugName; }
+    );
+
+    const float thumbW = ImGui::GetContentRegionAvail().x;
+
+    for (auto& r : resourceInfo)
+    {
+        if (!r.isTexture || r.glTextureID == 0)
+            continue;
+
+        const float aspect =
+            (r.width > 0 && r.height > 0)
+                ? static_cast<float>(r.height) / static_cast<float>(r.width)
+                : (9.f / 16.f);
+
+        const float thumbH = thumbW * aspect;
+
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.85f, 1.00f, 1.f));
+        ImGui::TextUnformatted(r.debugName.c_str());
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine(thumbW - 90.f);
+        ImGui::TextDisabled("%ux%u", r.width, r.height);
+
+        ImTextureID imID = (ImTextureID)(intptr_t)r.glTextureID;
+        ImGui::Image(imID, ImVec2(thumbW, thumbH), ImVec2(0, 1), ImVec2(1, 0));
+
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Image(imID, ImVec2(512.f, 512.f * aspect), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::TextDisabled("%s  |  gl id %u", r.debugName.c_str(), r.glTextureID);
+            ImGui::EndTooltip();
+        }
+
+        ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+    }
+
+    ImGui::End();
 }

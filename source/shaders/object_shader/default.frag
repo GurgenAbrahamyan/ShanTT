@@ -52,4 +52,6 @@ void main()
     gAlbedo   = vec4(albedo, 1.0);
     gARM      = vec4(ao, roughness, metallic, 1.0);
     gEmissive = vec4(emissive, 1.0);
+
+  
 }

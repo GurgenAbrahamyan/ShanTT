@@ -10,11 +10,9 @@ Engine::Engine()
     : platform(CreatePlatform()),
       bus(),
       input(bus),
-      debugUi(*platform.get(), &bus), 
-      renderer( &bus, &rendererResources),
+      debugUi(*platform.get(), &bus, assetManager), 
+      renderer(),
       physicsEngine(PhysicsEngine()),
-    //  cameraSystem(CameraSystem(&bus, *renderContext.registry)),   
-     // shadowSystem(ShadowSystem()),
       engineContext({*platform.get(),
                     0.0f,
                     0.0f, 
@@ -22,8 +20,9 @@ Engine::Engine()
                     renderer,
                     physicsEngine,
                     assetManager,
-                    input}),
-      sceneContext({engineContext}),
+                    input,
+                    nullptr}),
+      sceneContext(engineContext),
       sceneManager(sceneContext),
       running(true),
       accumulator(0.0f),
@@ -37,9 +36,15 @@ Engine::Engine()
     desc.title = "ShanTT";
     desc.api = GraphicsAPI::OpenGL;
 
+    engineContext.sceneManager = &sceneManager;
+
     if (!platform->Init(desc, bus)) {
         throw std::runtime_error("Platform init failed");
     }
+
+    renderer.Init();
+    debugUi.Initialize();
+
 }
 
 Engine::~Engine() {
@@ -64,25 +69,25 @@ void Engine::run() {
         }
 
         sceneManager.Update(frameTime);
-
-
-        // cameraSystem->update(scene->getRegistry(), frameTime);
-
-        //renderer.rebuildContext(frameData);
-        sceneManager.Current()->GetExtractor().extract(sceneManager.Current()->Registry(), frameData);
-        //shadowSystem.update(&renderContext);
+    
+        for( auto& extract : sceneManager.Current()->GetExtractors())
+            extract->extract(sceneManager.Current()->Registry(), frameData);
 
         renderer.render(frameData);
 
-        platform->SwapBuffers();
-        input.EndFrame(); 
-
         debugUi.startNewFrame();
-        debugUi.buildUI(sceneManager.Current()->Registry(),
-                      rendererResources, 
-                      renderer.getDebugRenderData(), 
-                      renderer.getRenderGraph());
-                      
+        debugUi.buildUI(
+            sceneManager.Current()->Registry(),
+            rendererResources,
+            renderer.getDebugRenderData(),
+            renderer.getRenderGraph()
+        );
+        debugUi.render();
+
+        platform->SwapBuffers();
+
+        input.EndFrame();
+
         framesThisSecond++;
         timeSinceLastFpsPrint += frameTime;
         if (timeSinceLastFpsPrint >= 1.0f) {
@@ -90,6 +95,8 @@ void Engine::run() {
             framesThisSecond = 0;
             timeSinceLastFpsPrint = 0.0f;
         }
+
+        frameData.Clear();
     }
 }
 

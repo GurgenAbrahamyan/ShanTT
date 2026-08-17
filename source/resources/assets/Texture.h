@@ -2,11 +2,6 @@
 
 #include <glad/glad.h>
 
-
-
-
-
-
 struct TextureDesc {
     GLenum target = GL_TEXTURE_2D;
     GLenum internalFormat = GL_RGBA8;

@@ -3,7 +3,7 @@
 
 struct GLFWwindow;
 class EventBus;
-class WindowGLFW;
+
 class PlatformGLFW final : public IPlatform {
 public:
     bool Init(const WindowDesc&, EventBus& bus) override;
@@ -19,6 +19,9 @@ public:
     Vector2 GetFramebufferSize() const override;
     double GetTime() const override;
 
+    void SetCursorMode(CursorMode mode) override;
+    void SetCursorPosition(const Vector2& pos) override;
+    Vector2 GetCursorPosition() const override;
 
 private:
     static void KeyCallback(GLFWwindow* w, int key, int scancode, int action, int mods);

@@ -1,77 +1,93 @@
 #pragma once
+
 #include "RenderPass.h"
-#include "../ecs_systems/ShadowAtlas.h"
+#include "../RenderGraphBuilder.h"
+#include "../PassResources.h"
+
+#include "../backend/Shader.h"
+
+#include "render/ecs_systems/ShadowAtlas.h"
 
 class ShadowPass : public RenderPass
 {
+   
 public:
-    ShadowPass(Shader* s)
-        : RenderPass(s)
+
+    struct ShadowPassOptions{
+        Shader* shader;
+    };
+
+    ShadowPass(
+        RenderGraphBuilder& builder,
+        const ShadowPassOptions& options
+    )
+        : RenderPass(builder, "Shadow"),
+          m_shader(options.shader)
     {
+        TextureDesc shadowTextureDesc;
 
+        shadowTextureDesc.target = GL_TEXTURE_2D;
+        shadowTextureDesc.internalFormat = GL_DEPTH_COMPONENT32F;
+        shadowTextureDesc.format = GL_DEPTH_COMPONENT;
+        shadowTextureDesc.type = GL_FLOAT;
+
+        shadowTextureDesc.generateMipmaps = false;
+        shadowTextureDesc.minFilter = GL_NEAREST;
+        shadowTextureDesc.magFilter = GL_NEAREST;
+
+        shadowTextureDesc.wrapS = GL_CLAMP_TO_EDGE;
+        shadowTextureDesc.wrapT = GL_CLAMP_TO_EDGE;
+
+        TextureResourceDesc textureDesc;
+
+        textureDesc.width = ShadowAtlas::ATLAS_SIZE;
+        textureDesc.height = ShadowAtlas::ATLAS_SIZE;
+        textureDesc.texture = shadowTextureDesc;
+
+        m_shadowTexture =
+            builder.create(
+                "ShadowAtlas",
+                textureDesc
+            );
+
+        FrameBufferResourceDesc framebufferDesc;
+
+        framebufferDesc.depthAttachment =
+            m_shadowTexture;
+
+        m_shadowFramebuffer =
+            builder.create(
+                "ShadowFramebuffer",
+                framebufferDesc
+            );
+
+
+        hasSideEffect = true;
     }
 
-    void execute(const FrameRenderData& frameData, 
-                const EngineResources& resources, 
-                const DebugRenderData&) override {
-        if (outputs.empty() || frameData.shadowData.empty()) return;
-
-        
-
-
-        FrameBuffer* fb = outputs[0]->framebuffer;
-        if (fb->getWidth() != ShadowAtlas::ATLAS_SIZE || fb->getHeight() != ShadowAtlas::ATLAS_SIZE) {
-            fb->resize(ShadowAtlas::ATLAS_SIZE, ShadowAtlas::ATLAS_SIZE);
-
-        }
-
-        shader->Activate();
-        fb->bind();
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(2.0f, 4.0f);
-
-
-        for (const ShadowData& data : frameData.shadowData) {
-
-            int x = int(data.uvMin.x * ShadowAtlas::ATLAS_SIZE);
-            int y = int(data.uvMin.y * ShadowAtlas::ATLAS_SIZE);
-            int w = int((data.uvMax.x - data.uvMin.x) * ShadowAtlas::ATLAS_SIZE);
-            int h = int((data.uvMax.y - data.uvMin.y) * ShadowAtlas::ATLAS_SIZE);
-
-            glViewport(x, y, w, h);
-            shader->setMat4("lightSpaceMatrix", data.lightMatrix);
-
-
-            for (auto& [mat, meshMap] : frameData.batches) {
-                for (auto& [mesh, batch] : meshMap) {
-                    if (batch.instances.empty()) continue;
-                    mesh->bind();
-                    mesh->setupInstanceVBO(batch.instances.size());
-                    glBindBuffer(GL_ARRAY_BUFFER, mesh->getInstanceVBO());
-                    glBufferSubData(GL_ARRAY_BUFFER, 0,
-                        batch.instances.size() * sizeof(Mat4),
-                        batch.instances.data());
-                    glDrawElementsInstanced(GL_TRIANGLES,
-                        mesh->indexCount(), GL_UNSIGNED_INT, 0,
-                        static_cast<GLsizei>(batch.instances.size()));
-                }
-            }
-
-        }
-
-        fb->unbind();
-        glViewport(0, 0, resources.windowSize.x, resources.windowSize.y);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glDisable(GL_POLYGON_OFFSET_FILL);
+    ResourceId shadowTexture() const
+    {
+        return m_shadowTexture;
     }
 
+    ResourceId shadowFramebuffer() const
+    {
+        return m_shadowFramebuffer;
+    }
 
+    void execute(
+        const FrameRenderData& frameData,
+        PassResources& resources,
+        const DebugRenderData&
+    ) override;
 
+private:
+    Shader* m_shader = nullptr;
 
+    ResourceId m_shadowTexture =
+        INVALID_RESOURCE_ID;
 
+    ResourceId m_shadowFramebuffer =
+        INVALID_RESOURCE_ID;
 
 };

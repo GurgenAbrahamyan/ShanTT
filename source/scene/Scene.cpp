@@ -13,7 +13,8 @@ void Scene::Initialize(SceneContext& ctx)
         system->Initialize(ctx);
     }
 
-    sceneExtractor.OnCreate(ctx.registry);
+    for(auto& extractionSystem : extractionSystems)
+        extractionSystem->onInit(registry);
 
     state = SceneState::Exited;
 }

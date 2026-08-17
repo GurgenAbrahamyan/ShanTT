@@ -18,6 +18,7 @@ public:
             m_Data.emplace(
                 std::type_index(typeid(T)),
                 T{}
+                
             );
 
         if (!inserted)

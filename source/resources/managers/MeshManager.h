@@ -1,38 +1,45 @@
 #pragma once
-#include <unordered_map>
+
 #include <memory>
-#include <vector>
 #include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "ResourcePool.h"
+#include "MeshHandleTypes.h"
 
 #include "../assets/RenderMesh.h"
-
 #include "../data/Vertex.h"
-
-class EventBus;
-using MeshID = int;
 
 class MeshManager {
 public:
-    MeshManager(EventBus* bus);
+    MeshManager() = default;
 
     MeshID addMesh(
         const std::string& name,
         const std::vector<Vertex>& vertices,
-        const std::vector<unsigned int>& indices,
-        bool dynamic = false
+        const std::vector<unsigned int>& indices
     );
 
     RenderMesh* getMesh(MeshID id);
+    RenderMesh* getMesh(MeshID id) const ;
+    
+    void removeMesh(MeshID id);
+
     MeshID getMeshID(const std::string& name) const;
+
     RenderMesh* getRectangleMesh();
 
-    int getMeshCount() const { return static_cast<int>(meshes.size()); }
+    size_t getMeshCount() const {
+        return pool.size();
+    }
 
 private:
-    std::unordered_map<MeshID, std::unique_ptr<RenderMesh>> meshes;
-    std::unordered_map<std::string, MeshID> nameToID;
+    struct MeshRecord {
+        std::unique_ptr<RenderMesh> mesh;
+        std::string name;
+    };
 
-    MeshID nextID = 0;
-
-    [[maybe_unused]] EventBus* bus;
+    ResourcePool<MeshRecord, MeshTag> pool;
+    std::unordered_map<std::string, MeshID> lookup;
 };

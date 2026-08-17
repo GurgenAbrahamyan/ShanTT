@@ -223,3 +223,29 @@ void PlatformGLFW::FramebufferSizeCallback(GLFWwindow*, int width, int height) {
    // platform->m_eventBus->publish(WindowResizeEvent{width, height});
    glViewport(0, 0, width, height);
 }
+
+void PlatformGLFW::SetCursorMode(CursorMode mode)
+{
+    int glfwMode = GLFW_CURSOR_NORMAL;
+    switch (mode) {
+        case CursorMode::Normal:   glfwMode = GLFW_CURSOR_NORMAL;   break;
+        case CursorMode::Hidden:   glfwMode = GLFW_CURSOR_HIDDEN;   break;
+        case CursorMode::Disabled: glfwMode = GLFW_CURSOR_DISABLED; break;
+    }
+    glfwSetInputMode(window, GLFW_CURSOR, glfwMode);
+
+    if (mode == CursorMode::Disabled && glfwRawMouseMotionSupported())
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+}
+
+void PlatformGLFW::SetCursorPosition(const Vector2& pos)
+{
+    glfwSetCursorPos(window, pos.x, pos.y);
+}
+
+Vector2 PlatformGLFW::GetCursorPosition() const
+{
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    return { static_cast<float>(x), static_cast<float>(y) };
+}

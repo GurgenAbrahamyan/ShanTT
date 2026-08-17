@@ -6,7 +6,8 @@
 
 #include "../core/ecs_systems/ISystem.h"
 #include "SceneContext.h"
-#include "SceneExtractor.h"
+
+#include "IExtractionSystem.h"
 
 class Scene
 {
@@ -53,9 +54,9 @@ public:
         return state;
     }
 
-    SceneExtractor& GetExtractor()
+    std::vector<std::unique_ptr<IExtractionSystem>>& GetExtractors()
     {
-        return sceneExtractor;
+        return extractionSystems;
     }
 
 protected:
@@ -90,7 +91,7 @@ private:
 
     std::vector<std::unique_ptr<ISystem>> systems;
 
-    SceneExtractor sceneExtractor;
+    std::vector<std::unique_ptr<IExtractionSystem>> extractionSystems;
 
     SceneContext* context = nullptr;
 };

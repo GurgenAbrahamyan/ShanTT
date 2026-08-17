@@ -6,6 +6,9 @@
 #include "physics/PhysicsEngine.h"
 #include "resources/managers/AssetManager.h"
 #include "platform/IPlatform.h"
+
+class SceneManager;
+
 struct EngineContext
 {
     IPlatform& platform;
@@ -13,6 +16,7 @@ struct EngineContext
     float deltaTime = 0.0f;
 
     float totalTime = 0.0f;
+
 
     EventBus& events;
 
@@ -23,4 +27,6 @@ struct EngineContext
     AssetManager& assets;
 
     InputManager& input;
+
+    SceneManager* sceneManager;
 };

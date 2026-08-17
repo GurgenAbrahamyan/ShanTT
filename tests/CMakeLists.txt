@@ -6,6 +6,7 @@ add_executable(
 add_subdirectory(
     math_custom_tests
 )
+
 add_subdirectory(
     scene_tests
 )
@@ -13,8 +14,8 @@ add_subdirectory(
 target_link_libraries(
     ShanTT_Tests
     PRIVATE
-    GTest::gtest_main
-    ShanTT_Lib
+        GTest::gtest_main
+        ShanTT::Engine
 )
 
 include(GoogleTest)

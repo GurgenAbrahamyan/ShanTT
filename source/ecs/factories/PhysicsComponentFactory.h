@@ -5,6 +5,7 @@
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
 #include "EnTT/entt.hpp"
+#include <iostream>
 namespace PhysicsComponentFactory {
 
     TransformComponent createTransform(Vector3 translation = Vector3(), Quat rotation = Quat(), Vector3 scale = Vector3(1, 1, 1)) {
@@ -24,6 +25,7 @@ namespace PhysicsComponentFactory {
         rb.forceAccum = Vector3(0, 0, 0);
 
         if (!registry.all_of<TransformComponent>(entity)) {
+            std::cout << "creating transform";
             registry.emplace<TransformComponent>(entity, createTransform(translation, rotation, scale));
         }
 

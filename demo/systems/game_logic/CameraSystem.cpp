@@ -1,115 +1,149 @@
 #include "CameraSystem.h"
+
+#include <algorithm>
 #include <cmath>
 
 #include "ecs/components/core/TransformComponent.h"
 #include "ecs/components/graphics/CameraComponent.h"
 #include "ecs/components/graphics/ActiveCameraTag.h"
-#include "core/Event.h"
+
 #include "math_custom/Mat4.h"
+#include "math_custom/Vector3.h"
 
 void CameraSystem::Initialize(SceneContext& sceneCtx)
 {
     ctx = &sceneCtx;
-
-    ctx->engine.events.subscribe<PressedKey>(this, [this](const PressedKey& event) {
-        processKeyboard(ctx->registry, event.key, ctx->engine.deltaTime);
-    });
-
-    ctx->engine.events.subscribe<CameraMode>(this, [this](const CameraMode& event) {
-        camMode = event.key;
-    });
-
-    ctx->engine.events.subscribe<MouseDragged>(this, [this](const MouseDragged& event) {
-        processMouse(ctx->registry, static_cast<float>(event.x), static_cast<float>(event.y));
-    });
 }
 
-void CameraSystem::Update(SceneContext& sceneCtx, float)
+void CameraSystem::Update(SceneContext&, float dt)
 {
-    updateVectors(sceneCtx.registry);
-    updateMatrices(sceneCtx.registry);
+    processMouse();
+    processKeyboard(dt);
+
+    updateVectors();
+    updateMatrices();
 }
 
-void CameraSystem::processKeyboard(entt::registry& registry, char key, float dt)
+void CameraSystem::processKeyboard(float dt)
 {
-    auto camEntity = getActiveCamera(registry);
-    if (camEntity == entt::null) return;
+    const entt::entity camEntity = getActiveCamera();
+    if (camEntity == entt::null)
+        return;
 
-    auto* cam = registry.try_get<CameraComponent>(camEntity);
+    auto* camera = registry.try_get<CameraComponent>(camEntity);
     auto* transform = registry.try_get<TransformComponent>(camEntity);
-    if (!cam || !transform) return;
+    if (!camera || !transform)
+        return;
 
-    float velocity = movementSpeed * dt;
-    if (key == 'W') transform->position += cam->front * velocity;
-    if (key == 'S') transform->position -= cam->front * velocity;
-    if (key == 'A') transform->position -= cam->right * velocity;
-    if (key == 'D') transform->position += cam->right * velocity;
-    if (key == 'Q') transform->position -= cam->up * velocity;
-    if (key == 'E') transform->position += cam->up * velocity;
+    const Keyboard& keys = ctx->engine.input.Keys();
+    const float velocity = movementSpeed * dt;
+
+    if (keys.IsDown(KeyCode::W)) transform->position += camera->front * velocity;
+    if (keys.IsDown(KeyCode::S)) transform->position -= camera->front * velocity;
+    if (keys.IsDown(KeyCode::A)) transform->position -= camera->right * velocity;
+    if (keys.IsDown(KeyCode::D)) transform->position += camera->right * velocity;
+    if (keys.IsDown(KeyCode::Q)) transform->position -= camera->up * velocity;
+    if (keys.IsDown(KeyCode::E)) transform->position += camera->up * velocity;
 }
 
-void CameraSystem::processMouse(entt::registry& registry, float xoffset, float yoffset)
+void CameraSystem::processMouse()
 {
-    if (!camMode) return;
+    const Mouse& mouse = ctx->engine.input.Cursor();
+    const bool rmbDown = mouse.IsDown(MouseButton::Right);
 
-    auto camEntity = getActiveCamera(registry);
-    if (camEntity == entt::null) return;
+    if (rmbDown != camMode)
+    {
+        ctx->engine.platform.SetCursorMode(
+            rmbDown ? CursorMode::Disabled : CursorMode::Normal
+        );
+        camMode = rmbDown;
+        firstMouseThisHold = true;
+    }
 
-    auto* cam = registry.try_get<CameraComponent>(camEntity);
-    if (!cam) return;
+    if (!camMode)
+        return;
 
-    xoffset *= mouseSensitivity;
-    yoffset *= mouseSensitivity;
+    if (firstMouseThisHold)
+    {
+        firstMouseThisHold = false;
+        return;
+    }
 
-    cam->yaw += xoffset;
-    cam->pitch += yoffset;
+    const entt::entity camEntity = getActiveCamera();
+    if (camEntity == entt::null)
+        return;
 
-    cam->pitch = std::clamp(cam->pitch, -89.0f, 89.0f);
+    auto* camera = registry.try_get<CameraComponent>(camEntity);
+    if (!camera)
+        return;
 
-    if (cam->yaw > 360.f) cam->yaw -= 360.f;
-    if (cam->yaw < -360.f) cam->yaw += 360.f;
+    Vector2 delta = mouse.Delta();
+    float xOffset = delta.x * mouseSensitivity;
+    float yOffset = -delta.y * mouseSensitivity; 
+
+    camera->yaw += xOffset;
+    camera->pitch += yOffset;
+
+    camera->pitch = std::clamp(camera->pitch, -89.0f, 89.0f);
+
+    if (camera->yaw > 360.0f) camera->yaw -= 360.0f;
+    if (camera->yaw < -360.0f) camera->yaw += 360.0f;
 }
 
-void CameraSystem::updateVectors(entt::registry& registry)
+void CameraSystem::updateVectors()
 {
-    auto camEntity = getActiveCamera(registry);
-    if (camEntity == entt::null) return;
+    const entt::entity camEntity = getActiveCamera();
+    if (camEntity == entt::null)
+        return;
 
-    auto* cam = registry.try_get<CameraComponent>(camEntity);
-    if (!cam) return;
+    auto* camera = registry.try_get<CameraComponent>(camEntity);
+    if (!camera)
+        return;
 
-    float yawRad = Mat4::radians(cam->yaw);
-    float pitchRad = Mat4::radians(cam->pitch);
+    const float yawRad = Mat4::radians(camera->yaw);
+    const float pitchRad = Mat4::radians(camera->pitch);
 
-    cam->front.x = cos(yawRad) * cos(pitchRad);
-    cam->front.y = sin(pitchRad);
-    cam->front.z = sin(yawRad) * cos(pitchRad);
-    cam->front = cam->front.normalized();
+    Vector3 front;
+    front.x = std::cos(yawRad) * std::cos(pitchRad);
+    front.y = std::sin(pitchRad);
+    front.z = std::sin(yawRad) * std::cos(pitchRad);
 
-    cam->right = cam->front.cross(Vector3(0, 1, 0)).normalized();
-    cam->up = cam->right.cross(cam->front).normalized();
+    camera->front = front.normalized();
+    camera->right = camera->front.cross(Vector3(0.0f, 1.0f, 0.0f)).normalized();
+    camera->up = camera->right.cross(camera->front).normalized();
 }
 
-void CameraSystem::updateMatrices(entt::registry& registry)
+void CameraSystem::updateMatrices()
 {
-    auto camEntity = getActiveCamera(registry);
-    if (camEntity == entt::null) return;
+    const entt::entity camEntity = getActiveCamera();
+    if (camEntity == entt::null)
+        return;
 
-    auto* cam = registry.try_get<CameraComponent>(camEntity);
+    auto* camera = registry.try_get<CameraComponent>(camEntity);
     auto* transform = registry.try_get<TransformComponent>(camEntity);
-    if (!cam || !transform) return;
+    if (!camera || !transform)
+        return;
 
-    cam->viewMatrix = Mat4::lookAt(transform->position, transform->position + cam->front, cam->up);
-    cam->projectionMatrix = Mat4::perspective(cam->fov, cam->aspectRatio, cam->nearPlane, cam->farPlane);
+    camera->viewMatrix = Mat4::lookAt(
+        transform->position,
+        transform->position + camera->front,
+        camera->up
+    );
+
+    camera->projectionMatrix = Mat4::perspective(
+        camera->fov, camera->aspectRatio, camera->nearPlane, camera->farPlane
+    );
 }
 
-entt::entity CameraSystem::getActiveCamera(entt::registry& registry)
+entt::entity CameraSystem::getActiveCamera()
 {
-    for (auto entity : registry.view<ActiveCameraTag>()) return entity;
-        return entt::null;
+    auto view = registry.view<ActiveCameraTag, CameraComponent, TransformComponent>();
+    for (auto entity : view)
+        return entity;
+    return entt::null;
 }
 
-void CameraSystem::Shutdown(SceneContext& sceneCtx)
+void CameraSystem::Shutdown(SceneContext&)
 {
-    sceneCtx.engine.events.unsubscribeAll(this);
+    ctx = nullptr;
 }

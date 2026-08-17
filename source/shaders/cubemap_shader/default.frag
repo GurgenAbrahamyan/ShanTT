@@ -7,8 +7,5 @@ uniform float envIntensity;
 void main()
 {
    vec3 envColor = textureLod(skybox, localPos, 1.2).rgb; 
-    
-   
-  
     FragColor = vec4(envColor * envIntensity, 1.0);
 }

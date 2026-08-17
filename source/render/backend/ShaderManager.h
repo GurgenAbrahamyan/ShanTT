@@ -18,7 +18,6 @@ class GetDefaultShader;
 
 class ShaderManager {
 public:
-    ShaderManager(EventBus* bus);
 
     Shader* load(
         const std::string& name,
@@ -39,7 +38,6 @@ public:
     void clear(); // for shutdown / reload
 
 private:
-    [[maybe_unused]] EventBus* bus;
 
     // All loaded shaders by name
     std::unordered_map<std::string, std::unique_ptr<Shader>> shaders;

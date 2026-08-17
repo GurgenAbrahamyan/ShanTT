@@ -1,152 +1,67 @@
 #include "MaterialManager.h"
-#include "TextureManager.h"
-#include "../../resources/assets/Material.h"
-#include "../data/MaterialData.h"
-#include "../../core/EventBus.h"
-#include "../../core/Event.h"
-#include "../data/MaterialData.h"
 
-#include <iostream>
-
-MaterialManager::MaterialManager(TextureManager* texMgr, EventBus* bus)
-    : textureManager(texMgr), bus(bus) {
-
-    bus->subscribe<InitMaterial>([this](InitMaterial& event) {
-        const MaterialData* matData = event.data;
-        this->addMaterial(
-            *matData
-        );
-		event.result = this->getMaterial(this->getMaterialID(matData->name));
-		});
-
-}
-
-int MaterialManager::addMaterial(const MaterialData& materialData)
+MaterialID MaterialManager::addMaterial(Material&& material, const std::string& name)
 {
-    const std::string& name = materialData.name;
-    const std::vector<MaterialTextureInfo>& textures = materialData.textureInfo;
-
-    if (auto it = nameToIDMap.find(name); it != nameToIDMap.end()) {
-        std::cout << "Material already exists: " << name << " (ID: " << it->second << ")\n";
-        return it->second;
-    }
-
-    int id = nextID++;
-    auto mat = std::make_unique<Material>();
-
-    std::cout << "Creating material: " << name << " (ID: " << id << ")\n";
-    std::cout << "  Textures provided: " << textures.size() << "\n";
-
-    const MaterialTextureInfo* armInfo = nullptr;
-    const MaterialTextureInfo* aoInfo = nullptr;
-
-    for (const auto& texInfo : textures)
-    {
-        if (texInfo.path.empty()) continue;
-
-       
-
-        Texture* tex = loadTex(texInfo);
-        if (tex) {
-            switch (texInfo.type)
-            {
-            case TextureType::Albedo:
-            {
+    if (!name.empty())
+        if (auto it = lookup.find(name); it != lookup.end())
+            return it->second;
 
 
-                mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), tex);
-                break;
-            }
-            case TextureType::Normal:
-            {
+    MaterialRecord record{
+        .material = std::move(material),
+        .name = name
+    };
 
-                mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), tex);
-                break;
-            }
-            case TextureType::Emissive:
-            {
+    MaterialID id = pool.insert(std::move(record));
 
-                mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), tex);
-                break;
-            }
-            case TextureType::Height:
-            {
-
-                mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), tex);
-                break;
-            }
-            case TextureType::ORM: armInfo = &texInfo; break;
-            case TextureType::AO:  aoInfo = &texInfo; break;
-            default: break;
-            }
-        }
-    }
-
-    // Pack ARM  always goes through loadARM so AO gets baked into R if present
-    if (armInfo) {
-        std::string armPath = armInfo ? armInfo->path : "";
-        std::string aoPath = aoInfo ? aoInfo->path : "";
-
-        Texture* tex = textureManager->loadARM(aoPath, armPath);
-        if (tex)
-            mat->SetTexture(static_cast<int>(TextureSlot::ARM), tex);
-    }
-
-    // Fallbacks
-    if (!mat->GetTexture(static_cast<int>(TextureSlot::BASE_COLOR)))
-        mat->SetTexture(static_cast<int>(TextureSlot::BASE_COLOR), textureManager->getDefaultAlbedo());
-    if (!mat->GetTexture(static_cast<int>(TextureSlot::NORMAL_MAP)))
-        mat->SetTexture(static_cast<int>(TextureSlot::NORMAL_MAP), textureManager->getDefaultNormal());
-    if (!mat->GetTexture(static_cast<int>(TextureSlot::ARM)))
-        mat->SetTexture(static_cast<int>(TextureSlot::ARM), textureManager->getDefaultWhite());
-    if (!mat->GetTexture(static_cast<int>(TextureSlot::EMISSIVE)))
-        mat->SetTexture(static_cast<int>(TextureSlot::EMISSIVE), textureManager->getDefaultBlack());
-    if (!mat->GetTexture(static_cast<int>(TextureSlot::HEIGHT)))
-        mat->SetTexture(static_cast<int>(TextureSlot::HEIGHT), textureManager->getDefaultBlack());
-
-    mat->metallic = materialData.metallic;
-    mat->roughness = materialData.roughness;
-    mat->ao = materialData.ao;
-    mat->baseColorFactor = materialData.baseColorFactor;
-    mat->emissiveFactor = materialData.emissiveFactor;
-    mat->setID(id);
-
-    idMap[id] = std::move(mat);
-    nameToIDMap[name] = id;
-
-    std::cout << "Material created successfully!\n";
+    if (!name.empty())
+        lookup[name] = id;
     return id;
 }
 
-Material* MaterialManager::getRectangleMaterial() {
-    MaterialData matData;
+Material* MaterialManager::getMaterial(MaterialID id)
+{
+    MaterialRecord* record = pool.get(id);
 
-    matData.name = "Cube_-1";
-    MaterialTextureInfo texInfo;
-    texInfo.path = "resource/textures/brick_wall.jpg";
-    texInfo.type = TextureType::Albedo;
-    matData.textureInfo.push_back(texInfo);
-    return getMaterial(addMaterial(matData));
+    if (!record)
+        return nullptr;
+
+    return &record->material;
+
 }
 
+const Material* MaterialManager::getMaterial(MaterialID id) const
+{
+    const MaterialRecord* record = pool.get(id);
 
-Material* MaterialManager::getMaterial(int id) {
-    if (auto it = idMap.find(id); it != idMap.end())
-        return it->second.get();
+    if (!record)
+        return nullptr;
 
-    std::cerr << "Material not found with ID: " << id << "\n";
-    return nullptr;
+    return &record->material;
+
 }
 
-int MaterialManager::getMaterialID(const std::string& name) {
-    if (auto it = nameToIDMap.find(name); it != nameToIDMap.end())
-        return it->second;
+void MaterialManager::removeMaterial(MaterialID id)
+{
+    MaterialRecord* record = pool.get(id);
+    if (!record)
+        return;
 
-    std::cerr << "Material not found with name: " << name << "\n";
-    return -1;
+    if (!record->name.empty()) 
+    {
+        auto it = lookup.find(record->name);
+        if (it != lookup.end() && it->second == id)
+            lookup.erase(it);
+    }
+    pool.remove(id);
 }
 
-Texture* MaterialManager::loadTex(const MaterialTextureInfo& info) {
-    uint32_t id = textureManager->addTexture(info.path, info.type);
-    return textureManager->getTexture(id);
+MaterialID MaterialManager::getID(const std::string& name) const
+{
+    auto it = lookup.find(name);
+
+    if (it == lookup.end())
+        return MaterialID{};
+
+    return it->second;
 }

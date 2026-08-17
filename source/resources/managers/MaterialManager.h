@@ -1,41 +1,31 @@
 #pragma once
-#include <unordered_map>
-#include <memory>
 #include <string>
-
-#include "../assets/Material.h"
-
-class EventBus;
-class TextureManager;
-struct MaterialData;
-struct MaterialTextureInfo;
-// Define standard texture slot indices
-enum class TextureSlot {
-    BASE_COLOR = 0,
-    ARM = 1,
-    NORMAL_MAP = 2,
-    EMISSIVE = 3,
-    HEIGHT = 4,
-    MAX_SLOTS = 5  
-};
+#include <unordered_map>
+#include "ResourcePool.h"
+#include "MaterialHandleTypes.h"
+#include "resources/assets/Material.h"
 
 class MaterialManager {
 public:
-    MaterialManager(TextureManager* texMgr, EventBus* bus);
+    MaterialManager() = default;
 
-    int addMaterial(const MaterialData& materialData);
+    MaterialID addMaterial(Material&& material, const std::string& name = "");
 
-    Material* getMaterial(int id);
-    int getMaterialID(const std::string& name);
-    Material* getRectangleMaterial();
+    Material* getMaterial(MaterialID id);
+    const Material* getMaterial(MaterialID id) const;
 
-    Texture* loadTex(const MaterialTextureInfo& info);
+    void removeMaterial(MaterialID id);
+
+    MaterialID getID(const std::string& name) const;
+
+    size_t getMaterialCount() const { return pool.size(); }
+
 private:
-    TextureManager* textureManager;
-    [[maybe_unused]] EventBus* bus;
-    std::unordered_map<int, std::unique_ptr<Material>> idMap;
-    std::unordered_map<std::string, int> nameToIDMap;
-    int nextID = 0;
+    struct MaterialRecord {
+        Material material;
+        std::string name;
+    };
 
-
+    ResourcePool<MaterialRecord, MaterialTag> pool;
+    std::unordered_map<std::string, MaterialID> lookup;
 };

@@ -64,14 +64,10 @@ T& SceneManager::PushScene(Args&&... args)
     if (Current())
         Current()->Pause();
 
+    reference.Initialize(context);
+    reference.Enter();
 
-    scene->Initialize(context);
-    scene->Enter();
-
-
-    scenes.push_back(
-        std::move(scene)
-    );
+    scenes.push_back(std::move(scene));
 
 
     return reference;

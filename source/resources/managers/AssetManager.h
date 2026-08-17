@@ -20,6 +20,6 @@ private:
     TextureManager  m_textures;
     MeshManager     m_meshes;
     MaterialManager m_materials;
-    ModelManager    m_models;
+    ModelManager    m_models{&m_meshes, &m_materials, &m_textures};
     ShaderManager   m_shaders;
 };

@@ -1,82 +1,184 @@
 #pragma once
 
 #include "RenderPass.h"
+#include "../RenderGraphBuilder.h"
+#include "../PassResources.h"
 
-class FXAAPass : public RenderPass {
+#include "../backend/containers/FrameBuffer.h"
+#include "../backend/Shader.h"
 
-    struct Settings {
+class FXAAPass : public RenderPass
+{
+    
+public:
+    struct FXAAPassSettings
+    {
+        Shader* shader;
+        ResourceId input;
+        uint32_t width;
+        uint32_t height;
         float edgeThreshold = 0.2f;
         float blendStrength = 0.4f;
     };
-    
-public :
-    FXAAPass(Shader* s)
-        : RenderPass(s),
-        quadVBO(quadVertices, sizeof(quadVertices), false)
+
+    FXAAPass(
+        RenderGraphBuilder& builder,
+        const FXAAPassSettings& options
+        )
+        : RenderPass(builder, "FXAA")
+        , settings(options)
+        , m_Shader(options.shader)
+        , m_Input(builder.read(options.input))
+        , m_QuadVBO(
+            quadVertices,
+            sizeof(quadVertices),
+            false)
     {
 
-        quadVAO.Bind();
-        quadVBO.Bind();
+        m_OutputColor =
+            builder.create(
+                "FXAA.Color",
+                TextureResourceDesc{
+                    options.width,
+                    options.height,
+                    {
+                        .internalFormat = GL_RGBA16F,
+                        .wrapS = GL_CLAMP_TO_EDGE,
+                        .wrapT = GL_CLAMP_TO_EDGE
+                    }
+                }
+            );
 
-        quadVAO.LinkAttrib(quadVBO, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
-        quadVAO.LinkAttrib(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        m_Output =
+            builder.create(
+                "FXAA.Buffer",
+                FrameBufferResourceDesc{
+                    { m_OutputColor }
+                }
+            );
 
-        quadVAO.Unbind();
-        quadVBO.Unbind();
+        hasSideEffect = true;
+
+        m_QuadVAO.Bind();
+        m_QuadVBO.Bind();
+
+        m_QuadVAO.LinkAttrib(
+            m_QuadVBO,
+            0,
+            2,
+            GL_FLOAT,
+            4 * sizeof(float),
+            (void*)0
+        );
+
+        m_QuadVAO.LinkAttrib(
+            m_QuadVBO,
+            1,
+            2,
+            GL_FLOAT,
+            4 * sizeof(float),
+            (void*)(2 * sizeof(float))
+        );
+
+        m_QuadVAO.Unbind();
+        m_QuadVBO.Unbind();
     }
 
-   
-    Settings settings;
+    ResourceId output() const
+    {
+        return m_OutputColor;
+    }
 
-    void execute(const FrameRenderData&, const EngineResources&, const DebugRenderData&) override {
-
-
-        
-        
-
-        if (inputs.empty())
+    void execute(
+        const FrameRenderData&,
+        PassResources& resources,
+        const DebugRenderData&) override
+    {
+        if (!m_Shader)
             return;
-        
-       
 
+        Texture* input =
+            resources.get<Texture>(m_Input);
 
+        FrameBuffer* outputFB =
+            resources.get<FrameBuffer>(m_Output);
 
-        FrameBuffer* inputFB = inputs[0]->framebuffer;
+        if (!input || !outputFB)
+            return;
 
-        glViewport(0, 0, inputFB->getWidth(), inputFB->getHeight());
-       
+        outputFB->bind();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(
+            0,
+            0,
+            outputFB->getWidth(),
+            outputFB->getHeight()
+        );
 
-        shader->Activate();
+        glDisable(GL_DEPTH_TEST);
 
-        shader->setInt("screenTex", 0);
-		shader->setFloat("threshold", settings.edgeThreshold);
-		shader->setFloat("blendStrength", settings.blendStrength);
-       
+        m_Shader->Activate();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inputFB->getColorAttachment(0));
- 
+        m_Shader->setInt(
+            "screenTex",
+            0
+        );
 
-        quadVAO.Bind();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        quadVAO.Unbind();
+        m_Shader->setFloat(
+            "threshold",
+            settings.edgeThreshold
+        );
 
-        
+        m_Shader->setFloat(
+            "blendStrength",
+            settings.blendStrength
+        );
+
+        input->Bind(0);
+
+        m_QuadVAO.Bind();
+
+        glDrawArrays(
+            GL_TRIANGLE_STRIP,
+            0,
+            4
+        );
+
+        m_QuadVAO.Unbind();
+
+        outputFB->unbind();
+
+        glEnable(GL_DEPTH_TEST);
     }
-	const char* passName() const override { return "FXAAPass"; }
+
+    FXAAPassSettings& getSettings(){
+        return settings;
+    }
+    
+
 private:
 
-    VAO quadVAO;
-    VBO quadVBO;
+    FXAAPassSettings settings;
 
-    static constexpr float quadVertices[16] = {
-    -1.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f,  1.0f,  1.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 0.0f,
+    Shader* m_Shader = nullptr;
+
+    ResourceId m_Input =
+        INVALID_RESOURCE_ID;
+
+    ResourceId m_Output =
+        INVALID_RESOURCE_ID;
+
+    ResourceId m_OutputColor =
+        INVALID_RESOURCE_ID;
+
+    VAO m_QuadVAO;
+    VBO m_QuadVBO;
+
+    static constexpr float quadVertices[16] =
+    {
+        -1.0f,  1.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f,
+         1.0f,  1.0f, 1.0f, 1.0f,
+         1.0f, -1.0f, 1.0f, 0.0f
     };
-
-
 };

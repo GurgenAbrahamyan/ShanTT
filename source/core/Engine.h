@@ -23,11 +23,15 @@ public:
     void stop();
     long long getTimeMicro();
 
+    SceneContext& getSceneContext(){ return sceneContext; }
+
 private:
     std::unique_ptr<IPlatform> platform;
     EventBus bus;
     InputManager input;
 
+    AssetManager assetManager;
+    
     UiInput debugUi;
 
     EngineResources rendererResources;   
@@ -36,7 +40,6 @@ private:
     Renderer renderer;
 
     PhysicsEngine physicsEngine;
-    AssetManager assetManager;
 
     EngineContext engineContext;
     SceneContext sceneContext;

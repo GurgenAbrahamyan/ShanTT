@@ -3,33 +3,11 @@
 #include "../../resources/data/ShaderData.h"
 #include <iostream>
 
-ShaderManager::ShaderManager(EventBus* bus)
-    : bus(bus)
-{
-   
-    bus->subscribe<InitShader>( [this](const InitShader& event) {
-        std::cout << "[ShaderManager] Initializing shader: " << event.data->name << "\n";
-        Shader* shader = this->load(
-            event.data->name,
-            event.data->vertexPath,
-            event.data->fragmentPath,
-            event.data->type
-        );
-        event.result = shader;
-        });
-
- 
-    bus->subscribe<GetDefaultShader>([this](const GetDefaultShader& event) {
-        std::cout << "[ShaderManager] Getting default shader \n";
-        event.shader = getDefaultShader();
-        });
-}
 
 Shader* ShaderManager::load(
     const std::string& name,
     const std::string& vertexPath,
     const std::string& fragmentPath,
-   
     ShaderType type
 ) {
 

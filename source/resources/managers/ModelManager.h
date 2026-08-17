@@ -1,28 +1,29 @@
 #pragma once
-#include <unordered_map>
+
+#include <memory>
 #include <string>
-#include "EnTT/entt.hpp"
+#include <unordered_map>
+
+#include <entt/entt.hpp>
+
 #include "../../resources/data/ModelAsset.h"
 
-class EventBus;
 class MeshManager;
 class MaterialManager;
 class TextureManager;
-struct ModelComponent;
-
-
 
 class ModelManager {
 public:
     ModelManager(
-        EventBus* bus,
-        MeshManager* ,
-        MaterialManager* ,
-        TextureManager*
+        MeshManager* meshManager,
+        MaterialManager* materialManager,
+        TextureManager* textureManager
     );
 
-   
-    bool loadModel(const std::string& name, const std::string& path);
+    bool loadModel(
+        const std::string& name,
+        const std::string& path
+    );
 
     void instantiateModel(
         const std::string& name,
@@ -30,19 +31,20 @@ public:
         entt::entity entity
     );
 
-    const std::unordered_map<std::string, std::unique_ptr<ModelAsset>>& getLoadedModels() const;
+    const std::unordered_map<
+        std::string,
+        std::unique_ptr<ModelAsset>
+    >& getLoadedModels() const;
 
     bool isLoaded(const std::string& name) const;
 
-    
-
-
-
-
-
 private:
-    EventBus* bus;
-    
+    MeshManager* meshManager;
+    MaterialManager* materialManager;
+    TextureManager* textureManager;
 
-    std::unordered_map<std::string, std::unique_ptr<ModelAsset>> loadedModels;
+    std::unordered_map<
+        std::string,
+        std::unique_ptr<ModelAsset>
+    > loadedModels;
 };

@@ -1,4 +1,3 @@
-// source/platform/GLFW/CreatePlatform.cpp
 #include "platform/IPlatform.h"
 #include "PlatformGLFW.h"
 

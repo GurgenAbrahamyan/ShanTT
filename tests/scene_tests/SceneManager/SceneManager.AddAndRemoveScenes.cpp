@@ -7,9 +7,8 @@ TEST(SceneManager, PushesScene)
 {
     TestContext test;
     auto ctx = test.Create();
-
-    SceneManager manager(ctx);
-
+    
+    SceneManager manager{ctx};
 
     auto& scene = manager.PushScene<TestScene>();
 
@@ -25,8 +24,7 @@ TEST(SceneManager, PushPausesPreviousScene)
     TestContext test;
     auto ctx = test.Create();
 
-    SceneManager manager(ctx);
-
+    SceneManager manager{ctx};
 
     auto& first = manager.PushScene<TestScene>();
 
@@ -46,7 +44,7 @@ TEST(SceneManager, PopsScene)
     TestContext test;
     auto ctx = test.Create();
 
-    SceneManager manager(ctx);
+    SceneManager manager{ctx};
 
 
     auto& scene = manager.PushScene<TestScene>();
@@ -67,7 +65,7 @@ TEST(SceneManager, PopResumesPreviousScene)
     TestContext test;
     auto ctx = test.Create();
 
-    SceneManager manager(ctx);
+    SceneManager manager{ctx};
 
 
     auto& gameplay = manager.PushScene<TestScene>();
