@@ -27,6 +27,8 @@
 
 #include "../systems/game_logic/CameraSystem.h"
 #include "render/ecs_systems/ShadowSystem.h"
+
+#include "ecs/factories/ModelSpawner.h"
 void GameScene::OnCreate()
 {
     auto& renderGraph = *Context().engine.renderer.getRenderGraph();
@@ -54,8 +56,18 @@ void GameScene::OnCreate()
         ShaderType::OBJECT3D
     );
 
+    shaderManager.load(
+        "default_obj_skinned",
+        "source\\shaders\\object_shader\\skinned.vert",
+        "source\\Shaders\\object_shader\\default.frag",
+        
+        ShaderType::OBJECT3D
+    );
+
+
     auto* geometry = renderGraph.addPass<GeometryPass>(GeometryPass::GeometryPassOptions{ 
                                     shaderManager.getShader("default_obj")
+                                    , shaderManager.getShader("default_obj_skinned")
                                     , screenWidth
                                     , screenHeight});
 
@@ -229,7 +241,8 @@ void GameScene::OnCreate()
                                 assets.models(),
                                 assets.meshes(),
                                 assets.materials(),
-                                assets.textures()
+                                assets.textures(),
+                                assets.skeletons()
     ));
     
     auto skybox = registry.create();
@@ -250,32 +263,79 @@ void GameScene::OnCreate()
     assets.models().loadModel("car",     "resource/models/toy car/ToyCar.gltf");
     assets.models().loadModel("boombox", "resource/models/boombox_4k/boombox_4k.gltf");
     assets.models().loadModel("cannon",  "resource/models/cannon_4k.gltf/cannon_01_4k.gltf");
+    assets.models().loadModel("animation",  "resource/models/Animation/untitled.gltf");
+   //  assets.models().loadModel("animation",  "resource/models/CesiumMan/CesiumMan.gltf");
+    auto cube =
+        spawnModel(
+            "Cube",
+            assets.models().getModelID("cube"),
+            assets.models(),
+            registry
+        ).root;
 
-    auto cube = registry.create();
-    registry.emplace<TagComponent>(cube, "Cube");
-    auto chess = registry.create();
-    registry.emplace<TagComponent>(chess, "Chess Set");
-    auto map = registry.create();
-    registry.emplace<TagComponent>(map, "Map");
-    auto duck = registry.create();
-    registry.emplace<TagComponent>(duck, "Duck");
-    auto helmet = registry.create();
-    registry.emplace<TagComponent>(helmet, "Helmet");
-    auto car = registry.create();
-    registry.emplace<TagComponent>(car, "Car");
-    auto boombox = registry.create();
-    registry.emplace<TagComponent>(boombox, "Boombox");
-    auto cannon = registry.create();
-    registry.emplace<TagComponent>(cannon, "Cannon");
+    auto chess =
+        spawnModel(
+            "Chess",
+            assets.models().getModelID("chess"),
+            assets.models(),
+            registry
+        ).root;
 
-    assets.models().instantiateModel("cube",    registry, cube);
-    assets.models().instantiateModel("chess",   registry, chess);
-    assets.models().instantiateModel("map",     registry, map);
-    assets.models().instantiateModel("duck",    registry, duck);
-    assets.models().instantiateModel("helmet",  registry, helmet);
-    assets.models().instantiateModel("car",     registry, car);
-    assets.models().instantiateModel("boombox", registry, boombox);
-    assets.models().instantiateModel("cannon",  registry, cannon);
+    auto map =
+        spawnModel(
+            "Map",
+            assets.models().getModelID("map"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto duck =
+        spawnModel(
+            "Duckie",
+            assets.models().getModelID("duck"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto helmet =
+        spawnModel(
+            "Helmet",
+            assets.models().getModelID("helmet"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto car =
+        spawnModel(
+            "Car",
+            assets.models().getModelID("car"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto boombox =
+        spawnModel(
+            "BoomBox",
+            assets.models().getModelID("boombox"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto cannon =
+        spawnModel(
+            "Cannon",
+            assets.models().getModelID("cannon"),
+            assets.models(),
+            registry
+        ).root;
+
+    auto animation =
+        spawnModel(
+            "Animation",
+            assets.models().getModelID("animation"),
+            assets.models(),
+            registry
+        ).root;
 
     auto createRBWithModelTransform = [&](entt::entity e, float mass, const Vector3& pos, const Quat& rot, const Vector3& scale) {
         registry.emplace<RigidBodyComponent>(e, PhysicsComponentFactory::createRigidBody(registry, e, pos, rot, scale, mass));
@@ -289,7 +349,8 @@ void GameScene::OnCreate()
     createRBWithModelTransform(car,     1.0f, Vector3(0, 3, 0),     Quat(), Vector3(100, 100, 100));
     createRBWithModelTransform(boombox, 1.0f, Vector3(10, 3, 0),    Quat(), Vector3(3, 3, 3));
     createRBWithModelTransform(cannon,  5.0f, Vector3(-10, 3, 10),  Quat(), Vector3(3, 3, 3));
-
+    createRBWithModelTransform(animation,  5.0f, Vector3(0, 10, 0),  Quat(), Vector3(3, 3, 3));
+        
     registry.emplace<CollisionShapeComponent>(chess,   PhysicsComponentFactory::createCubeShape(Vector3(3, 3, 3)));
     registry.emplace<CollisionShapeComponent>(map,     PhysicsComponentFactory::createCubeShape(Vector3(0.2f, 0.2f, 0.2f)));
     registry.emplace<CollisionShapeComponent>(duck,    PhysicsComponentFactory::createCubeShape(Vector3(1, 1, 1)));

@@ -1,4 +1,4 @@
-#include "UiInput.h"
+#include "UIInput.h"
 
 
 #include "render/handlers/BloomPass.h"
@@ -218,9 +218,7 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         { "Material",        [](entt::registry& r, entt::entity e) { r.emplace_or_replace<MaterialComponent>(e); }},
 
-        { "Mesh",            [](entt::registry& r, entt::entity e) { r.emplace_or_replace<MeshComponent>(e); }},
-
-        { "Model",           [](entt::registry& r, entt::entity e) { r.emplace_or_replace<ModelComponent>(e); }},
+        { "Renderable",      [](entt::registry& r, entt::entity e) { r.emplace_or_replace<RenderableComponent>(e); }},
 
         { "Collision Shape", [](entt::registry& r, entt::entity e) { r.emplace_or_replace<CollisionShapeComponent>(e); }},
 
@@ -230,9 +228,6 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
     };
 
-
-
-    // ── Component render map ──────────────────────────────────────────────────
 
     componentRenderMap = {
 
@@ -443,122 +438,231 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         }},
 
-        { typeid(MaterialComponent), [](entt::registry& r, entt::entity e, bool& del) {
+        { typeid(RenderableComponent), [&](entt::registry& r, entt::entity e, bool& del)
+        {
+            if (!BeginComponentHeader("Renderable", del))
+                return;
 
-            if (!BeginComponentHeader("Material", del)) return;
+            auto& renderer =
+                r.get<RenderableComponent>(e);
 
-            auto& m = r.get<MaterialComponent>(e);
+            ImGui::Checkbox(
+                "Visible",
+                &renderer.visible
+            );
 
-            ImGui::Text("Ptr: %s", m.material ? "set" : "null");
+            ImGui::Separator();
 
-            if (m.material) ImGui::Text("Addr: 0x%llX", (unsigned long long)m.material);
+            ImGui::TextUnformatted("Mesh");
 
-            EndComponentHeader();
+            if (!renderer.mesh.valueless_by_exception())
+            {
+                std::visit(
+                    [&](const auto& meshID)
+                    {
+                        using ID = std::decay_t<decltype(meshID)>;
 
-        }},
-
-        { typeid(MeshComponent), [](entt::registry& r, entt::entity e, bool& del) {
-
-            if (!BeginComponentHeader("Mesh", del)) return;
-
-            auto& m = r.get<MeshComponent>(e);
-
-            ImGui::Text("Ptr: %s", m.mesh ? "set" : "null");
-
-            if (m.mesh) ImGui::Text("Addr: 0x%llX", (unsigned long long)m.mesh);
-
-            EndComponentHeader();
-
-        }},
-
-        { typeid(ModelComponent), [&](entt::registry& r, entt::entity e, bool& del) {
-
-            if (!BeginComponentHeader("Model", del)) return;
-
-            auto& model = r.get<ModelComponent>(e);
-
-            ImGui::Text("Mesh entries: %zu", model.asset->meshes.size());
-
-            ImGui::Spacing();
-
-            static const char* slotLabels[] = { "Albedo", "ARM", "Normal", "Emissive" };
-
-            static constexpr int kDisplaySlots = 4;
-
-            for (size_t i = 0; i < model.asset->meshes.size(); ++i) {
-
-                auto& entry = model.asset->meshes[i];
-
-                ImGui::PushID((int)i);
-
-                bool nodeOpen = ImGui::TreeNodeEx(("Entry " + std::to_string(i)).c_str(),
-
-                    ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth);
-
-                if (nodeOpen) {
-
-                    auto mesh = assetManager.meshes().getMesh(entry.mesh);
-                    auto mat = assetManager.materials().getMaterial(entry.material);
-
-                    ImGui::TextDisabled("Mesh:     %s", mesh    ? "set" : "null");
-
-                    ImGui::TextDisabled("Material: %s", mat     ? "set" : "null");
-
-                    if (mat) {
-
-                        
-
-                        ImGui::Spacing();
-
-                        ImGui::DragFloat("Metallic",  &mat->metallic,  0.01f, 0.f, 1.f);
-
-                        ImGui::DragFloat("Roughness", &mat->roughness, 0.01f, 0.f, 1.f);
-
-                        ImGui::DragFloat("AO",        &mat->ao,        0.01f, 0.f, 1.f);
-
-                        float bc[4] = { mat->baseColorFactor.x, mat->baseColorFactor.y,
-
-                                        mat->baseColorFactor.z, mat->baseColorFactor.w };
-
-                        if (ImGui::ColorEdit4("Base Color", bc))
-
-                            mat->baseColorFactor = { bc[0], bc[1], bc[2], bc[3] };
-
-                        float ec[3] = { mat->emissiveFactor.x, mat->emissiveFactor.y, mat->emissiveFactor.z };
-
-                        if (ImGui::ColorEdit3("Emissive", ec))
-
-                            mat->emissiveFactor = { ec[0], ec[1], ec[2] };
-
-                        ImGui::Spacing(); ImGui::Separator();
-
-                        ImGui::TextUnformatted("Textures"); ImGui::Separator(); ImGui::Spacing();
-
-                        for (int slot = 0; slot < kDisplaySlots; ++slot) {
-
-                            DrawTextureSlot(slotLabels[slot], assetManager.textures().getTexture(mat->GetTexture(static_cast<MaterialSlot>(slot))), 56.f);
-
-                            ImGui::Spacing();
-
+                        if (!meshID.isValid())
+                        {
+                            ImGui::TextDisabled("Invalid");
+                            return;
                         }
 
-                    } else ImGui::TextDisabled("No material attached.");
+                        if constexpr (
+                            std::is_same_v<ID, StaticMeshID>
+                        )
+                        {
+                            ImGui::TextDisabled("Type: Static");
+                        }
+                        else if constexpr (
+                            std::is_same_v<ID, SkinnedMeshID>
+                        )
+                        {
+                            ImGui::TextDisabled("Type: Skinned");
+                        }
+                    },
+                    renderer.mesh
+                );
+            }
+            else
+            {
+                ImGui::TextDisabled("No mesh assigned");
+            }
 
-                    ImGui::TreePop();
+            ImGui::Separator();
 
+            // --------------------------------------------------------
+            // Material
+            // --------------------------------------------------------
+
+            ImGui::TextUnformatted("Material");
+
+            if (!renderer.material.isValid())
+            {
+                ImGui::TextDisabled("No material assigned");
+            }
+            else
+            {
+                ImGui::TextDisabled("Assigned");
+
+                if (auto* material =
+                    assetManager.materials().getMaterial(
+                        renderer.material))
+                {
+                    ImGui::Spacing();
+
+                    ImGui::DragFloat(
+                        "Metallic",
+                        &material->metallic,
+                        0.01f,
+                        0.f,
+                        1.f
+                    );
+
+                    ImGui::DragFloat(
+                        "Roughness",
+                        &material->roughness,
+                        0.01f,
+                        0.f,
+                        1.f
+                    );
+
+                    ImGui::DragFloat(
+                        "AO",
+                        &material->ao,
+                        0.01f,
+                        0.f,
+                        1.f
+                    );
+
+                    float bc[4] =
+                    {
+                        material->baseColorFactor.x,
+                        material->baseColorFactor.y,
+                        material->baseColorFactor.z,
+                        material->baseColorFactor.w
+                    };
+
+                    if (ImGui::ColorEdit4(
+                        "Base Color",
+                        bc
+                    ))
+                    {
+                        material->baseColorFactor =
+                        {
+                            bc[0],
+                            bc[1],
+                            bc[2],
+                            bc[3]
+                        };
+                    }
+
+                    float ec[3] =
+                    {
+                        material->emissiveFactor.x,
+                        material->emissiveFactor.y,
+                        material->emissiveFactor.z
+                    };
+
+                    if (ImGui::ColorEdit3(
+                        "Emissive",
+                        ec
+                    ))
+                    {
+                        material->emissiveFactor =
+                        {
+                            ec[0],
+                            ec[1],
+                            ec[2]
+                        };
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+
+                    ImGui::TextUnformatted("Textures");
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    static const char* slotLabels[] =
+                    {
+                        "Albedo",
+                        "ARM",
+                        "Normal",
+                        "Emissive"
+                    };
+
+                    constexpr int kDisplaySlots = 4;
+
+                    for (int slot = 0;
+                        slot < kDisplaySlots;
+                        ++slot)
+                    {
+                        DrawTextureSlot(
+                            slotLabels[slot],
+                            assetManager.textures().getTexture(
+                                material->GetTexture(
+                                    static_cast<MaterialSlot>(slot)
+                                )
+                            ),
+                            56.f
+                        );
+
+                        ImGui::Spacing();
+                    }
                 }
-
-                ImGui::PopID();
-
-                ImGui::Spacing();
-
+                else
+                {
+                    ImGui::TextDisabled(
+                        "Material handle is valid, but resource is missing."
+                    );
+                }
             }
 
             EndComponentHeader();
+        }
+    },
 
-        }},
+            { typeid(SkeletonComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-        { typeid(CollisionShapeComponent), [](entt::registry& r, entt::entity e, bool& del) {
+        if (!BeginComponentHeader("Skeleton", del))
+            return;
+
+        auto skeleton = assetManager.skeletons().getSkeleton(r.get<SkeletonComponent>(e).skeleton);
+
+        ImGui::Text("Bones: %zu", skeleton->bones.size());
+
+        ImGui::Separator();
+
+        for (size_t i = 0; i < skeleton->bones.size(); ++i)
+        {
+            auto& bone = skeleton->bones[i];
+
+            if (ImGui::TreeNode(
+                ("Bone " + std::to_string(i)).c_str()))
+            {
+                // Adjust these field names to whatever SkeletonComponent actually has.
+                ImGui::Text("Name: %s", bone.name.c_str());
+
+                ImGui::Text("Parent: %d", bone.parentId);
+
+                ImGui::Separator();
+
+                ImGui::Text("Local Transform");
+
+                DragVec3("Position", bone.pos);
+                DragQuat("Rotation", bone.rot);
+                DragVec3("Scale", bone.scale, 0.01f);
+
+                ImGui::TreePop();
+            }
+        }
+
+        EndComponentHeader();
+
+    }},
+
+    { typeid(CollisionShapeComponent), [](entt::registry& r, entt::entity e, bool& del) {
 
             if (!BeginComponentHeader("Collision Shape", del)) return;
 
@@ -761,10 +865,10 @@ void UiInput::DrawRenderPassWindow(RenderPass* pass,
 
 
 
-void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry, Vector2 windowSizes)
+void UiInput::DrawModelManagerWindow(ModelManager*, entt::registry&, Vector2)
 
 {
-    const float windowWidth = windowSizes.x;
+ /*   const float windowWidth = windowSizes.x;
     const float windowHeight = windowSizes.y;
 
     const float pad = 10.f;
@@ -819,7 +923,6 @@ void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry
 
     ImGui::Separator();
 
-    const auto& models = mgr->getLoadedModels();
 
     static int selectedModel = -1;
 
@@ -869,15 +972,13 @@ void UiInput::DrawModelManagerWindow(ModelManager* mgr, entt::registry& registry
 
             registry.emplace<TagComponent>(entity, std::string(entityName));
 
-            mgr->instantiateModel(it->first, registry, entity);
-
             activeInspectorEntity = entity;
 
         }
 
     }
 
-    ImGui::End();
+    ImGui::End();*/
 
 }
 
@@ -900,15 +1001,15 @@ void UiInput::Shutdown()
 }
 
 void UiInput::buildUI(entt::registry& registry,
-                       const EngineResources& resources,
+                       Vector2 windowSize,
                        const DebugRenderData&,
                        RenderGraph* rendergraph)
 {
 
-    ModelManager* modelMgr {resources.modelManager};
+    ModelManager* modelMgr {&assetManager.models()};
 
-    const float windowWidth = resources.windowSize.x;
-    const float windowHeight = resources.windowSize.y;
+    const float windowWidth = windowSize.x;
+    const float windowHeight = windowSize.y;
 
     const float pad    = 10.f;
 
@@ -1115,8 +1216,8 @@ void UiInput::buildUI(entt::registry& registry,
 
     if (rendergraph && renderGraphOpen)
     {
-        DrawRenderGraphWindow(rendergraph, resources.windowSize);
-        DrawFramebufferStatesWindow(rendergraph, resources.windowSize);
+        DrawRenderGraphWindow(rendergraph, windowSize);
+        DrawFramebufferStatesWindow(rendergraph, windowSize);
     }
 
 
@@ -1132,7 +1233,7 @@ void UiInput::buildUI(entt::registry& registry,
 
             if (it != passRenderMap.end())
 
-                DrawRenderPassWindow(pass, it->second, resources.windowSize);
+                DrawRenderPassWindow(pass, it->second, windowSize);
 
         }
 
@@ -1174,7 +1275,7 @@ void UiInput::buildUI(entt::registry& registry,
 
     if (modelManagerOpen && modelMgr)
 
-        DrawModelManagerWindow(modelMgr, registry, resources.windowSize);
+        DrawModelManagerWindow(modelMgr, registry, windowSize);
 
 
 

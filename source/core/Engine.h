@@ -11,8 +11,7 @@ class AssetManager;
 
 #include "EngineContext.h"
 #include "scene/SceneContext.h"
-#include "render/data/EngineResources.h"  
-#include "input/UiInput.h"
+#include "input/UIInput.h"
 
 class Engine {
 public:
@@ -34,7 +33,6 @@ private:
     
     UiInput debugUi;
 
-    EngineResources rendererResources;   
     FrameRenderData frameData;          
 
     Renderer renderer;

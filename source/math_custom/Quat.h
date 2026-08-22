@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include "Vector3.h"
+class Mat4;
 struct Quat
 {
     float x;
@@ -226,7 +227,7 @@ struct Quat
         return Quat(n.x * s, n.y * s, n.z * s, std::cos(half));
     }
 
-    
+    static Quat fromMat4(const Mat4& m); 
 };
 
 inline Quat operator*(float scalar, const Quat &other) {

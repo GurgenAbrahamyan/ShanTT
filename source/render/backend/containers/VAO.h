@@ -19,8 +19,15 @@ public:
 		glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
 		glEnableVertexAttribArray(layout);
 		VBO.Unbind();
-
 	}
+
+	void LinkAttribI(VBO& vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset) {
+		vbo.Bind();
+		glVertexAttribIPointer(layout, numComponents, type, stride, offset);
+		glEnableVertexAttribArray(layout);
+		vbo.Unbind();
+	}
+	
 	void Bind() {
 		glBindVertexArray(ID);
 	}

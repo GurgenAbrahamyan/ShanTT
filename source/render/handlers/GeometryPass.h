@@ -1,13 +1,18 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "RenderPass.h"
 #include "../RenderGraphBuilder.h"
 #include "../PassResources.h"
 
 #include "../backend/containers/FrameBuffer.h"
 #include "../backend/Shader.h"
+#include "../backend/containers/StorageBuffer.h"
 
 #include "scene/SceneRenderData.h"
+
 
 class GeometryPass : public RenderPass
 {
@@ -15,19 +20,37 @@ public:
 
     struct GeometryPassOptions
     {
-        Shader* shader;
+        Shader* staticShader;
+        Shader* skinnedShader;
+
         uint32_t width;
         uint32_t height;
     };
+
+
+    /*
+     * GPU representation of one skinned instance.
+     *
+     * This is deliberately separate from SceneRenderData::SkinnedInstance.
+     *
+     * SceneRenderData is CPU-side render data.
+     * This is exactly the layout we send to the GPU.
+     */
 
     GeometryPass(
         RenderGraphBuilder& builder,
         const GeometryPassOptions& options
     )
         : RenderPass(builder, "Geometry")
-        , m_shader(options.shader)
+        , m_staticShader(options.staticShader)
+        , m_skinnedShader(options.skinnedShader)
     {
- 
+        /*
+         * =========================================================
+         * GBUFFER
+         * =========================================================
+         */
+
         TextureResourceDesc albedoDesc;
 
         albedoDesc.width = options.width;
@@ -46,6 +69,7 @@ public:
             albedoDesc
         );
 
+
         TextureResourceDesc depthDesc;
 
         depthDesc.width = options.width;
@@ -63,6 +87,7 @@ public:
             "GBuffer.LinearDepth",
             depthDesc
         );
+
 
         TextureResourceDesc normalDesc;
 
@@ -120,6 +145,7 @@ public:
             emissiveDesc
         );
 
+
         TextureResourceDesc hardwareDepthDesc;
 
         hardwareDepthDesc.width = options.width;
@@ -148,7 +174,7 @@ public:
             hardwareDepthDesc
         );
 
-    
+
         FrameBufferResourceDesc framebufferDesc;
 
         framebufferDesc.colorAttachments =
@@ -167,11 +193,8 @@ public:
             "GBuffer.Framebuffer",
             framebufferDesc
         );
-
-    
-
-        //hasSideEffect = true;
     }
+
 
     ResourceId albedo() const
     {
@@ -208,6 +231,7 @@ public:
         return m_framebuffer;
     }
 
+
     void execute(
         const FrameRenderData& frameData,
         PassResources& resources,
@@ -217,13 +241,15 @@ public:
         if (!frameData.Has<SceneRenderData>())
             return;
 
+
         FrameBuffer* target =
             resources.get<FrameBuffer>(
                 m_framebuffer
             );
 
-        if (!target || !m_shader)
+        if (!target)
             return;
+
 
         const auto& scene =
             frameData.Get<SceneRenderData>();
@@ -231,14 +257,15 @@ public:
         if (!scene.camera)
             return;
 
+
         GLboolean cullWasEnabled =
             glIsEnabled(GL_CULL_FACE);
 
         glDisable(GL_CULL_FACE);
 
+
         target->bind();
 
-       
 
         glViewport(
             0,
@@ -247,28 +274,59 @@ public:
             target->getHeight()
         );
 
+
         glClear(
             GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT
         );
 
-        m_shader->Activate();
 
-        m_shader->setMat4(
+        renderStatic(
+            scene
+        );
+
+        renderSkinned(
+            scene
+        );
+
+
+        target->unbind();
+
+
+        if (cullWasEnabled)
+        {
+            glEnable(GL_CULL_FACE);
+        }
+    }
+
+
+private:
+
+    void renderStatic(
+        const SceneRenderData& scene
+    )
+    {
+        if (!m_staticShader)
+            return;
+
+
+        m_staticShader->Activate();
+
+
+        m_staticShader->setMat4(
             "view",
             scene.camera->viewMatrix
         );
 
-        m_shader->setMat4(
+        m_staticShader->setMat4(
             "projection",
             scene.camera->projectionMatrix
         );
 
-        for (auto& [materialId, meshBatches]
-             : scene.batches)
-        {
 
-            
+        for (const auto& [materialId, meshBatches]
+             : scene.staticBatches)
+        {
             auto materialIt =
                 scene.materials.find(materialId);
 
@@ -278,34 +336,37 @@ public:
                 continue;
             }
 
+
             const RenderMaterial& material =
                 materialIt->second;
 
-    
-            material.Bind(m_shader);
+            material.Bind(
+                m_staticShader
+            );
 
-            for (auto& [mesh, batch]
+
+            for (const auto& [mesh, batch]
                  : meshBatches)
             {
-
-  
                 if (!mesh)
                     continue;
 
                 if (batch.instances.empty())
                     continue;
 
+
                 mesh->bind();
 
-            
+
                 mesh->setupInstanceVBO(
                     batch.instances.size()
                 );
 
-                glBindBuffer(
-                    GL_ARRAY_BUFFER,
-                    mesh->getInstanceVBO()
-                );
+
+                
+                mesh->getInstanceVBO()->Bind();
+                
+
 
                 glBufferSubData(
                     GL_ARRAY_BUFFER,
@@ -314,6 +375,7 @@ public:
                         sizeof(Mat4),
                     batch.instances.data()
                 );
+
 
                 glDrawElementsInstanced(
                     GL_TRIANGLES,
@@ -326,18 +388,141 @@ public:
                 );
             }
         }
+    }
 
-        target->unbind();
 
-        if (cullWasEnabled)
+
+    void renderSkinned(
+    const SceneRenderData& scene
+)
+{
+    if (!m_skinnedShader)
+        return;
+
+    if (!scene.skinMatrices.empty())
+    {
+        m_skinMatrices.upload(
+            scene.skinMatrices.data(),
+            scene.skinMatrices.size() * sizeof(Mat4),
+            GL_DYNAMIC_DRAW
+        );
+    }
+
+    m_skinMatrices.bindBase(
+        0
+    );
+
+
+    m_skinnedShader->Activate();
+
+    m_skinnedShader->setMat4(
+        "view",
+        scene.camera->viewMatrix
+    );
+
+    m_skinnedShader->setMat4(
+        "projection",
+        scene.camera->projectionMatrix
+    );
+
+
+    for (const auto& [materialId, meshBatches]
+         : scene.skinnedBatches)
+    {
+        auto materialIt =
+            scene.materials.find(materialId);
+
+        if (materialIt ==
+            scene.materials.end())
         {
-            glEnable(GL_CULL_FACE);
+            continue;
+        }
+
+
+        const RenderMaterial& material =
+            materialIt->second;
+
+        material.Bind(
+            m_skinnedShader
+        );
+
+
+        for (const auto& [mesh, batch]
+             : meshBatches)
+        {
+            if (!mesh)
+                continue;
+
+            if (batch.instances.empty())
+                continue;
+
+            const std::size_t count =
+                batch.instances.size();
+
+            m_instanceTransforms.resize(count);
+            m_instancePaletteOffsets.resize(count);
+
+            for (std::size_t i = 0; i < count; ++i)
+            {
+                const auto& instance =
+                    batch.instances[i];
+
+                m_instanceTransforms[i] =
+                    instance.worldTransform;
+
+                m_instancePaletteOffsets[i] =
+                    instance.paletteOffset;
+            }
+
+
+            mesh->bind();
+
+            mesh->setupSkinnedTransformVBO(count);
+            mesh->setupSkinnedPaletteOffsetVBO(count);
+
+
+            mesh->getSkinnedTransformVBO()->Bind();
+
+            glBufferSubData(
+                GL_ARRAY_BUFFER,
+                0,
+                count * sizeof(Mat4),
+                m_instanceTransforms.data()
+            );
+            
+            mesh->getSkinnedPaletteOffsetVBO()->Bind();
+
+            glBufferSubData(
+                GL_ARRAY_BUFFER,
+                0,
+                count * sizeof(uint32_t),
+                m_instancePaletteOffsets.data()
+            );
+
+
+            glDrawElementsInstanced(
+                GL_TRIANGLES,
+                mesh->indexCount(),
+                GL_UNSIGNED_INT,
+                nullptr,
+                static_cast<GLsizei>(count)
+            );
         }
     }
+}
 
 private:
 
-    Shader* m_shader = nullptr;
+    Shader* m_staticShader = nullptr;
+    Shader* m_skinnedShader = nullptr;
+
+    StorageBuffer m_skinMatrices;
+
+    // Buffer A: per-instance world transforms
+    std::vector<Mat4> m_instanceTransforms;
+
+    // Buffer B: per-instance palette offsets
+    std::vector<uint32_t> m_instancePaletteOffsets;
 
     ResourceId m_albedo =
         INVALID_RESOURCE_ID;
