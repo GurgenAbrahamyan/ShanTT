@@ -1,3 +1,4 @@
+// MeshManager.h
 #pragma once
 
 #include <memory>
@@ -9,37 +10,52 @@
 #include "MeshHandleTypes.h"
 
 #include "../assets/RenderMesh.h"
-#include "../data/Vertex.h"
+#include "../data/StaticVertex.h"
+#include "../data/SkinnedVertex.h"
 
 class MeshManager {
 public:
     MeshManager() = default;
 
-    MeshID addMesh(
+    StaticMeshID addStaticMesh(
         const std::string& name,
-        const std::vector<Vertex>& vertices,
+        const std::vector<StaticVertex>& vertices,
         const std::vector<unsigned int>& indices
     );
 
-    RenderMesh* getMesh(MeshID id);
-    RenderMesh* getMesh(MeshID id) const ;
-    
-    void removeMesh(MeshID id);
+    RenderMesh<StaticVertex>* getStaticMesh(StaticMeshID id);
+    RenderMesh<StaticVertex>* getStaticMesh(StaticMeshID id) const;
 
-    MeshID getMeshID(const std::string& name) const;
+    void removeStaticMesh(StaticMeshID id);
+    StaticMeshID getStaticMeshID(const std::string& name) const;
 
-    RenderMesh* getRectangleMesh();
+    RenderMesh<StaticVertex>* getRectangleMesh(); // static-only primitive, lives here now
 
-    size_t getMeshCount() const {
-        return pool.size();
-    }
+    SkinnedMeshID addSkinnedMesh(
+        const std::string& name,
+        const std::vector<SkinnedVertex>& vertices,
+        const std::vector<unsigned int>& indices
+    );
+
+    RenderMesh<SkinnedVertex>* getSkinnedMesh(SkinnedMeshID id);
+    RenderMesh<SkinnedVertex>* getSkinnedMesh(SkinnedMeshID id) const;
+
+    void removeSkinnedMesh(SkinnedMeshID id);
+    SkinnedMeshID getSkinnedMeshID(const std::string& name) const;
+
+    size_t getStaticMeshCount() const  { return staticPool.size(); }
+    size_t getSkinnedMeshCount() const { return skinnedPool.size(); }
 
 private:
+    template <typename VertexT>
     struct MeshRecord {
-        std::unique_ptr<RenderMesh> mesh;
+        std::unique_ptr<RenderMesh<VertexT>> mesh;
         std::string name;
     };
 
-    ResourcePool<MeshRecord, MeshTag> pool;
-    std::unordered_map<std::string, MeshID> lookup;
+    ResourcePool<MeshRecord<StaticVertex>,  StaticMeshTag>  staticPool;
+    ResourcePool<MeshRecord<SkinnedVertex>, SkinnedMeshTag> skinnedPool;
+
+    std::unordered_map<std::string, StaticMeshID>  staticLookup;
+    std::unordered_map<std::string, SkinnedMeshID> skinnedLookup;
 };
