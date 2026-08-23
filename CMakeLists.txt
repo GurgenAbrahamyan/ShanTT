@@ -44,7 +44,6 @@ set(ECS_HEADERS
     source/ecs/components/graphics/CameraComponent.h
     source/ecs/components/graphics/CubeMapComponent.h
     source/ecs/components/graphics/LightComponent.h
-    source/ecs/components/graphics/MaterialComponent.h
     source/ecs/components/graphics/Renderable.h
     source/ecs/components/physics/CollisionShapeComponent.h
     source/ecs/components/physics/RigidBodyComponent.h
