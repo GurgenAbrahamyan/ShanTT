@@ -216,8 +216,6 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         { "Light",           [](entt::registry& r, entt::entity e) { r.emplace_or_replace<LightComponent>(e); }},
 
-        { "Material",        [](entt::registry& r, entt::entity e) { r.emplace_or_replace<MaterialComponent>(e); }},
-
         { "Renderable",      [](entt::registry& r, entt::entity e) { r.emplace_or_replace<RenderableComponent>(e); }},
 
         { "Collision Shape", [](entt::registry& r, entt::entity e) { r.emplace_or_replace<CollisionShapeComponent>(e); }},
@@ -623,64 +621,64 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
         }
     },
 
-            { typeid(SkeletonComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
+        { typeid(SkeletonComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-        if (!BeginComponentHeader("Skeleton", del))
-            return;
+            if (!BeginComponentHeader("Skeleton", del))
+                return;
 
-        auto skeleton = assetManager.skeletons().getSkeleton(r.get<SkeletonComponent>(e).skeleton);
+            auto skeleton = assetManager.skeletons().getSkeleton(r.get<SkeletonComponent>(e).skeleton);
 
-        ImGui::Text("Bones: %zu", skeleton->bones.size());
+            ImGui::Text("Bones: %zu", skeleton->bones.size());
 
-        ImGui::Separator();
+            ImGui::Separator();
 
-        for (size_t i = 0; i < skeleton->bones.size(); ++i)
-        {
-            auto& bone = skeleton->bones[i];
-
-            if (ImGui::TreeNode(
-                ("Bone " + std::to_string(i)).c_str()))
+            for (size_t i = 0; i < skeleton->bones.size(); ++i)
             {
-                // Adjust these field names to whatever SkeletonComponent actually has.
-                ImGui::Text("Name: %s", bone.name.c_str());
+                auto& bone = skeleton->bones[i];
 
-                ImGui::Text("Parent: %d", bone.parentId);
+                if (ImGui::TreeNode(
+                    ("Bone " + std::to_string(i)).c_str()))
+                {
+                    // Adjust these field names to whatever SkeletonComponent actually has.
+                    ImGui::Text("Name: %s", bone.name.c_str());
 
-                ImGui::Separator();
+                    ImGui::Text("Parent: %d", bone.parentId);
 
-                ImGui::Text("Local Transform");
+                    ImGui::Separator();
 
-                DragVec3("Position", bone.pos);
-                DragQuat("Rotation", bone.rot);
-                DragVec3("Scale", bone.scale, 0.01f);
+                    ImGui::Text("Local Transform");
 
-                ImGui::TreePop();
+                    DragVec3("Position", bone.pos);
+                    DragQuat("Rotation", bone.rot);
+                    DragVec3("Scale", bone.scale, 0.01f);
+
+                    ImGui::TreePop();
+                }
             }
-        }
-
-        EndComponentHeader();
-
-    }},
-
-    { typeid(CollisionShapeComponent), [](entt::registry& r, entt::entity e, bool& del) {
-
-            if (!BeginComponentHeader("Collision Shape", del)) return;
-
-            auto& cs = r.get<CollisionShapeComponent>(e);
-
-            ImGui::Text("Vertices: %zu", cs.vertices.size());
-
-            ImGui::Text("Indices:  %zu", cs.indices.size());
-
-            DragVec3("Local Pos",   cs.localPosition);
-
-            DragQuat("Local Rot",   cs.localRotation);
-
-            DragVec3("Local Scale", cs.localScale, 0.01f);
 
             EndComponentHeader();
 
         }},
+
+        { typeid(CollisionShapeComponent), [](entt::registry& r, entt::entity e, bool& del) {
+
+                if (!BeginComponentHeader("Collision Shape", del)) return;
+
+                auto& cs = r.get<CollisionShapeComponent>(e);
+
+                ImGui::Text("Vertices: %zu", cs.vertices.size());
+
+                ImGui::Text("Indices:  %zu", cs.indices.size());
+
+                DragVec3("Local Pos",   cs.localPosition);
+
+                DragQuat("Local Rot",   cs.localRotation);
+
+                DragVec3("Local Scale", cs.localScale, 0.01f);
+
+                EndComponentHeader();
+
+            }},
 
         { typeid(RigidBodyComponent), [](entt::registry& r, entt::entity e, bool& del) {
 
@@ -724,8 +722,116 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         }},
 
-    };
+        { typeid(AnimationState), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
+        if (!BeginComponentHeader("Animation State", del))
+            return;
+
+        auto& state = r.get<AnimationState>(e);
+
+        const AnimationClip* clip = nullptr;
+        if (state.clip.isValid())
+            clip = &assetManager.animations().Get(state.clip);
+
+        if (clip)
+        {
+            ImGui::Text("Clip: %s", clip->name.c_str());
+            ImGui::Text("Duration: %.2fs", clip->duration);
+            ImGui::Text("Tracks: %zu", clip->tracks.size());
+        }
+        else
+        {
+            ImGui::TextDisabled("No clip assigned / invalid handle");
+        }
+
+        ImGui::Separator();
+
+        ImGui::Checkbox("Playing", &state.playing);
+        ImGui::SameLine();
+        ImGui::Checkbox("Looping", &state.looping);
+
+        if (clip && clip->duration > 0.0f)
+        {
+            ImGui::SliderFloat("Time", &state.time, 0.0f, clip->duration);
+        }
+        else
+        {
+            ImGui::DragFloat("Time", &state.time, 0.01f, 0.0f, 0.0f);
+        }
+
+        ImGui::DragFloat("Speed", &state.speed, 0.01f, -4.0f, 4.0f);
+
+        ImGui::Separator();
+        ImGui::TextDisabled("Cache version: %u", state.lastSeenClipVersion);
+
+        if (ImGui::SmallButton("Restart"))
+            state.time = 0.0f;
+        ImGui::SameLine();
+        if (ImGui::SmallButton(state.playing ? "Pause" : "Play"))
+            state.playing = !state.playing;
+
+        EndComponentHeader();
+
+    }},
+
+        { typeid(SkeletalAnimationTarget), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
+
+            if (!BeginComponentHeader("Skeletal Animation Target", del))
+                return;
+
+            auto& target = r.get<SkeletalAnimationTarget>(e);
+
+            auto* skeleton = assetManager.skeletons().getSkeleton(target.skeleton);
+
+            if (!skeleton)
+            {
+                ImGui::TextDisabled("Skeleton handle invalid or unresolved");
+                EndComponentHeader();
+                return;
+            }
+
+            int mapped = 0;
+            for (int b : target.trackToJoint)
+                if (b >= 0) ++mapped;
+
+            ImGui::Text("Bound skeleton bones: %zu", skeleton->bones.size());
+            ImGui::Text("Mapped tracks: %d / %zu", mapped, target.trackToJoint.size());
+
+            if (mapped < (int)target.trackToJoint.size())
+                ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.2f, 1.f), "Some tracks are unmapped!");
+
+            ImGui::Separator();
+
+            if (ImGui::TreeNode("Track -> Bone Mapping"))
+            {
+                for (size_t t = 0; t < target.trackToJoint.size(); ++t)
+                {
+                    int boneIdx = target.trackToJoint[t];
+
+                    if (boneIdx < 0)
+                    {
+                        ImGui::TextColored(ImVec4(0.9f, 0.4f, 0.4f, 1.f),
+                            "Track %zu -> (unmapped)", t);
+                    }
+                    else if (boneIdx < (int)skeleton->bones.size())
+                    {
+                        ImGui::Text("Track %zu -> Bone %d (%s)",
+                            t, boneIdx, skeleton->bones[boneIdx].name.c_str());
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(0.9f, 0.4f, 0.4f, 1.f),
+                            "Track %zu -> Bone %d (OUT OF RANGE)", t, boneIdx);
+                    }
+                }
+
+                ImGui::TreePop();
+            }
+
+            EndComponentHeader();
+
+            }},
+    };
 }
 
 

@@ -105,6 +105,22 @@ set(MATH_SOURCES
     source/math_custom/Quat.cpp
 )
 
+
+set(ANIMATION_HEADERS
+    source/animation/AnimationBinding.h
+    source/animation/AnimationClip.h
+    source/animation/AnimationHandleTypes.h
+    source/animation/AnimationManager.h
+    source/animation/AnimationSampler.h
+    source/animation/AnimationState.h
+    source/animation/Track.h
+    source/animation/ecs_systems/SkeletonAnimationSystem.h
+)
+set(ANIMATION_SOURCES
+    source/animation/ecs_systems/SkeletonAnimationSystem.cpp
+    source/animation/AnimationManager.cpp
+)
+
 set(PHYSICS_SOURCES
     source/physics/PhysicsEngine.cpp
     source/physics/dynamics/ForceGenerator.cpp
@@ -149,7 +165,6 @@ set(RENDER_HEADERS
     source/render/data/GPULight.h
     source/render/data/MeshBatch.h
     source/render/data/DebugRenderData.h
-    source/render/data/EngineResources.h
     source/render/data/FrameRenderData.h
     source/render/PassResources.h
     source/render/data/ShaderType.h
@@ -282,6 +297,8 @@ add_library(ShanTT_Engine STATIC
     ${LIBRARY_SOURCES}
     ${MATH_HEADERS}
     ${MATH_SOURCES}
+    ${ANIMATION_HEADERS}
+    ${ANIMATION_SOURCES}
     ${PHYSICS_SOURCES}
     ${PHYSICS_HEADERS}
     ${PLATFORM_HEADERS}

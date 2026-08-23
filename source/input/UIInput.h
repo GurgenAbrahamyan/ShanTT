@@ -27,12 +27,13 @@
 #include "../ecs/components/graphics/CameraComponent.h"
 #include "../ecs/components/graphics/CubeMapComponent.h"
 #include "../ecs/components/graphics/LightComponent.h"
-#include "../ecs/components/graphics/MaterialComponent.h"
 #include "../ecs/components/physics/CollisionShapeComponent.h"
 #include "../ecs/components/physics/RigidBodyComponent.h"
 #include "../ecs/components/physics/SoftBodyComponent.h"
 #include "ecs/components/graphics/Renderable.h"
 #include "ecs/components/graphics/SkeletonComponent.h"
+#include "animation/AnimationState.h"
+#include "ecs/components/core/SkeletonAnimationTarget.h"
 
 #include "platform/IPlatform.h"
 
@@ -48,8 +49,9 @@ using ComponentTypes = std::tuple<
     CubeMapComponent,
     RenderableComponent,
     SkeletonComponent,
+    AnimationState,
+    SkeletalAnimationTarget,
     LightComponent,
-    MaterialComponent,
     CollisionShapeComponent,
     RigidBodyComponent,
     SoftBodyComponent

@@ -9,6 +9,7 @@
 #include "ecs/components/graphics/CameraComponent.h"
 #include "ecs/components/core/TagComponent.h"
 #include "ecs/components/graphics/CubeMapComponent.h"
+#include "ecs/components/graphics/SkeletonComponent.h"
 
 #include "scene/GlobalTexturesExtractor.h"
 #include "scene/EnvironmentExtractor.h"
@@ -29,6 +30,10 @@
 #include "render/ecs_systems/ShadowSystem.h"
 
 #include "ecs/factories/ModelSpawner.h"
+
+#include "animation/AnimationState.h"
+#include "animation/AnimationBinding.h"
+#include "animation/ecs_systems/SkeletonAnimationSystem.h"
 void GameScene::OnCreate()
 {
     auto& renderGraph = *Context().engine.renderer.getRenderGraph();
@@ -224,6 +229,7 @@ void GameScene::OnCreate()
     for( auto& str : errors)
             std::cout << str << '\n';
 
+    AddSystem<SkeletonAnimationSystem>(Registry());
     AddSystem<CameraSystem>(Registry());
     AddSystem<ShadowSystem>(Registry());
 
@@ -264,7 +270,8 @@ void GameScene::OnCreate()
     assets.models().loadModel("boombox", "resource/models/boombox_4k/boombox_4k.gltf");
     assets.models().loadModel("cannon",  "resource/models/cannon_4k.gltf/cannon_01_4k.gltf");
     assets.models().loadModel("animation",  "resource/models/Animation/untitled.gltf");
-   //  assets.models().loadModel("animation",  "resource/models/CesiumMan/CesiumMan.gltf");
+   
+   
     auto cube =
         spawnModel(
             "Cube",
@@ -336,6 +343,25 @@ void GameScene::OnCreate()
             assets.models(),
             registry
         ).root;
+
+    auto walkAnimation =
+        assets.animations().LoadAll("resource/models/Animation/untitled.gltf");
+    
+    SkeletonID skelId = registry.get<SkeletonComponent>(animation).skeleton;
+
+    const Skeleton& skeleton = *assets.skeletons().getSkeleton(skelId);
+    const AnimationClip& clip = assets.animations().Get(walkAnimation[5]);
+
+    registry.emplace<AnimationState>(animation, AnimationState{
+        .clip = walkAnimation[5],
+        .time = 0.0f,
+        .speed = 1.0f,
+        .looping = true,
+        .playing = true
+    });
+
+    registry.emplace<SkeletalAnimationTarget>(animation, BindClipToSkeleton(clip, skelId, skeleton));
+
 
     auto createRBWithModelTransform = [&](entt::entity e, float mass, const Vector3& pos, const Quat& rot, const Vector3& scale) {
         registry.emplace<RigidBodyComponent>(e, PhysicsComponentFactory::createRigidBody(registry, e, pos, rot, scale, mass));
