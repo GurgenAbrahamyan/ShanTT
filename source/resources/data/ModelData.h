@@ -1,13 +1,21 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "MeshData.h"
+#include <optional>
+
+#include "StaticMeshData.h"
+#include "SkinnedMeshData.h"
 #include "MaterialData.h"
 #include "SubMeshData.h"
+#include "SkeletonData.h"
 
 struct ModelData {
-    std::vector<MeshData> meshes;
-    std::vector<MaterialData> materials;
-    std::vector<SubMeshData> submeshes;
     std::string modelName;
+
+    std::vector<StaticMeshData>  staticMeshes;
+    std::vector<SkinnedMeshData> skinnedMeshes;
+    std::vector<MaterialData>    materials;
+    std::vector<SubMeshData>     submeshes;
+
+    std::optional<SkeletonData> skeleton;
 };

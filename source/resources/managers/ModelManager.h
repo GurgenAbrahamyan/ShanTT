@@ -1,50 +1,39 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 
-#include <entt/entt.hpp>
-
-#include "../../resources/data/ModelAsset.h"
+#include "ResourcePool.h"
+#include "ModelHandleTypes.h"
+#include "../../resources/data/ModelAssetDef.h"
 
 class MeshManager;
 class MaterialManager;
 class TextureManager;
+class SkeletonManager;
 
 class ModelManager {
 public:
     ModelManager(
         MeshManager* meshManager,
         MaterialManager* materialManager,
-        TextureManager* textureManager
+        TextureManager* textureManager,
+        SkeletonManager* skeletonManager
     );
 
-    bool loadModel(
-        const std::string& name,
-        const std::string& path
-    );
+    ModelAssetID loadModel(const std::string& name, const std::string& path);
 
-    void instantiateModel(
-        const std::string& name,
-        entt::registry& registry,
-        entt::entity entity
-    );
-
-    const std::unordered_map<
-        std::string,
-        std::unique_ptr<ModelAsset>
-    >& getLoadedModels() const;
+    const ModelAssetDef* getModel(ModelAssetID id) const;
+    ModelAssetID getModelID(const std::string& name) const;
 
     bool isLoaded(const std::string& name) const;
 
 private:
-    MeshManager* meshManager;
+    MeshManager*     meshManager;
     MaterialManager* materialManager;
-    TextureManager* textureManager;
+    TextureManager*  textureManager;
+    SkeletonManager* skeletonManager;
 
-    std::unordered_map<
-        std::string,
-        std::unique_ptr<ModelAsset>
-    > loadedModels;
+    ResourcePool<ModelAssetDef, ModelAssetTag> pool;
+    std::unordered_map<std::string, ModelAssetID> lookup; // keyed by name
 };

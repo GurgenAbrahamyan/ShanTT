@@ -1,18 +1,28 @@
 #pragma once
 #include <string>
 #include <cstdint>
+#include <optional>
+
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
-#include "../../math_custom/Mat4.h"
+
+enum class MeshKind : uint8_t {
+    Static,
+    Skinned
+};
 
 struct SubMeshData {
-    std::string name;         // submesh name
-    uint32_t meshIndex = UINT32_MAX;     // which mesh asset to use
-    uint32_t materialIndex = UINT32_MAX; // material asset
-    uint32_t parentIndex = UINT32_MAX;   // index of parent submesh in array, if any
-    uint32_t nodeIndex = UINT32_MAX;
-    Vector3 position = Vector3(0.0f);
-    Quat rotation = Quat();
-    Vector3 scale = Vector3(1.0f);
-    Mat4 worldTransform = Mat4();
+    std::string name;
+
+    MeshKind meshKind = MeshKind::Static;
+    uint32_t meshIndex     = UINT32_MAX;
+    uint32_t materialIndex = UINT32_MAX;
+
+    uint32_t parentSubmeshIndex = UINT32_MAX; 
+
+    Vector3 localPosition{0.0f, 0.0f, 0.0f};
+    Quat    localRotation;
+    Vector3 localScale{1.0f, 1.0f, 1.0f};
+
+    std::optional<uint32_t> attachBoneIndex;
 };

@@ -77,7 +77,7 @@ void ShadowPass::execute(
 
 
         for (const auto& [material, meshMap] :
-             frameData.Get<SceneRenderData>().batches)
+             frameData.Get<SceneRenderData>().staticBatches)
         {
             for (const auto& [mesh, batch] :
                  meshMap)
@@ -91,10 +91,8 @@ void ShadowPass::execute(
                     batch.instances.size()
                 );
 
-                glBindBuffer(
-                    GL_ARRAY_BUFFER,
-                    mesh->getInstanceVBO()
-                );
+                mesh->getInstanceVBO()->Bind();
+                
 
                 glBufferSubData(
                     GL_ARRAY_BUFFER,

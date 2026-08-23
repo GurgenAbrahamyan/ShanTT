@@ -1,7 +1,11 @@
 #pragma once
-
+#include <variant>
 #include "ResourcePool.h"
 
-struct MeshTag {};
+struct StaticMeshTag {};
+struct SkinnedMeshTag {};
 
-using MeshID = Handle<MeshTag>;
+using StaticMeshID  = Handle<StaticMeshTag>;
+using SkinnedMeshID = Handle<SkinnedMeshTag>;
+
+using MeshRef = std::variant<StaticMeshID, SkinnedMeshID>;

@@ -11,7 +11,6 @@
 #include "../render/RenderGraph.h"
 #include "../core/EventBus.h"
 #include "../render/data/DebugRenderData.h"
-#include "../render/data/EngineResources.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_opengl3.h>
@@ -28,12 +27,13 @@
 #include "../ecs/components/graphics/CameraComponent.h"
 #include "../ecs/components/graphics/CubeMapComponent.h"
 #include "../ecs/components/graphics/LightComponent.h"
-#include "../ecs/components/graphics/MaterialComponent.h"
-#include "../ecs/components/graphics/MeshComponent.h"
-#include "../ecs/components/graphics/ModelComponent.h"
 #include "../ecs/components/physics/CollisionShapeComponent.h"
 #include "../ecs/components/physics/RigidBodyComponent.h"
 #include "../ecs/components/physics/SoftBodyComponent.h"
+#include "ecs/components/graphics/Renderable.h"
+#include "ecs/components/graphics/SkeletonComponent.h"
+#include "animation/AnimationState.h"
+#include "ecs/components/core/SkeletonAnimationTarget.h"
 
 #include "platform/IPlatform.h"
 
@@ -47,10 +47,11 @@ using ComponentTypes = std::tuple<
     ActiveCameraTag,
     CameraComponent,
     CubeMapComponent,
+    RenderableComponent,
+    SkeletonComponent,
+    AnimationState,
+    SkeletalAnimationTarget,
     LightComponent,
-    MaterialComponent,
-    MeshComponent,
-    ModelComponent,
     CollisionShapeComponent,
     RigidBodyComponent,
     SoftBodyComponent
@@ -347,7 +348,7 @@ public:
 
     void buildUI(
         entt::registry& registry,
-        const EngineResources& resources,
+        Vector2 windowsize,
         const DebugRenderData& debugData,
         RenderGraph* rendergraph
     );

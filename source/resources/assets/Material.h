@@ -9,7 +9,6 @@
 
 class Texture;
 class Shader;
-class TextureManager;
 
 class Material {
 public:
@@ -25,8 +24,6 @@ public:
 
     Vector4 baseColorFactor = { 1.0f, 1.0f, 1.0f, 1.0f };
     Vector3 emissiveFactor = { 1.0f, 1.0f, 1.0f };
-
-    void Bind(Shader* shader, TextureManager& tm) const;
 
 private:
     std::array<TextureID, static_cast<size_t>(MaterialSlot::Count)> textures{};

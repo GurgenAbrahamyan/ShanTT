@@ -4,5 +4,4 @@
 
 struct SceneContext {
     EngineContext& engine;
-    //entt::registry& registry;
 };

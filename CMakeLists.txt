@@ -45,8 +45,7 @@ set(ECS_HEADERS
     source/ecs/components/graphics/CubeMapComponent.h
     source/ecs/components/graphics/LightComponent.h
     source/ecs/components/graphics/MaterialComponent.h
-    source/ecs/components/graphics/MeshComponent.h
-    source/ecs/components/graphics/ModelComponent.h
+    source/ecs/components/graphics/Renderable.h
     source/ecs/components/physics/CollisionShapeComponent.h
     source/ecs/components/physics/RigidBodyComponent.h
     source/ecs/components/physics/SoftBodyComponent.h
@@ -54,11 +53,13 @@ set(ECS_HEADERS
 
 set(ECS_FACTORY_SOURCES
     source/ecs/factories/GraphicsEntityFactory.cpp
+    source/ecs/factories/ModelSpawner.cpp
 )
 
 set(ECS_FACTORY_HEADERS
     source/ecs/factories/GraphicsEntityFactory.h
     source/ecs/factories/PhysicsComponentFactory.h
+    source/ecs/factories/ModelSpawner.h
 )
 
 set(INPUT_SOURCES
@@ -99,6 +100,25 @@ set(MATH_HEADERS
     source/math_custom/Vector2.h
     source/math_custom/Vector3.h
     source/math_custom/Vector4.h
+)
+set(MATH_SOURCES
+    source/math_custom/Quat.cpp
+)
+
+
+set(ANIMATION_HEADERS
+    source/animation/AnimationBinding.h
+    source/animation/AnimationClip.h
+    source/animation/AnimationHandleTypes.h
+    source/animation/AnimationManager.h
+    source/animation/AnimationSampler.h
+    source/animation/AnimationState.h
+    source/animation/Track.h
+    source/animation/ecs_systems/SkeletonAnimationSystem.h
+)
+set(ANIMATION_SOURCES
+    source/animation/ecs_systems/SkeletonAnimationSystem.cpp
+    source/animation/AnimationManager.cpp
 )
 
 set(PHYSICS_SOURCES
@@ -145,7 +165,6 @@ set(RENDER_HEADERS
     source/render/data/GPULight.h
     source/render/data/MeshBatch.h
     source/render/data/DebugRenderData.h
-    source/render/data/EngineResources.h
     source/render/data/FrameRenderData.h
     source/render/PassResources.h
     source/render/data/ShaderType.h
@@ -167,15 +186,14 @@ set(RENDER_HEADERS
 
 set(RESOURCE_SOURCES
     source/resources/assets/CubeMap.cpp
-    source/resources/assets/Material.cpp
     source/resources/assets/Texture.cpp
-    source/resources/assets/RenderMesh.cpp
     source/resources/loaders/ModelLoader.cpp
     source/resources/loaders/TextureLoader.cpp
     source/resources/managers/MaterialManager.cpp
     source/resources/managers/MeshManager.cpp
     source/resources/managers/ModelManager.cpp
     source/resources/managers/TextureManager.cpp
+    source/resources/managers/SkeletonManager.cpp
     source/resources/managers/EnvironmentBaker.cpp
     source/resources/data/RenderMaterialData.cpp
 )
@@ -186,24 +204,28 @@ set(RESOURCE_HEADERS
     source/resources/assets/Model.h
     source/resources/assets/RenderMesh.h
     source/resources/assets/Texture.h
+    source/resources/assets/Skeleton/Bone.h
+    source/resources/assets/Skeleton/Skeleton.h
     source/resources/data/RenderMaterialData.h
     source/resources/data/GlobalUBOData.h
     source/resources/data/MaterialData.h
     source/resources/data/MaterialTextureInfo.h
-    source/resources/data/MeshData.h
-    source/resources/data/ModelAsset.h
+    source/resources/data/StaticMeshData.h
+    source/resources/data/SkinnedMeshData.h
     source/resources/data/ModelData.h
     source/resources/data/ModelLoadConfig.h
     source/resources/data/ShaderData.h
     source/resources/data/SubMeshData.h
     source/resources/data/TextureType.h
-    source/resources/data/Vertex.h
+    source/resources/data/StaticVertex.h
+    source/resources/data/SkinnedVertex.h
     source/resources/loaders/ModelLoader.h
     source/resources/loaders/TextureLoader.h
     source/resources/managers/MaterialManager.h
     source/resources/managers/MeshManager.h
     source/resources/managers/ModelManager.h
     source/resources/managers/TextureManager.h
+    source/resources/managers/SkeletonManager.h
     source/resources/managers/EnvironmentBaker.h
 )
 
@@ -274,6 +296,9 @@ add_library(ShanTT_Engine STATIC
     ${INPUT_HEADERS}
     ${LIBRARY_SOURCES}
     ${MATH_HEADERS}
+    ${MATH_SOURCES}
+    ${ANIMATION_HEADERS}
+    ${ANIMATION_SOURCES}
     ${PHYSICS_SOURCES}
     ${PHYSICS_HEADERS}
     ${PLATFORM_HEADERS}

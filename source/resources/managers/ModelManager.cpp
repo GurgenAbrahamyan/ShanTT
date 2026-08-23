@@ -3,38 +3,114 @@
 #include "MeshManager.h"
 #include "MaterialManager.h"
 #include "TextureManager.h"
+#include "SkeletonManager.h"
 
 #include "../../resources/loaders/ModelLoader.h"
 
-#include "../../ecs/components/graphics/ModelComponent.h"
-
 #include <iostream>
+
+/*namespace
+{
+
+    void printMatrix(
+        const Mat4& matrix,
+        const char* name
+    )
+    {
+        std::cout << name << ":\n";
+
+        std::cout << std::fixed
+                  << std::setprecision(4);
+
+        for (int row = 0; row < 4; ++row)
+        {
+            std::cout
+                << "  [ ";
+
+            for (int col = 0; col < 4; ++col)
+            {
+                std::cout
+                    << std::setw(9)
+                    << matrix(row, col);
+
+                if (col < 3)
+                    std::cout << ", ";
+            }
+
+            std::cout << " ]\n";
+        }
+    }
+
+
+    void printVector3(
+        const Vector3& v,
+        const char* name
+    )
+    {
+        std::cout
+            << name
+            << ": ("
+            << v.x << ", "
+            << v.y << ", "
+            << v.z << ")\n";
+    }
+
+
+    void printQuat(
+        const Quat& q,
+        const char* name
+    )
+    {
+        std::cout
+            << name
+            << ": ("
+            << q.x << ", "
+            << q.y << ", "
+            << q.z << ", "
+            << q.w << ")\n";
+    }
+
+}
+*/
 
 ModelManager::ModelManager(
     MeshManager* meshManager,
     MaterialManager* materialManager,
-    TextureManager* textureManager
+    TextureManager* textureManager,
+    SkeletonManager* skeletonManager
 )
     : meshManager(meshManager),
       materialManager(materialManager),
-      textureManager(textureManager)
+      textureManager(textureManager),
+      skeletonManager(skeletonManager)
 {
 }
 
-bool ModelManager::loadModel(
+
+ModelAssetID ModelManager::loadModel(
     const std::string& name,
-    const std::string& path
-)
+    const std::string& path)
 {
-    if (loadedModels.contains(name))
+    if (auto it = lookup.find(name);
+        it != lookup.end())
     {
         std::cout
             << "Model already loaded: "
             << name
             << '\n';
 
-        return false;
+        return it->second;
     }
+
+
+    std::cout
+        << "\n========================================\n"
+        << "Loading model: "
+        << name
+        << "\nPath: "
+        << path
+        << "\n========================================\n";
+
 
     ModelLoader loader(path);
 
@@ -45,22 +121,36 @@ bool ModelManager::loadModel(
             << path
             << '\n';
 
-        return false;
+        return ModelAssetID{};
     }
+
 
     const ModelData& data =
         loader.getModelData();
 
-    auto asset =
-        std::make_unique<ModelAsset>();
 
-    asset->name = name;
-    asset->path = path;
+    ModelAssetDef def;
+
+    def.name = name;
+    def.path = path;
+
+
+    // =========================================================
+    // MATERIALS
+    // =========================================================
+
+    std::cout
+        << "\n--- MATERIALS ---\n";
 
     std::vector<MaterialID> materialIDs;
-    materialIDs.reserve(data.materials.size());
 
-    for (const auto& materialData : data.materials)
+    materialIDs.reserve(
+        data.materials.size()
+    );
+
+
+    for (const auto& materialData :
+         data.materials)
     {
         Material material;
 
@@ -82,8 +172,12 @@ bool ModelManager::loadModel(
         material.emissiveFactor =
             materialData.emissiveFactor;
 
-        const MaterialTextureInfo* ormInfo = nullptr;
-        const MaterialTextureInfo* aoInfo = nullptr;
+
+        const MaterialTextureInfo* ormInfo =
+            nullptr;
+
+        const MaterialTextureInfo* aoInfo =
+            nullptr;
 
 
         for (const auto& textureInfo :
@@ -91,6 +185,7 @@ bool ModelManager::loadModel(
         {
             if (textureInfo.path.empty())
                 continue;
+
 
             switch (textureInfo.type)
             {
@@ -113,6 +208,7 @@ bool ModelManager::loadModel(
                     break;
                 }
 
+
                 case TextureType::Normal:
                 {
                     TextureID id =
@@ -131,6 +227,7 @@ bool ModelManager::loadModel(
 
                     break;
                 }
+
 
                 case TextureType::Emissive:
                 {
@@ -151,6 +248,7 @@ bool ModelManager::loadModel(
                     break;
                 }
 
+
                 case TextureType::Height:
                 {
                     TextureID id =
@@ -170,13 +268,16 @@ bool ModelManager::loadModel(
                     break;
                 }
 
+
                 case TextureType::ORM:
                     ormInfo = &textureInfo;
                     break;
 
+
                 case TextureType::AO:
                     aoInfo = &textureInfo;
                     break;
+
 
                 case TextureType::Mask:
                 case TextureType::Unknown:
@@ -184,19 +285,21 @@ bool ModelManager::loadModel(
             }
         }
 
+
         if (ormInfo)
         {
-            const std::string& armPath =
-                ormInfo->path;
-
             const std::string aoPath =
-                aoInfo ? aoInfo->path : "";
+                aoInfo
+                    ? aoInfo->path
+                    : "";
+
 
             TextureID armID =
                 textureManager->loadARM(
                     aoPath,
-                    armPath
+                    ormInfo->path
                 );
+
 
             if (armID.isValid())
             {
@@ -207,9 +310,9 @@ bool ModelManager::loadModel(
             }
         }
 
-        if (!material
-                .GetTexture(MaterialSlot::Albedo)
-                .isValid())
+
+        if (!material.GetTexture(
+                MaterialSlot::Albedo).isValid())
         {
             material.SetTexture(
                 MaterialSlot::Albedo,
@@ -217,9 +320,9 @@ bool ModelManager::loadModel(
             );
         }
 
-        if (!material
-                .GetTexture(MaterialSlot::Normal)
-                .isValid())
+
+        if (!material.GetTexture(
+                MaterialSlot::Normal).isValid())
         {
             material.SetTexture(
                 MaterialSlot::Normal,
@@ -227,9 +330,9 @@ bool ModelManager::loadModel(
             );
         }
 
-        if (!material
-                .GetTexture(MaterialSlot::ARM)
-                .isValid())
+
+        if (!material.GetTexture(
+                MaterialSlot::ARM).isValid())
         {
             material.SetTexture(
                 MaterialSlot::ARM,
@@ -237,9 +340,9 @@ bool ModelManager::loadModel(
             );
         }
 
-        if (!material
-                .GetTexture(MaterialSlot::Emissive)
-                .isValid())
+
+        if (!material.GetTexture(
+                MaterialSlot::Emissive).isValid())
         {
             material.SetTexture(
                 MaterialSlot::Emissive,
@@ -247,9 +350,9 @@ bool ModelManager::loadModel(
             );
         }
 
-        if (!material
-                .GetTexture(MaterialSlot::Height)
-                .isValid())
+
+        if (!material.GetTexture(
+                MaterialSlot::Height).isValid())
         {
             material.SetTexture(
                 MaterialSlot::Height,
@@ -264,97 +367,257 @@ bool ModelManager::loadModel(
                 name + "::" + materialData.name
             );
 
-        materialIDs.push_back(materialID);
+
+        materialIDs.push_back(
+            materialID
+        );
     }
 
-    for (const auto& submesh : data.submeshes)
+    std::cout
+        << "\n========================================\n"
+        << "SKELETON\n"
+        << "========================================\n";
+
+
+    if (data.skeleton.has_value())
     {
-        const MeshData& meshData =
-            data.meshes[submesh.meshIndex];
+        const SkeletonData& skeletonData =
+            *data.skeleton;
 
-        const std::string meshName =
-            name + "::" + submesh.name;
 
-        MeshID meshID =
-            meshManager->addMesh(
-                meshName,
-                meshData.vertices,
-                meshData.indices
-            );
+        std::cout
+            << "Bone count: "
+            << skeletonData.bones.size()
+            << "\n\n";
 
-        if (!meshID.isValid())
+
+        Skeleton skeleton;
+
+        skeleton.name =
+            name + "::Skeleton";
+
+        skeleton.bones.reserve(
+            skeletonData.bones.size()
+        );
+
+
+        for (std::size_t i = 0;
+             i < skeletonData.bones.size();
+             ++i)
         {
-            std::cerr
-                << "Failed to create mesh: "
-                << meshName
-                << '\n';
+            const auto& boneData =
+                skeletonData.bones[i];
 
-            continue;
+            Bone bone;
+
+            bone.name =
+                boneData.name;
+
+            bone.parentId =
+                boneData.parentIndex;
+
+            bone.pos =
+                boneData.translation;
+
+            bone.rot =
+                boneData.rotation;
+
+            bone.scale =
+                boneData.scale;
+
+            bone.invBind =
+                boneData.inverseBindMatrix;
+
+
+            skeleton.bones.push_back(
+                std::move(bone)
+            );
         }
 
-        MeshEntry entry;
+        def.skeleton =
+            skeletonManager->addSkeleton(
+                std::make_unique<Skeleton>(
+                    std::move(skeleton)
+                )
+            );
 
-        entry.mesh = meshID;
+
+        if (!def.skeleton.isValid())
+        {
+            std::cerr
+                << "Failed to create skeleton for model: "
+                << name
+                << '\n';
+
+            return ModelAssetID{};
+        }
+
+
+        std::cout
+            << "\nSkeleton registered successfully.\n";
+    }
+    else
+    {
+        std::cout
+            << "Model has NO skeleton.\n";
+    }
+
+    def.parts.reserve(
+        data.submeshes.size()
+    );
+
+
+    for (std::size_t i = 0;
+         i < data.submeshes.size();
+         ++i)
+    {
+        const auto& submesh =
+            data.submeshes[i];
+
+
+        const std::string partMeshName =
+            name + "::" + submesh.name;
+
+
+        ModelPartDef part;
+
+        part.name =
+            submesh.name;
+
+        part.parentPartIndex =
+            submesh.parentSubmeshIndex;
+
+        part.localPosition =
+            submesh.localPosition;
+
+        part.localRotation =
+            submesh.localRotation;
+
+        part.localScale =
+            submesh.localScale;
+
+        part.attachBoneIndex =
+            submesh.attachBoneIndex;
 
         if (submesh.materialIndex <
             materialIDs.size())
         {
-            entry.material =
-                materialIDs[submesh.materialIndex];
+            part.material =
+                materialIDs[
+                    submesh.materialIndex
+                ];
         }
 
-        entry.localTransform =
-            submesh.worldTransform;
 
-        asset->meshes.push_back(entry);
+
+        if (submesh.meshKind ==
+            MeshKind::Static)
+        {
+            const StaticMeshData& meshData =
+                data.staticMeshes[
+                    submesh.meshIndex
+                ];
+
+
+            StaticMeshID meshID =
+                meshManager->addStaticMesh(
+                    partMeshName,
+                    meshData.vertices,
+                    meshData.indices
+                );
+
+
+            if (!meshID.isValid())
+            {
+                std::cerr
+                    << "Failed to create static mesh: "
+                    << partMeshName
+                    << '\n';
+
+                continue;
+            }
+
+
+            part.mesh =
+                meshID;
+        }
+        else
+        {
+            const SkinnedMeshData& meshData =
+                data.skinnedMeshes[
+                    submesh.meshIndex
+                ];
+
+        
+
+            SkinnedMeshID meshID =
+                meshManager->addSkinnedMesh(
+                    partMeshName,
+                    meshData.vertices,
+                    meshData.indices
+                );
+
+
+            if (!meshID.isValid())
+            {
+                std::cerr
+                    << "Failed to create skinned mesh: "
+                    << partMeshName
+                    << '\n';
+
+                continue;
+            }
+
+
+            part.mesh =
+                meshID;
+        }
+
+
+        def.parts.push_back(
+            std::move(part)
+        );
     }
 
 
 
-    loadedModels[name] =
-        std::move(asset);
-
-    std::cout
-        << "Loaded model asset: "
-        << name
-        << '\n';
-
-    return true;
-}
-
-void ModelManager::instantiateModel(
-    const std::string& name,
-    entt::registry& registry,
-    entt::entity entity)
-{
-    auto it =
-        loadedModels.find(name);
-
-    if (it == loadedModels.end())
-        return;
-
-    const ModelAsset& asset =
-        *it->second;
-
-    auto& model =
-        registry.emplace_or_replace<ModelComponent>(
-            entity
+    ModelAssetID id =
+        pool.insert(
+            std::move(def)
         );
 
-    model.asset = &asset;
+
+    lookup[name] =
+        id;
+
+
+    return id;
 }
+
+
+const ModelAssetDef* ModelManager::getModel(
+    ModelAssetID id) const
+{
+    return pool.get(id);
+}
+
+
+ModelAssetID ModelManager::getModelID(
+    const std::string& name) const
+{
+    auto it =
+        lookup.find(name);
+
+    return
+        (it != lookup.end())
+            ? it->second
+            : ModelAssetID{};
+}
+
 
 bool ModelManager::isLoaded(
     const std::string& name) const
 {
-    return loadedModels.find(name)
-        != loadedModels.end();
-}
-
-const std::unordered_map<
-    std::string,
-    std::unique_ptr<ModelAsset>
->& ModelManager::getLoadedModels() const
-{
-    return loadedModels;
+    return lookup.find(name)
+        != lookup.end();
 }

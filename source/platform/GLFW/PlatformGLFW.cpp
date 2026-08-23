@@ -99,7 +99,7 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
     }
 
     if (desc.api == GraphicsAPI::OpenGL) {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     
    
@@ -125,7 +125,7 @@ bool PlatformGLFW::Init(const WindowDesc& desc, EventBus& bus)
         glfwMakeContextCurrent(window);
         glfwSwapInterval(desc.vsync ? 1 : 0);
 
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        if (!gladLoadGL((GLADloadfunc)glfwGetProcAddress)) {
             std::cerr << "GLAD init failed\n";
             return false;
         }

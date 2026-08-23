@@ -78,7 +78,7 @@ void Engine::run() {
         debugUi.startNewFrame();
         debugUi.buildUI(
             sceneManager.Current()->Registry(),
-            rendererResources,
+            platform->GetFramebufferSize(),
             renderer.getDebugRenderData(),
             renderer.getRenderGraph()
         );

@@ -72,4 +72,9 @@ public:
 };
 
 
-inline Vector3 operator*(float s, const Vector3& v) { return v * s; }
+inline Vector3 operator*(float s, const Vector3& v) { return v * s;}
+inline Vector3 operator*(const Vector3 other1, 
+                        const Vector3& other2) 
+{ return Vector3{other1.x * other2.x,
+                other1.y * other2.y,
+                other1.z * other2.z}; }
