@@ -434,11 +434,15 @@ ModelAssetID ModelManager::loadModel(
             );
         }
 
+        std::string skelName = name.c_str(); 
+        skelName.append("_skeleton");
+
         def.skeleton =
             skeletonManager->addSkeleton(
                 std::make_unique<Skeleton>(
                     std::move(skeleton)
-                )
+                ),
+                skelName
             );
 
 

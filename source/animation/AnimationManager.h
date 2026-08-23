@@ -21,6 +21,10 @@ public:
 
     void Unload(AnimationID h) { pool_.remove(h); }
 
+    template<typename Fn>
+    void ForEachAnimation(Fn&& fn) const {
+        pool_.forEachAlive([&](Handle<AnimationTag> h, const AnimationClip& clip) { fn(h, clip.name); });
+    }
 private:
 
     ResourcePool<AnimationClip, AnimationTag> pool_;

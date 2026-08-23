@@ -115,6 +115,42 @@ struct DebugWindow
     ImGui::TreePop();
 }
 
+template<typename Tag, typename ForEachFn>
+[[maybe_unused]] static bool ResourcePickerCombo(
+    const char* label,
+    Handle<Tag>& current,
+    const std::string& currentName,
+    ForEachFn&& forEach)
+{
+    bool changed = false;
+    std::string preview = current.isValid()
+        ? (currentName.empty() ? "<unnamed>" : currentName)
+        : "<none>";
+
+    ImGui::PushID(label);
+    if (ImGui::BeginCombo(label, preview.c_str()))
+    {
+        forEach([&](Handle<Tag> h, const std::string& name)
+        {
+            bool selected = (h == current);
+            std::string entryLabel = name.empty() ? "<unnamed>" : name;
+
+            ImGui::PushID((int)h.index);
+            if (ImGui::Selectable(entryLabel.c_str(), selected))
+            {
+                current = h;
+                changed = true;
+            }
+            ImGui::PopID();
+
+            if (selected) ImGui::SetItemDefaultFocus();
+        });
+        ImGui::EndCombo();
+    }
+    ImGui::PopID();
+    return changed;
+}
+
 [[maybe_unused]] static void DragVec3(
     const char* label,
     Vector3& v,

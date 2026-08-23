@@ -436,195 +436,139 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         }},
 
-        { typeid(RenderableComponent), [&](entt::registry& r, entt::entity e, bool& del)
+        { typeid(RenderableComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del)
         {
             if (!BeginComponentHeader("Renderable", del))
                 return;
 
-            auto& renderer =
-                r.get<RenderableComponent>(e);
+            auto& renderer = r.get<RenderableComponent>(e);
 
-            ImGui::Checkbox(
-                "Visible",
-                &renderer.visible
-            );
-
+            ImGui::Checkbox("Visible", &renderer.visible);
             ImGui::Separator();
 
             ImGui::TextUnformatted("Mesh");
 
+            std::string meshPreview = "<none>";
             if (!renderer.mesh.valueless_by_exception())
             {
-                std::visit(
-                    [&](const auto& meshID)
-                    {
-                        using ID = std::decay_t<decltype(meshID)>;
-
-                        if (!meshID.isValid())
-                        {
-                            ImGui::TextDisabled("Invalid");
-                            return;
-                        }
-
-                        if constexpr (
-                            std::is_same_v<ID, StaticMeshID>
-                        )
-                        {
-                            ImGui::TextDisabled("Type: Static");
-                        }
-                        else if constexpr (
-                            std::is_same_v<ID, SkinnedMeshID>
-                        )
-                        {
-                            ImGui::TextDisabled("Type: Skinned");
-                        }
-                    },
-                    renderer.mesh
-                );
+                std::visit([&](const auto& id) {
+                    using ID = std::decay_t<decltype(id)>;
+                    if (!id.isValid()) return;
+                    if constexpr (std::is_same_v<ID, StaticMeshID>)
+                        meshPreview = "[Static] " + assetManager.meshes().GetStaticMeshName(id);
+                    else if constexpr (std::is_same_v<ID, SkinnedMeshID>)
+                        meshPreview = "[Skinned] " + assetManager.meshes().GetSkinnedMeshName(id);
+                }, renderer.mesh);
             }
-            else
+
+            if (ImGui::BeginCombo("##meshpicker", meshPreview.c_str()))
             {
-                ImGui::TextDisabled("No mesh assigned");
+                ImGui::TextDisabled("Static Meshes");
+                ImGui::Separator();
+                assetManager.meshes().ForEachStaticMesh([&](StaticMeshID h, const std::string& name)
+                {
+                    bool selected = std::holds_alternative<StaticMeshID>(renderer.mesh)
+                        && std::get<StaticMeshID>(renderer.mesh) == h;
+                    ImGui::PushID((int)h.index);
+                    if (ImGui::Selectable((name.empty() ? "<unnamed>" : name).c_str(), selected))
+                        renderer.mesh = h;
+                    ImGui::PopID();
+                });
+
+                ImGui::Spacing();
+                ImGui::TextDisabled("Skinned Meshes");
+                ImGui::Separator();
+                assetManager.meshes().ForEachSkinnedMesh([&](SkinnedMeshID h, const std::string& name)
+                {
+                    bool selected = std::holds_alternative<SkinnedMeshID>(renderer.mesh)
+                        && std::get<SkinnedMeshID>(renderer.mesh) == h;
+                    ImGui::PushID((int)(1'000'000 + h.index)); // avoid ID collision with static section
+                    if (ImGui::Selectable((name.empty() ? "<unnamed>" : name).c_str(), selected))
+                        renderer.mesh = h;
+                    ImGui::PopID();
+                });
+
+                ImGui::EndCombo();
             }
 
             ImGui::Separator();
 
-            // --------------------------------------------------------
-            // Material
-            // --------------------------------------------------------
-
             ImGui::TextUnformatted("Material");
 
-            if (!renderer.material.isValid())
+            std::string matName = assetManager.materials().GetName(renderer.material);
+            ResourcePickerCombo<MaterialTag>(
+                "##materialpicker",
+                renderer.material,
+                matName,
+                [&](auto&& fn) { assetManager.materials().ForEachMaterial(fn); }
+            );
+
+            if (auto* material = assetManager.materials().getMaterial(renderer.material))
             {
-                ImGui::TextDisabled("No material assigned");
+                ImGui::Spacing();
+                ImGui::DragFloat("Metallic", &material->metallic, 0.01f, 0.f, 1.f);
+                ImGui::DragFloat("Roughness", &material->roughness, 0.01f, 0.f, 1.f);
+                ImGui::DragFloat("AO", &material->ao, 0.01f, 0.f, 1.f);
+
+                float bc[4] = { material->baseColorFactor.x, material->baseColorFactor.y,
+                                material->baseColorFactor.z, material->baseColorFactor.w };
+                if (ImGui::ColorEdit4("Base Color", bc))
+                    material->baseColorFactor = { bc[0], bc[1], bc[2], bc[3] };
+
+                float ec[3] = { material->emissiveFactor.x, material->emissiveFactor.y, material->emissiveFactor.z };
+                if (ImGui::ColorEdit3("Emissive", ec))
+                    material->emissiveFactor = { ec[0], ec[1], ec[2] };
+
+                ImGui::Spacing(); ImGui::Separator();
+                ImGui::TextUnformatted("Textures");
+                ImGui::Separator(); ImGui::Spacing();
+
+                static const char* slotLabels[] = { "Albedo", "ARM", "Normal", "Emissive", "Height" };
+
+                for (int slot = 0; slot < static_cast<int>(MaterialSlot::Count); ++slot)
+                {
+                    auto matSlot = static_cast<MaterialSlot>(slot);
+                    TextureID currentTex = material->GetTexture(matSlot);
+
+                    DrawTextureSlot(slotLabels[slot], assetManager.textures().getTexture(currentTex), 56.f);
+
+                    std::string texName = assetManager.textures().GetTextureName(currentTex);
+                    ImGui::PushID(slot);
+                    if (ResourcePickerCombo<TextureTag>(
+                            "##texpick",
+                            currentTex,
+                            texName,
+                            [&](auto&& fn) { assetManager.textures().ForEachTexture(fn); }))
+                    {
+                        material->SetTexture(matSlot, currentTex);
+                    }
+                    ImGui::PopID();
+
+                    ImGui::Spacing();
+                }
             }
             else
             {
-                ImGui::TextDisabled("Assigned");
-
-                if (auto* material =
-                    assetManager.materials().getMaterial(
-                        renderer.material))
-                {
-                    ImGui::Spacing();
-
-                    ImGui::DragFloat(
-                        "Metallic",
-                        &material->metallic,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    ImGui::DragFloat(
-                        "Roughness",
-                        &material->roughness,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    ImGui::DragFloat(
-                        "AO",
-                        &material->ao,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    float bc[4] =
-                    {
-                        material->baseColorFactor.x,
-                        material->baseColorFactor.y,
-                        material->baseColorFactor.z,
-                        material->baseColorFactor.w
-                    };
-
-                    if (ImGui::ColorEdit4(
-                        "Base Color",
-                        bc
-                    ))
-                    {
-                        material->baseColorFactor =
-                        {
-                            bc[0],
-                            bc[1],
-                            bc[2],
-                            bc[3]
-                        };
-                    }
-
-                    float ec[3] =
-                    {
-                        material->emissiveFactor.x,
-                        material->emissiveFactor.y,
-                        material->emissiveFactor.z
-                    };
-
-                    if (ImGui::ColorEdit3(
-                        "Emissive",
-                        ec
-                    ))
-                    {
-                        material->emissiveFactor =
-                        {
-                            ec[0],
-                            ec[1],
-                            ec[2]
-                        };
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-
-                    ImGui::TextUnformatted("Textures");
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    static const char* slotLabels[] =
-                    {
-                        "Albedo",
-                        "ARM",
-                        "Normal",
-                        "Emissive"
-                    };
-
-                    constexpr int kDisplaySlots = 4;
-
-                    for (int slot = 0;
-                        slot < kDisplaySlots;
-                        ++slot)
-                    {
-                        DrawTextureSlot(
-                            slotLabels[slot],
-                            assetManager.textures().getTexture(
-                                material->GetTexture(
-                                    static_cast<MaterialSlot>(slot)
-                                )
-                            ),
-                            56.f
-                        );
-
-                        ImGui::Spacing();
-                    }
-                }
-                else
-                {
-                    ImGui::TextDisabled(
-                        "Material handle is valid, but resource is missing."
-                    );
-                }
+                ImGui::TextDisabled("No material assigned");
             }
 
             EndComponentHeader();
-        }
-    },
+        }},
 
         { typeid(SkeletonComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-            if (!BeginComponentHeader("Skeleton", del))
-                return;
+            if (!BeginComponentHeader("Skeleton", del)) return;
+
+            auto& skelComp = r.get<SkeletonComponent>(e);
+
+            std::string currentName = assetManager.skeletons().GetName(skelComp.skeleton);
+
+            ResourcePickerCombo<SkeletonTag>(
+                "Skeleton",
+                skelComp.skeleton,
+                currentName,
+                [&](auto&& fn) { assetManager.skeletons().ForEachSkeleton(fn); }
+            );
 
             auto skeleton = assetManager.skeletons().getSkeleton(r.get<SkeletonComponent>(e).skeleton);
 
@@ -724,55 +668,57 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         { typeid(AnimationState), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-        if (!BeginComponentHeader("Animation State", del))
-            return;
+            if (!BeginComponentHeader("Animation State", del))
+                return;
 
-        auto& state = r.get<AnimationState>(e);
+            auto& state = r.get<AnimationState>(e);
 
-        const AnimationClip* clip = nullptr;
-        if (state.clip.isValid())
-            clip = &assetManager.animations().Get(state.clip);
+            std::string clipName = assetManager.animations().Get(state.clip).name;
 
-        if (clip)
-        {
-            ImGui::Text("Clip: %s", clip->name.c_str());
-            ImGui::Text("Duration: %.2fs", clip->duration);
-            ImGui::Text("Tracks: %zu", clip->tracks.size());
-        }
-        else
-        {
-            ImGui::TextDisabled("No clip assigned / invalid handle");
-        }
+            ResourcePickerCombo<AnimationTag>(
+                "Clip",
+                state.clip,
+                clipName,
+                [&](auto&& fn) { assetManager.animations().ForEachAnimation(fn); }
+            );
 
-        ImGui::Separator();
+            const AnimationClip* clip = &assetManager.animations().Get(state.clip);
 
-        ImGui::Checkbox("Playing", &state.playing);
-        ImGui::SameLine();
-        ImGui::Checkbox("Looping", &state.looping);
+            if (clip)
+            {
+                ImGui::Text("Duration: %.2fs", clip->duration);
+                ImGui::Text("Tracks: %zu", clip->tracks.size());
+            }
+            else
+            {
+                ImGui::TextDisabled("No clip assigned / invalid handle");
+            }
 
-        if (clip && clip->duration > 0.0f)
-        {
-            ImGui::SliderFloat("Time", &state.time, 0.0f, clip->duration);
-        }
-        else
-        {
-            ImGui::DragFloat("Time", &state.time, 0.01f, 0.0f, 0.0f);
-        }
+            ImGui::Separator();
 
-        ImGui::DragFloat("Speed", &state.speed, 0.01f, -4.0f, 4.0f);
+            ImGui::Checkbox("Playing", &state.playing);
+            ImGui::SameLine();
+            ImGui::Checkbox("Looping", &state.looping);
 
-        ImGui::Separator();
-        ImGui::TextDisabled("Cache version: %u", state.lastSeenClipVersion);
+            if (clip && clip->duration > 0.0f)
+                ImGui::SliderFloat("Time", &state.time, 0.0f, clip->duration);
+            else
+                ImGui::DragFloat("Time", &state.time, 0.01f, 0.0f, 0.0f);
 
-        if (ImGui::SmallButton("Restart"))
-            state.time = 0.0f;
-        ImGui::SameLine();
-        if (ImGui::SmallButton(state.playing ? "Pause" : "Play"))
-            state.playing = !state.playing;
+            ImGui::DragFloat("Speed", &state.speed, 0.01f, -4.0f, 4.0f);
 
-        EndComponentHeader();
+            ImGui::Separator();
+            ImGui::TextDisabled("Cache version: %u", state.lastSeenClipVersion);
 
-    }},
+            if (ImGui::SmallButton("Restart"))
+                state.time = 0.0f;
+            ImGui::SameLine();
+            if (ImGui::SmallButton(state.playing ? "Pause" : "Play"))
+                state.playing = !state.playing;
+
+            EndComponentHeader();
+
+        }},
 
         { typeid(SkeletalAnimationTarget), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 

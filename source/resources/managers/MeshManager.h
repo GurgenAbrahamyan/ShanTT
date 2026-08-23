@@ -46,6 +46,28 @@ public:
     size_t getStaticMeshCount() const  { return staticPool.size(); }
     size_t getSkinnedMeshCount() const { return skinnedPool.size(); }
 
+    const std::string& GetStaticMeshName(StaticMeshID id) const {
+        static const std::string unknown = "<unnamed>";
+        const MeshRecord<StaticVertex>* rec = staticPool.get(id);
+        return rec ? rec->name : unknown; 
+    }
+
+    const std::string& GetSkinnedMeshName(SkinnedMeshID id) const {
+        static const std::string unknown = "<unnamed>";
+        const MeshRecord<SkinnedVertex>* rec = skinnedPool.get(id);
+        return rec ? rec->name : unknown;
+    }
+
+    template<typename Fn>
+    void ForEachStaticMesh(Fn&& fn) const {
+        staticPool.forEachAlive([&](Handle<StaticMeshTag> h, const MeshRecord<StaticVertex>& rec) { fn(h, rec.name); });
+    }
+
+    template<typename Fn>
+    void ForEachSkinnedMesh(Fn&& fn) const {
+        skinnedPool.forEachAlive([&](Handle<SkinnedMeshTag> h, const MeshRecord<SkinnedVertex>& rec) { fn(h, rec.name); });
+    }
+
 private:
     template <typename VertexT>
     struct MeshRecord {

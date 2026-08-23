@@ -11,11 +11,13 @@
 #include "ecs/components/core/ParentComponent.h"
 #include "ecs/components/core/TagComponent.h"
 
+#include "resources/managers/SkeletonManager.h"
 
 SpawnedModel spawnModel(
     const std::string& name,
     ModelAssetID assetId,
     ModelManager& models,
+    SkeletonManager& manager,
     entt::registry& registry)
 {
     SpawnedModel result;
@@ -39,7 +41,7 @@ SpawnedModel spawnModel(
         std::cout << "SKELETON IS FUCKING VALID!!!";
         registry.emplace<SkeletonComponent>(
             result.root,
-            def->skeleton
+            manager.instantiate(def->skeleton)
         );
     }
 

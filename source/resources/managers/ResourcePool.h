@@ -65,6 +65,13 @@ public:
         }
     }
 
+    template<typename Fn>
+    void forEachAlive(Fn&& fn) const {
+        for (uint32_t i = 0; i < slots.size(); ++i) {
+            if (slots[i].alive) fn(HandleType{ i, slots[i].generation }, slots[i].value);
+        }
+    }
+
 private:
     struct Slot {
         T value;

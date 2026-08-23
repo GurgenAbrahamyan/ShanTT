@@ -20,6 +20,17 @@ public:
 
     size_t getMaterialCount() const { return pool.size(); }
 
+    template<typename Fn>
+    void ForEachMaterial(Fn&& fn) const {
+        pool.forEachAlive([&](Handle<MaterialTag> h, const MaterialRecord& rec) { fn(h, rec.name); });
+    }
+
+    const std::string& GetName(MaterialID id) const {
+        static const std::string unknown = "<unnamed>";
+        const MaterialRecord* rec = pool.get(id);
+        return rec ? rec->name : unknown;
+    }
+
 private:
     struct MaterialRecord {
         Material material;
