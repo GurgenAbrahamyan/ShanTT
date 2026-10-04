@@ -12,7 +12,6 @@ class AssetManager;
 #include "EngineContext.h"
 #include "scene/SceneContext.h"
 #include "input/UIInput.h"
-
 class Engine {
 public:
     Engine();
@@ -30,8 +29,6 @@ private:
     InputManager input;
 
     AssetManager assetManager;
-    
-    UiInput debugUi;
 
     FrameRenderData frameData;          
 
@@ -43,6 +40,8 @@ private:
     SceneContext sceneContext;
 
     SceneManager sceneManager;
+
+    UiInput debugUi;
 
     bool running;
     float accumulator;

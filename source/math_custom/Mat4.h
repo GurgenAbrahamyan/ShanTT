@@ -260,6 +260,109 @@ public:
         return result;
     }
 
+Quat getRotation() const
+{
+    // Extract the three basis vectors.
+    Vector3 x(
+        (*this)(0, 0),
+        (*this)(1, 0),
+        (*this)(2, 0)
+    );
+
+    Vector3 y(
+        (*this)(0, 1),
+        (*this)(1, 1),
+        (*this)(2, 1)
+    );
+
+    Vector3 z(
+        (*this)(0, 2),
+        (*this)(1, 2),
+        (*this)(2, 2)
+    );
+
+    // Remove scale.
+    const float sx = x.length();
+    const float sy = y.length();
+    const float sz = z.length();
+
+    assert(sx > EPSILON);
+    assert(sy > EPSILON);
+    assert(sz > EPSILON);
+
+    x /= sx;
+    y /= sy;
+    z /= sz;
+
+    // Reconstruct the rotation matrix.
+    const float m00 = x.x;
+    const float m01 = y.x;
+    const float m02 = z.x;
+
+    const float m10 = x.y;
+    const float m11 = y.y;
+    const float m12 = z.y;
+
+    const float m20 = x.z;
+    const float m21 = y.z;
+    const float m22 = z.z;
+
+    const float trace =
+        m00 + m11 + m22;
+
+    Quat q;
+
+    if (trace > 0.0f)
+    {
+        const float s =
+            std::sqrt(trace + 1.0f) * 2.0f;
+
+        q.w = 0.25f * s;
+        q.x = (m21 - m12) / s;
+        q.y = (m02 - m20) / s;
+        q.z = (m10 - m01) / s;
+    }
+    else if (m00 > m11 && m00 > m22)
+    {
+        const float s =
+            std::sqrt(1.0f + m00 - m11 - m22) * 2.0f;
+
+        q.w = (m21 - m12) / s;
+        q.x = 0.25f * s;
+        q.y = (m01 + m10) / s;
+        q.z = (m02 + m20) / s;
+    }
+    else if (m11 > m22)
+    {
+        const float s =
+            std::sqrt(1.0f + m11 - m00 - m22) * 2.0f;
+
+        q.w = (m02 - m20) / s;
+        q.x = (m01 + m10) / s;
+        q.y = 0.25f * s;
+        q.z = (m12 + m21) / s;
+    }
+    else
+    {
+        const float s =
+            std::sqrt(1.0f + m22 - m00 - m11) * 2.0f;
+
+        q.w = (m10 - m01) / s;
+        q.x = (m02 + m20) / s;
+        q.y = (m12 + m21) / s;
+        q.z = 0.25f * s;
+    }
+
+    return q.normalized();
+}
+    Vector3 getTranslation() const {
+        return Vector3(
+            (*this)(0, 3),
+            (*this)(1, 3),
+            (*this)(2, 3)
+        );
+    }
+
     // Translation
     // Column-major: Tx Ty Tz live in last COLUMN -> indices 12, 13, 14
     //  1  0  0  Tx

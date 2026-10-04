@@ -461,6 +461,7 @@ private:
 
             m_instanceTransforms.resize(count);
             m_instancePaletteOffsets.resize(count);
+            m_instanceSkinningEnabled.resize(count);
 
             for (std::size_t i = 0; i < count; ++i)
             {
@@ -472,13 +473,17 @@ private:
 
                 m_instancePaletteOffsets[i] =
                     instance.paletteOffset;
+
+                m_instanceSkinningEnabled[i] = 
+                    instance.skinningEnabled ? 1.0f : 0.0f;
             }
 
-
+            
             mesh->bind();
 
             mesh->setupSkinnedTransformVBO(count);
             mesh->setupSkinnedPaletteOffsetVBO(count);
+            mesh->setupSkinnedEnabledVBO(count); 
 
 
             mesh->getSkinnedTransformVBO()->Bind();
@@ -497,6 +502,14 @@ private:
                 0,
                 count * sizeof(uint32_t),
                 m_instancePaletteOffsets.data()
+            );
+
+            mesh->getSkinnedEnabledVBO()->Bind();           
+            glBufferSubData(
+                GL_ARRAY_BUFFER, 
+                0, 
+                count * sizeof(float), 
+                m_instanceSkinningEnabled.data()
             );
 
 
@@ -518,11 +531,9 @@ private:
 
     StorageBuffer m_skinMatrices;
 
-    // Buffer A: per-instance world transforms
     std::vector<Mat4> m_instanceTransforms;
-
-    // Buffer B: per-instance palette offsets
     std::vector<uint32_t> m_instancePaletteOffsets;
+    std::vector<float>    m_instanceSkinningEnabled; 
 
     ResourceId m_albedo =
         INVALID_RESOURCE_ID;

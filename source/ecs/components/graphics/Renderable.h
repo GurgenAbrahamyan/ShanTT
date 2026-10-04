@@ -5,5 +5,6 @@
 struct RenderableComponent {
     MeshRef mesh;         
     MaterialID material;
+    bool applySkin = true;
     bool visible = true;
 };

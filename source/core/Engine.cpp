@@ -6,11 +6,11 @@
 #include <chrono>
 #include <iostream>
 
+#include "scene/SceneRenderData.h"
 Engine::Engine()
     : platform(CreatePlatform()),
       bus(),
-      input(bus),
-      debugUi(*platform.get(), &bus, assetManager), 
+      input(bus), 
       renderer(),
       physicsEngine(PhysicsEngine()),
       engineContext({*platform.get(),
@@ -24,6 +24,10 @@ Engine::Engine()
                     nullptr}),
       sceneContext(engineContext),
       sceneManager(sceneContext),
+      debugUi(*platform.get(), 
+            &bus, 
+            assetManager, 
+            physicsEngine),
       running(true),
       accumulator(0.0f),
       framesThisSecond(0),
@@ -44,7 +48,7 @@ Engine::Engine()
 
     renderer.Init();
     debugUi.Initialize();
-
+    physicsEngine.Init();
 }
 
 Engine::~Engine() {
@@ -63,8 +67,8 @@ void Engine::run() {
 
         accumulator += frameTime;
         while (accumulator >= PHYSICS_STEP) {
-            physicsEngine.update(sceneManager.Current()->Registry(), PHYSICS_STEP);
             sceneManager.FixedUpdate(PHYSICS_STEP);
+            physicsEngine.Update(PHYSICS_STEP);
             accumulator -= PHYSICS_STEP;
         }
 
@@ -76,17 +80,23 @@ void Engine::run() {
         renderer.render(frameData);
 
         debugUi.startNewFrame();
+
         debugUi.buildUI(
             sceneManager.Current()->Registry(),
             platform->GetFramebufferSize(),
             renderer.getDebugRenderData(),
             renderer.getRenderGraph()
         );
+
         debugUi.render();
 
-        platform->SwapBuffers();
+
+       // std::cout << "lines=" << physrenderer.LineCount() << " tris=" << physrenderer.TriCount() << "\n"
+        
 
         input.EndFrame();
+
+        platform->SwapBuffers();
 
         framesThisSecond++;
         timeSinceLastFpsPrint += frameTime;

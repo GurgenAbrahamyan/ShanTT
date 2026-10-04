@@ -12,6 +12,7 @@ layout(location = 10) in uvec4 aJoints;
 layout(location = 11) in vec4 aWeights;
 
 layout(location = 12) in uint paletteOffset;
+layout(location = 13) in float enableSkining;
 
 out vec2 vUV;
 out vec3 vNormal;
@@ -29,24 +30,37 @@ layout(std430, binding = 0) readonly buffer SkinMatrices
 
 void main(){
 
-    mat4 skinMatrix =
-      aWeights.x *
-          jointMatrices[paletteOffset + aJoints.x]
-    + aWeights.y *
-          jointMatrices[paletteOffset + aJoints.y]
-    + aWeights.z *
-          jointMatrices[paletteOffset + aJoints.z]
-    + aWeights.w *
-          jointMatrices[paletteOffset + aJoints.w];
+    vec4 skinnedPos;
+    vec3 skinnedNormal;
+    vec3 skinnedTangent;
 
-    vec4 skinnedPos =
-        skinMatrix * vec4(aPos, 1.0);
+    if (enableSkining > 0.5)
+    {
+        mat4 skinMatrix =
+              aWeights.x *
+                  jointMatrices[paletteOffset + aJoints.x]
+            + aWeights.y *
+                  jointMatrices[paletteOffset + aJoints.y]
+            + aWeights.z *
+                  jointMatrices[paletteOffset + aJoints.z]
+            + aWeights.w *
+                  jointMatrices[paletteOffset + aJoints.w];
 
-    vec3 skinnedNormal =
-        mat3(skinMatrix) * aNormal;
+        skinnedPos =
+            skinMatrix * vec4(aPos, 1.0);
 
-    vec3 skinnedTangent =
-        mat3(skinMatrix) * aTangent;
+        skinnedNormal =
+            mat3(skinMatrix) * aNormal;
+
+        skinnedTangent =
+            mat3(skinMatrix) * aTangent;
+    }
+    else
+    {
+        skinnedPos      = vec4(aPos, 1.0);
+        skinnedNormal   = aNormal;
+        skinnedTangent  = aTangent;
+    }
 
     vec4 worldPos =
         instanceModel * skinnedPos;
@@ -109,15 +123,4 @@ void main(){
         projection *
         view *
         worldPos;
-
-       /*mat4 skinMatrix = jointMatrices[0];
-
-        vec4 skinnedPos =
-            skinMatrix * vec4(aPos, 1.0);
-
-        vec4 worldPos =
-            instanceModel * skinnedPos;
-
-        gl_Position =
-            projection * view * worldPos;*/
 }

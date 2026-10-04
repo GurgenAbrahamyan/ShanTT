@@ -14,4 +14,4 @@ public:
     virtual void extract(entt::registry& registry, FrameRenderData& out) = 0;
 
     virtual void onShutdown() {}
-};
+};  

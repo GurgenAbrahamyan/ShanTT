@@ -17,7 +17,96 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(googletest)
 
+
+
 enable_testing()
+FetchContent_Declare(
+    JoltPhysics
+    GIT_REPOSITORY https://github.com/jrouwe/JoltPhysics.git
+    GIT_TAG v5.5.0
+    SOURCE_SUBDIR Build   
+)
+
+set(DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
+set(CPP_RTTI_ENABLED ON CACHE BOOL "" FORCE)
+set(GENERATE_DEBUG_SYMBOLS ON CACHE BOOL "" FORCE)
+set(CROSS_PLATFORM_DETERMINISTIC OFF CACHE BOOL "" FORCE)
+set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
+set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "" FORCE) 
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(TARGET_SAMPLES OFF CACHE BOOL "" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(JoltPhysics)
+
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if (MSVC)
+	set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE "x64")
+
+	if (USE_STATIC_MSVC_RUNTIME_LIBRARY)
+		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /Gm- /MP /nologo /diagnostics:classic /FC /fp:except- /Zc:inline")
+
+	if (ENABLE_ALL_WARNINGS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall /WX")
+	endif()
+	
+	if (GENERATE_DEBUG_SYMBOLS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi")
+	endif()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR")
+	
+	if (OVERRIDE_CXX_FLAGS)
+		set(CMAKE_CXX_FLAGS_DEBUG "/GS /Od /Ob0 /RTC1")
+		set(CMAKE_CXX_FLAGS_RELEASE "/GS- /Gy /O2 /Oi /Ot")
+	endif()
+
+	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+		if (CROSS_PLATFORM_DETERMINISTIC)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise")
+		else()
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast") 
+	endif()
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /showFilenames")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments") 
+    endif()
+else()
+    if (ENABLE_ALL_WARNINGS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
+	endif()
+	if (GENERATE_DEBUG_SYMBOLS)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+	endif()
+
+	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow -ffp-contract=off")
+	else()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-model=precise")
+
+		if (CMAKE_CXX_COMPILER_VERSION LESS 14 OR CROSS_PLATFORM_DETERMINISTIC)
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
+		endif()
+	endif()
+
+    if ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin" AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -faligned-allocation")
+	endif()
+
+	if (OVERRIDE_CXX_FLAGS)
+		set(CMAKE_CXX_FLAGS_DEBUG "")
+		set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+	endif()
+	set(CMAKE_CXX_FLAGS_DISTRIBUTION "${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,6 +141,7 @@ set(ECS_HEADERS
 
 set(ECS_FACTORY_SOURCES
     source/ecs/factories/GraphicsEntityFactory.cpp
+    source/ecs/factories/PhysicsComponentFactory.cpp
     source/ecs/factories/ModelSpawner.cpp
 )
 
@@ -114,9 +204,15 @@ set(ANIMATION_HEADERS
     source/animation/AnimationState.h
     source/animation/Track.h
     source/animation/ecs_systems/SkeletonAnimationSystem.h
+    source/animation/ecs_systems/SkeletonAnimationPoseSystem.h
+    source/animation/ecs_systems/SkeletalPoseResolveExtractionSystem.h
+    source/animation/ecs_systems/AnimationSocketTransformSystem.h
 )
 set(ANIMATION_SOURCES
     source/animation/ecs_systems/SkeletonAnimationSystem.cpp
+    source/animation/ecs_systems/SkeletonAnimationPoseSystem.cpp
+    source/animation/ecs_systems/SkeletalPoseResolveExtractionSystem.cpp
+    source/animation/ecs_systems/AnimationSocketTransformSystem.cpp
     source/animation/AnimationManager.cpp
 )
 
@@ -125,6 +221,8 @@ set(PHYSICS_SOURCES
     source/physics/dynamics/ForceGenerator.cpp
     source/physics/dynamics/GeneralIntegrators.cpp
     source/physics/ecs_systems/RigidBodyIntegrator.cpp
+    source/physics/ecs_systems/RagdollMotorTargetSystem.cpp
+    source/physics/managers/RagdollManager.cpp
 )
 
 set(PHYSICS_HEADERS
@@ -134,6 +232,9 @@ set(PHYSICS_HEADERS
     source/physics/dynamics/colider/Header.h
     source/physics/ecs_systems/RigidBodyIntegrator.h
     source/physics/particles/Particle.h
+    source/physics/ecs_systems/RagdollMotorTargetSystem.h
+    source/physics/managers/RagdollManager.h
+    #source/physics/debug_render/DebugRender.h
 )
 
 set(RENDER_SOURCES
@@ -326,11 +427,14 @@ target_include_directories(ShanTT_Engine SYSTEM PUBLIC
     ${CMAKE_SOURCE_DIR}/include/KHR
 )
 
+
 find_package(OpenGL REQUIRED)
 
 target_link_libraries(ShanTT_Engine
     PRIVATE
         OpenGL::GL
+    PUBLIC
+        Jolt
 )
 
 if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
@@ -351,6 +455,8 @@ if(ENGINE_PLATFORM_BACKEND STREQUAL "GLFW")
             glfw
     )
 endif()
+
+
 
 target_compile_options(ShanTT_Engine PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>

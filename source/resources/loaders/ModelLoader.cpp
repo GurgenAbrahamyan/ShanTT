@@ -267,7 +267,7 @@ void ModelLoader::parseMaterial(unsigned int materialIndex)
     {
         const json& pbr = matJSON["pbrMetallicRoughness"];
         mat.metallic = pbr.value("metallicFactor", 1.0f);
-        mat.roughness = pbr.value("roughnessFactor", 0.0f);
+        mat.roughness = pbr.value("roughnessFactor", 1.0f);
         if (pbr.contains("baseColorFactor")) {
             auto& c = pbr["baseColorFactor"];
             mat.baseColorFactor = { c[0], c[1], c[2], c[3] };

@@ -7,6 +7,7 @@
 #include "render/backend/ShaderManager.h"
 #include "SkeletonManager.h"
 #include "animation/AnimationManager.h"
+#include "physics/managers/RagdollManager.h"
 
 class AssetManager
 {
@@ -19,6 +20,7 @@ public:
     ShaderManager&    shaders()   { return m_shaders;   }
     SkeletonManager&  skeletons() { return m_skeletons; }
     AnimationManager& animations(){ return m_animations;}
+    RagdollManager&    ragdolls()  { return m_ragdolls;}
 private:
     TextureManager   m_textures;
     MeshManager      m_meshes;
@@ -27,4 +29,5 @@ private:
     ModelManager     m_models{&m_meshes, &m_materials, &m_textures, &m_skeletons};
     ShaderManager    m_shaders;
     AnimationManager m_animations;
+    RagdollManager   m_ragdolls;
 };

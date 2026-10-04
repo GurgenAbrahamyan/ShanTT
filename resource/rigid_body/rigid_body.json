@@ -1,0 +1,290 @@
+{
+  "asset": "mech_biped_default",
+  "version": 1,
+  "bodies": [
+    {
+      "bone": "pelvis",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 8.0,
+      "friction": 0.8,
+      "restitution": 0.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ]
+    },
+    {
+      "bone": "spine_01",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 5.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 1200.0,
+        "breakForceThreshold": 6000.0,
+        "health": 150.0
+      }
+    },
+    {
+      "bone": "spine_02",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 5.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 1000.0,
+        "breakForceThreshold": 5000.0,
+        "health": 130.0
+      }
+    },
+    {
+      "bone": "spine_03",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 4.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 900.0,
+        "breakForceThreshold": 4500.0,
+        "health": 120.0
+      }
+    },
+    {
+      "bone": "Head",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 2.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 10.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 300.0,
+        "breakForceThreshold": 1500.0,
+        "health": 80.0
+      }
+    },
+    {
+      "bone": "upperarm_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 2.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 600.0,
+        "breakForceThreshold": 3000.0,
+        "health": 100.0
+      }
+    },
+    {
+      "bone": "lowerarm_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 2.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 450.0,
+        "breakForceThreshold": 2200.0,
+        "health": 90.0
+      }
+    },
+    {
+      "bone": "hand_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 1.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 10.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 200.0,
+        "breakForceThreshold": 1200.0,
+        "health": 60.0
+      }
+    },
+    {
+      "bone": "upperarm_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 2.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 600.0,
+        "breakForceThreshold": 3000.0,
+        "health": 100.0
+      }
+    },
+    {
+      "bone": "lowerarm_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 2.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 450.0,
+        "breakForceThreshold": 2200.0,
+        "health": 90.0
+      }
+    },
+    {
+      "bone": "hand_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 1.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 10.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 200.0,
+        "breakForceThreshold": 1200.0,
+        "health": 60.0
+      }
+    },
+    {
+      "bone": "thigh_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 5.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 1500.0,
+        "breakForceThreshold": 7000.0,
+        "health": 160.0
+      }
+    },
+    {
+      "bone": "calf_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 3.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 900.0,
+        "breakForceThreshold": 4500.0,
+        "health": 130.0
+      }
+    },
+    {
+      "bone": "foot_l",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 1.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 10.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 400.0,
+        "breakForceThreshold": 2000.0,
+        "health": 90.0
+      }
+    },
+    {
+      "bone": "thigh_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 5.0,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 1500.0,
+        "breakForceThreshold": 7000.0,
+        "health": 160.0
+      }
+    },
+    {
+      "bone": "calf_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 3.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 8.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 900.0,
+        "breakForceThreshold": 4500.0,
+        "health": 130.0
+      }
+    },
+    {
+      "bone": "foot_r",
+      "shape": {
+        "type": "sphere",
+        "radius": 0.05
+      },
+      "mass": 1.5,
+      "localOffset": [ 0.0, 0.0, 0.0 ],
+      "localRotationOffset": [ 0.0, 0.0, 0.0, 1.0 ],
+      "joint": {
+        "motorFrequency": 10.0,
+        "motorDamping": 1.0,
+        "maxMotorTorque": 400.0,
+        "breakForceThreshold": 2000.0,
+        "health": 90.0
+      }
+    }
+  ]
+}
