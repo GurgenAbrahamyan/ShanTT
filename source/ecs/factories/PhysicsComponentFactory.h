@@ -2,88 +2,90 @@
 #include "../components/physics/RigidBodyComponent.h"
 #include "../components/physics/CollisionShapeComponent.h"
 #include "../components/core/TransformComponent.h"
+#include "../components/physics/RagDollComponent.h"
+
+#include "resources/assets/Skeleton/Skeleton.h"
 #include "../../math_custom/Vector3.h"
 #include "../../math_custom/Quat.h"
 #include "EnTT/entt.hpp"
 #include <iostream>
-namespace PhysicsComponentFactory {
+#include "physics/data/RagdollData.h"
 
-    TransformComponent createTransform(Vector3 translation = Vector3(), Quat rotation = Quat(), Vector3 scale = Vector3(1, 1, 1)) {
-        TransformComponent transform;
-        transform.position = translation;
-        transform.rotation = rotation;
-        transform.scale = scale;
-        return transform;
-    }
+#include "scene/SceneContext.h"
 
-    RigidBodyComponent createRigidBody(entt::registry& registry, entt::entity entity, Vector3 translation = Vector3(), Quat rotation = Quat(), Vector3 scale = Vector3(1, 1, 1), float mass = 0 ) {
-        RigidBodyComponent rb;
-        rb.mass = mass;
-        rb.invmass = mass > 0.0f ? 1.0f / mass : 0.0f;
-        rb.linearVelocity = Vector3(0, 0, 0);
-        rb.angularVelocity = Vector3(0, 0, 0);
-        rb.forceAccum = Vector3(0, 0, 0);
+#include <Jolt/Jolt.h>
 
-        if (!registry.all_of<TransformComponent>(entity)) {
-            std::cout << "creating transform";
-            registry.emplace<TransformComponent>(entity, createTransform(translation, rotation, scale));
-        }
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Body/MotionType.h>
+#include <Jolt/Physics/Collision/Shape/Shape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+#include <Jolt/Physics/Constraints/SixDOFConstraint.h>
+#include <Jolt/Physics/Body/BodyInterface.h>
 
-        return rb;
-    }
+#include "ecs/factories/ModelSpawner.h"
+#pragma once
 
-    
+#include "../components/physics/RigidBodyComponent.h"
+#include "../components/physics/CollisionShapeComponent.h"
+#include "../components/core/TransformComponent.h"
+#include "../components/physics/RagDollComponent.h"
 
+#include "resources/assets/Skeleton/Skeleton.h"
+#include "../../math_custom/Vector3.h"
+#include "../../math_custom/Quat.h"
 
+#include <EnTT/entt.hpp>
 
-    RigidBodyComponent createStaticBody(entt::registry& reg, entt::entity entity) {
-        return createRigidBody(reg, entity);
-    }
+#include "physics/data/RagdollData.h"
+#include "scene/SceneContext.h"
+#include "ecs/factories/ModelSpawner.h"
+
+namespace PhysicsComponentFactory
+{
+    TransformComponent createTransform(
+        Vector3 translation = Vector3(),
+        Quat rotation = Quat(),
+        Vector3 scale = Vector3(1, 1, 1)
+    );
+
+    RigidBodyComponent createRigidBody(
+        entt::registry& registry,
+        entt::entity entity,
+        Vector3 translation = Vector3(),
+        Quat rotation = Quat(),
+        Vector3 scale = Vector3(1, 1, 1),
+        float mass = 0.0f
+    );
+
+    RigidBodyComponent createStaticBody(
+        entt::registry& registry,
+        entt::entity entity
+    );
 
     CollisionShapeComponent createCubeShape(
         Vector3 scale,
         Vector3 localPosition = Vector3(0, 0, 0),
-        Quat    localRotation = Quat(),
-        Vector3 localScale = Vector3(1, 1, 1))
-    {
-        float hw = scale.x * 0.5f;
-        float hd = scale.y * 0.5f;
-        float hh = scale.z * 0.5f;
-
-        CollisionShapeComponent shape;
-        shape.vertices = {
-            Vector3(-hw,-hd,-hh), Vector3(hw,-hd,-hh),
-            Vector3(hw, hd,-hh), Vector3(-hw, hd,-hh),
-            Vector3(-hw,-hd, hh), Vector3(hw,-hd, hh),
-            Vector3(hw, hd, hh), Vector3(-hw, hd, hh)
-        };
-        shape.indices = {
-            0,1,2, 2,3,0,
-            4,6,5, 6,4,7,
-            0,1,5, 5,4,0,
-            2,3,7, 7,6,2,
-            0,3,7, 7,4,0,
-            1,2,6, 6,5,1
-        };
-        shape.localPosition = localPosition;
-        shape.localRotation = localRotation;
-        shape.localScale = localScale;
-        return shape;
-    }
+        Quat localRotation = Quat(),
+        Vector3 localScale = Vector3(1, 1, 1)
+    );
 
     CollisionShapeComponent createCustomShape(
-        std::vector<Vector3>      vertices,
+        std::vector<Vector3> vertices,
         std::vector<unsigned int> indices,
         Vector3 localPosition = Vector3(0, 0, 0),
-        Quat    localRotation = Quat(),
-        Vector3 localScale = Vector3(1, 1, 1))
-    {
-        CollisionShapeComponent shape;
-        shape.vertices = vertices;
-        shape.indices = indices;
-        shape.localPosition = localPosition;
-        shape.localRotation = localRotation;
-        shape.localScale = localScale;
-        return shape;
-    }
+        Quat localRotation = Quat(),
+        Vector3 localScale = Vector3(1, 1, 1)
+    );
+
+    void BuildRagdoll(
+        entt::registry& registry,
+        const SpawnedModel& model,
+        const RagdollAsset& asset,
+        Skeleton& skeleton,
+        SceneContext& context
+    );
 }

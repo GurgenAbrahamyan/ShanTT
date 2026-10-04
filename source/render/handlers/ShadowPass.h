@@ -1,20 +1,27 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "RenderPass.h"
 #include "../RenderGraphBuilder.h"
 #include "../PassResources.h"
 
+#include "scene/SceneRenderData.h"
+
 #include "../backend/Shader.h"
+#include "../backend/containers/StorageBuffer.h"
 
 #include "render/ecs_systems/ShadowAtlas.h"
 
 class ShadowPass : public RenderPass
 {
-   
+
 public:
 
     struct ShadowPassOptions{
         Shader* shader;
+        Shader* skinnedShader;
     };
 
     ShadowPass(
@@ -22,7 +29,8 @@ public:
         const ShadowPassOptions& options
     )
         : RenderPass(builder, "Shadow"),
-          m_shader(options.shader)
+          m_shader(options.shader),
+          m_skinnedShader(options.skinnedShader)
     {
         TextureDesc shadowTextureDesc;
 
@@ -82,7 +90,23 @@ public:
     ) override;
 
 private:
+
+    void renderStatic(
+        const SceneRenderData& scene
+    );
+
+    void renderSkinned(
+        const SceneRenderData& scene
+    );
+
     Shader* m_shader = nullptr;
+    Shader* m_skinnedShader = nullptr;
+
+    StorageBuffer m_skinMatrices;
+
+    std::vector<Mat4> m_instanceTransforms;
+    std::vector<uint32_t> m_instancePaletteOffsets;
+    std::vector<float> m_instanceSkinningEnabled;
 
     ResourceId m_shadowTexture =
         INVALID_RESOURCE_ID;

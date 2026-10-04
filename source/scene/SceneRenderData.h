@@ -14,7 +14,6 @@
 #include "resources/data/RenderMaterialData.h"
 #include "render/data/ShadowData.h"
 #include "resources/managers/MaterialHandleTypes.h"
-#include "resources/assets/Skeleton/Skeleton.h"
 
 struct SceneRenderData
 {
@@ -28,8 +27,8 @@ struct SceneRenderData
         Mat4 worldTransform;
 
         uint32_t paletteOffset = 0;
-        
-        const Skeleton* skeleton = nullptr;
+
+        bool skinningEnabled = true;
     };
 
     struct SkinnedBatch

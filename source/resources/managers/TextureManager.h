@@ -67,6 +67,27 @@ public:
 
     void NextTexture(EventBus* bus);
 
+
+    std::string GetTextureName(TextureID id) const {
+        const TextureRecord* rec = texturePool.get(id);
+        return rec ? rec->path : "<unnamed>";
+    }
+
+    std::string GetCubeMapName(CubeMapID id) const {
+        const CubeMapRecord* rec = cubeMapPool.get(id);
+        return rec ? rec->path : "<unnamed>";
+    }
+
+    template<typename Fn>
+    void ForEachTexture(Fn&& fn) const {
+        texturePool.forEachAlive([&](Handle<TextureTag> h, const TextureRecord& rec) { fn(h, rec.path); });
+    }
+
+    template<typename Fn>
+    void ForEachCubeMap(Fn&& fn) const {
+        cubeMapPool.forEachAlive([&](Handle<CubeMapTag> h, const CubeMapRecord& rec) { fn(h, rec.path); });
+    }
+
 private:
     std::unique_ptr<Texture> createSinglePixel(unsigned char* data, int channels, GLenum internalFormat);
 

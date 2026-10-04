@@ -6,6 +6,112 @@
 #include "render/handlers/FXAAPass.h"
 #include "render/handlers/ToneMappingPass.h"
 
+#include "ecs/components/physics/RagdollBodyComponent.h"
+#include "ecs/components/physics/BoneComponent.h"
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
+namespace
+{
+    JPH::RefConst<JPH::Shape> BuildShapeFromBody(const RagdollBodyComponent& b)
+    {
+        switch (b.shapeType)
+        {
+            case RagdollShapeType::Capsule:
+                return new JPH::CapsuleShape(b.halfHeight, b.radius);
+            case RagdollShapeType::Box:
+                return new JPH::BoxShape(JPH::Vec3(b.halfExtent.x, b.halfExtent.y, b.halfExtent.z));
+            case RagdollShapeType::Sphere:
+                return new JPH::SphereShape(b.radius);
+            default:
+                return nullptr;
+        }
+    }
+}
+
+void UiInput::DrawRagdollShapeEditorWindow(entt::registry& registry, Vector2 windowSizes)
+{
+    const float windowWidth = windowSizes.x;
+    const float pad = 10.f;
+    const float w = windowWidth / 4.f;
+
+    ImGui::SetNextWindowSize(ImVec2(w, 500), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_FirstUseEver);
+
+    bool open = ragdollShapeEditorOpen;
+    ImGui::Begin("Ragdoll Bone Shapes", &open, ImGuiWindowFlags_NoCollapse);
+
+    auto& bodyInterface = physics.GetSystem().GetBodyInterface();
+
+    ImGui::Columns(2, "ragdoll_shape_cols", true);
+
+    // ── bone list ──────────────────────────────
+    auto view = registry.view<RagdollBodyComponent, BoneComponent>();
+
+    for (auto [entity, body, bone] : view.each())
+    {
+        std::string label = body.boneName.empty()
+            ? ("Bone " + std::to_string(bone.boneIndex))
+            : body.boneName;
+
+        bool isSel = (entity == selectedRagdollBone);
+        if (ImGui::Selectable(label.c_str(), isSel))
+            selectedRagdollBone = entity;
+    }
+
+    ImGui::NextColumn();
+
+    // ── editor ─────────────────────────────────
+    if (registry.valid(selectedRagdollBone) &&
+        registry.all_of<RagdollBodyComponent>(selectedRagdollBone))
+    {
+        auto& body = registry.get<RagdollBodyComponent>(selectedRagdollBone);
+
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.f, 1.f), "%s", body.boneName.c_str());
+        ImGui::Separator();
+
+        bool changed = false;
+
+        const char* shapeNames[] = { "Sphere", "Capsule", "Box" };
+        int shapeIdx = static_cast<int>(body.shapeType);
+        if (ImGui::Combo("Shape Type", &shapeIdx, shapeNames, 3))
+        {
+            body.shapeType = static_cast<RagdollShapeType>(shapeIdx);
+            changed = true;
+        }
+
+        switch (body.shapeType)
+        {
+            case RagdollShapeType::Sphere:
+                changed |= ImGui::DragFloat("Radius", &body.radius, 0.005f, 0.01f, 1.0f);
+                break;
+            case RagdollShapeType::Capsule:
+                changed |= ImGui::DragFloat("Radius", &body.radius, 0.005f, 0.01f, 0.5f);
+                changed |= ImGui::DragFloat("Half Height", &body.halfHeight, 0.005f, 0.01f, 1.0f);
+                break;
+            case RagdollShapeType::Box:
+                changed |= ImGui::DragFloat3("Half Extent", &body.halfExtent.x, 0.005f, 0.01f, 1.0f);
+                break;
+        }
+
+        if (changed && !body.bodyId.IsInvalid())
+        {
+            if (auto shape = BuildShapeFromBody(body))
+                bodyInterface.SetShape(body.bodyId, shape, true, JPH::EActivation::Activate);
+        }
+    }
+    else
+    {
+        ImGui::TextDisabled("Select a bone");
+    }
+
+    ImGui::Columns(1);
+    ImGui::End();
+
+    ragdollShapeEditorOpen = open;
+}
+
 bool UiInput::Initialize()
 {
     if (initialized)
@@ -62,7 +168,11 @@ bool UiInput::Initialize()
     return true;
 }
 
-UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager) :  assetManager(assetManager),  bus(bus),  platform(platform)
+UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager, PhysicsEngine& physics) 
+                :  assetManager(assetManager)
+                ,  bus(bus) 
+                ,  platform(platform)
+                ,  physics(physics)
 
 {
    // ── Pass render map ───────────────────────────────────────────────────────
@@ -436,195 +546,140 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         }},
 
-        { typeid(RenderableComponent), [&](entt::registry& r, entt::entity e, bool& del)
+        { typeid(RenderableComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del)
         {
             if (!BeginComponentHeader("Renderable", del))
                 return;
 
-            auto& renderer =
-                r.get<RenderableComponent>(e);
+            auto& renderer = r.get<RenderableComponent>(e);
 
-            ImGui::Checkbox(
-                "Visible",
-                &renderer.visible
-            );
-
+            ImGui::Checkbox("Visible", &renderer.visible);
+            ImGui::Checkbox("Apply Skinning", &renderer.applySkin);
             ImGui::Separator();
 
             ImGui::TextUnformatted("Mesh");
 
+            std::string meshPreview = "<none>";
             if (!renderer.mesh.valueless_by_exception())
             {
-                std::visit(
-                    [&](const auto& meshID)
-                    {
-                        using ID = std::decay_t<decltype(meshID)>;
-
-                        if (!meshID.isValid())
-                        {
-                            ImGui::TextDisabled("Invalid");
-                            return;
-                        }
-
-                        if constexpr (
-                            std::is_same_v<ID, StaticMeshID>
-                        )
-                        {
-                            ImGui::TextDisabled("Type: Static");
-                        }
-                        else if constexpr (
-                            std::is_same_v<ID, SkinnedMeshID>
-                        )
-                        {
-                            ImGui::TextDisabled("Type: Skinned");
-                        }
-                    },
-                    renderer.mesh
-                );
+                std::visit([&](const auto& id) {
+                    using ID = std::decay_t<decltype(id)>;
+                    if (!id.isValid()) return;
+                    if constexpr (std::is_same_v<ID, StaticMeshID>)
+                        meshPreview = "[Static] " + assetManager.meshes().GetStaticMeshName(id);
+                    else if constexpr (std::is_same_v<ID, SkinnedMeshID>)
+                        meshPreview = "[Skinned] " + assetManager.meshes().GetSkinnedMeshName(id);
+                }, renderer.mesh);
             }
-            else
+
+            if (ImGui::BeginCombo("##meshpicker", meshPreview.c_str()))
             {
-                ImGui::TextDisabled("No mesh assigned");
+                ImGui::TextDisabled("Static Meshes");
+                ImGui::Separator();
+                assetManager.meshes().ForEachStaticMesh([&](StaticMeshID h, const std::string& name)
+                {
+                    bool selected = std::holds_alternative<StaticMeshID>(renderer.mesh)
+                        && std::get<StaticMeshID>(renderer.mesh) == h;
+                    ImGui::PushID((int)h.index);
+                    if (ImGui::Selectable((name.empty() ? "<unnamed>" : name).c_str(), selected))
+                        renderer.mesh = h;
+                    ImGui::PopID();
+                });
+
+                ImGui::Spacing();
+                ImGui::TextDisabled("Skinned Meshes");
+                ImGui::Separator();
+                assetManager.meshes().ForEachSkinnedMesh([&](SkinnedMeshID h, const std::string& name)
+                {
+                    bool selected = std::holds_alternative<SkinnedMeshID>(renderer.mesh)
+                        && std::get<SkinnedMeshID>(renderer.mesh) == h;
+                    ImGui::PushID((int)(1'000'000 + h.index)); // avoid ID collision with static section
+                    if (ImGui::Selectable((name.empty() ? "<unnamed>" : name).c_str(), selected))
+                        renderer.mesh = h;
+                    ImGui::PopID();
+                });
+
+                ImGui::EndCombo();
             }
 
             ImGui::Separator();
 
-            // --------------------------------------------------------
-            // Material
-            // --------------------------------------------------------
-
             ImGui::TextUnformatted("Material");
 
-            if (!renderer.material.isValid())
+            std::string matName = assetManager.materials().GetName(renderer.material);
+            ResourcePickerCombo<MaterialTag>(
+                "##materialpicker",
+                renderer.material,
+                matName,
+                [&](auto&& fn) { assetManager.materials().ForEachMaterial(fn); }
+            );
+
+            if (auto* material = assetManager.materials().getMaterial(renderer.material))
             {
-                ImGui::TextDisabled("No material assigned");
+                ImGui::Spacing();
+                ImGui::DragFloat("Metallic", &material->metallic, 0.01f, 0.f, 1.f);
+                ImGui::DragFloat("Roughness", &material->roughness, 0.01f, 0.f, 1.f);
+                ImGui::DragFloat("AO", &material->ao, 0.01f, 0.f, 1.f);
+
+                float bc[4] = { material->baseColorFactor.x, material->baseColorFactor.y,
+                                material->baseColorFactor.z, material->baseColorFactor.w };
+                if (ImGui::ColorEdit4("Base Color", bc))
+                    material->baseColorFactor = { bc[0], bc[1], bc[2], bc[3] };
+
+                float ec[3] = { material->emissiveFactor.x, material->emissiveFactor.y, material->emissiveFactor.z };
+                if (ImGui::ColorEdit3("Emissive", ec))
+                    material->emissiveFactor = { ec[0], ec[1], ec[2] };
+
+                ImGui::Spacing(); ImGui::Separator();
+                ImGui::TextUnformatted("Textures");
+                ImGui::Separator(); ImGui::Spacing();
+
+                static const char* slotLabels[] = { "Albedo", "ARM", "Normal", "Emissive", "Height" };
+
+                for (int slot = 0; slot < static_cast<int>(MaterialSlot::Count); ++slot)
+                {
+                    auto matSlot = static_cast<MaterialSlot>(slot);
+                    TextureID currentTex = material->GetTexture(matSlot);
+
+                    DrawTextureSlot(slotLabels[slot], assetManager.textures().getTexture(currentTex), 56.f);
+
+                    std::string texName = assetManager.textures().GetTextureName(currentTex);
+                    ImGui::PushID(slot);
+                    if (ResourcePickerCombo<TextureTag>(
+                            "##texpick",
+                            currentTex,
+                            texName,
+                            [&](auto&& fn) { assetManager.textures().ForEachTexture(fn); }))
+                    {
+                        material->SetTexture(matSlot, currentTex);
+                    }
+                    ImGui::PopID();
+
+                    ImGui::Spacing();
+                }
             }
             else
             {
-                ImGui::TextDisabled("Assigned");
-
-                if (auto* material =
-                    assetManager.materials().getMaterial(
-                        renderer.material))
-                {
-                    ImGui::Spacing();
-
-                    ImGui::DragFloat(
-                        "Metallic",
-                        &material->metallic,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    ImGui::DragFloat(
-                        "Roughness",
-                        &material->roughness,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    ImGui::DragFloat(
-                        "AO",
-                        &material->ao,
-                        0.01f,
-                        0.f,
-                        1.f
-                    );
-
-                    float bc[4] =
-                    {
-                        material->baseColorFactor.x,
-                        material->baseColorFactor.y,
-                        material->baseColorFactor.z,
-                        material->baseColorFactor.w
-                    };
-
-                    if (ImGui::ColorEdit4(
-                        "Base Color",
-                        bc
-                    ))
-                    {
-                        material->baseColorFactor =
-                        {
-                            bc[0],
-                            bc[1],
-                            bc[2],
-                            bc[3]
-                        };
-                    }
-
-                    float ec[3] =
-                    {
-                        material->emissiveFactor.x,
-                        material->emissiveFactor.y,
-                        material->emissiveFactor.z
-                    };
-
-                    if (ImGui::ColorEdit3(
-                        "Emissive",
-                        ec
-                    ))
-                    {
-                        material->emissiveFactor =
-                        {
-                            ec[0],
-                            ec[1],
-                            ec[2]
-                        };
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-
-                    ImGui::TextUnformatted("Textures");
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    static const char* slotLabels[] =
-                    {
-                        "Albedo",
-                        "ARM",
-                        "Normal",
-                        "Emissive"
-                    };
-
-                    constexpr int kDisplaySlots = 4;
-
-                    for (int slot = 0;
-                        slot < kDisplaySlots;
-                        ++slot)
-                    {
-                        DrawTextureSlot(
-                            slotLabels[slot],
-                            assetManager.textures().getTexture(
-                                material->GetTexture(
-                                    static_cast<MaterialSlot>(slot)
-                                )
-                            ),
-                            56.f
-                        );
-
-                        ImGui::Spacing();
-                    }
-                }
-                else
-                {
-                    ImGui::TextDisabled(
-                        "Material handle is valid, but resource is missing."
-                    );
-                }
+                ImGui::TextDisabled("No material assigned");
             }
 
             EndComponentHeader();
-        }
-    },
+        }},
 
         { typeid(SkeletonComponent), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-            if (!BeginComponentHeader("Skeleton", del))
-                return;
+            if (!BeginComponentHeader("Skeleton", del)) return;
+
+            auto& skelComp = r.get<SkeletonComponent>(e);
+
+            std::string currentName = assetManager.skeletons().GetName(skelComp.skeleton);
+
+            ResourcePickerCombo<SkeletonTag>(
+                "Skeleton",
+                skelComp.skeleton,
+                currentName,
+                [&](auto&& fn) { assetManager.skeletons().ForEachSkeleton(fn); }
+            );
 
             auto skeleton = assetManager.skeletons().getSkeleton(r.get<SkeletonComponent>(e).skeleton);
 
@@ -724,55 +779,57 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
 
         { typeid(AnimationState), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
-        if (!BeginComponentHeader("Animation State", del))
-            return;
+            if (!BeginComponentHeader("Animation State", del))
+                return;
 
-        auto& state = r.get<AnimationState>(e);
+            auto& state = r.get<AnimationState>(e);
 
-        const AnimationClip* clip = nullptr;
-        if (state.clip.isValid())
-            clip = &assetManager.animations().Get(state.clip);
+            std::string clipName = assetManager.animations().Get(state.clip).name;
 
-        if (clip)
-        {
-            ImGui::Text("Clip: %s", clip->name.c_str());
-            ImGui::Text("Duration: %.2fs", clip->duration);
-            ImGui::Text("Tracks: %zu", clip->tracks.size());
-        }
-        else
-        {
-            ImGui::TextDisabled("No clip assigned / invalid handle");
-        }
+            ResourcePickerCombo<AnimationTag>(
+                "Clip",
+                state.clip,
+                clipName,
+                [&](auto&& fn) { assetManager.animations().ForEachAnimation(fn); }
+            );
 
-        ImGui::Separator();
+            const AnimationClip* clip = &assetManager.animations().Get(state.clip);
 
-        ImGui::Checkbox("Playing", &state.playing);
-        ImGui::SameLine();
-        ImGui::Checkbox("Looping", &state.looping);
+            if (clip)
+            {
+                ImGui::Text("Duration: %.2fs", clip->duration);
+                ImGui::Text("Tracks: %zu", clip->tracks.size());
+            }
+            else
+            {
+                ImGui::TextDisabled("No clip assigned / invalid handle");
+            }
 
-        if (clip && clip->duration > 0.0f)
-        {
-            ImGui::SliderFloat("Time", &state.time, 0.0f, clip->duration);
-        }
-        else
-        {
-            ImGui::DragFloat("Time", &state.time, 0.01f, 0.0f, 0.0f);
-        }
+            ImGui::Separator();
 
-        ImGui::DragFloat("Speed", &state.speed, 0.01f, -4.0f, 4.0f);
+            ImGui::Checkbox("Playing", &state.playing);
+            ImGui::SameLine();
+            ImGui::Checkbox("Looping", &state.looping);
 
-        ImGui::Separator();
-        ImGui::TextDisabled("Cache version: %u", state.lastSeenClipVersion);
+            if (clip && clip->duration > 0.0f)
+                ImGui::SliderFloat("Time", &state.time, 0.0f, clip->duration);
+            else
+                ImGui::DragFloat("Time", &state.time, 0.01f, 0.0f, 0.0f);
 
-        if (ImGui::SmallButton("Restart"))
-            state.time = 0.0f;
-        ImGui::SameLine();
-        if (ImGui::SmallButton(state.playing ? "Pause" : "Play"))
-            state.playing = !state.playing;
+            ImGui::DragFloat("Speed", &state.speed, 0.01f, -4.0f, 4.0f);
 
-        EndComponentHeader();
+            ImGui::Separator();
+            ImGui::TextDisabled("Cache version: %u", state.lastSeenClipVersion);
 
-    }},
+            if (ImGui::SmallButton("Restart"))
+                state.time = 0.0f;
+            ImGui::SameLine();
+            if (ImGui::SmallButton(state.playing ? "Pause" : "Play"))
+                state.playing = !state.playing;
+
+            EndComponentHeader();
+
+        }},
 
         { typeid(SkeletalAnimationTarget), [&assetManager](entt::registry& r, entt::entity e, bool& del) {
 
@@ -831,6 +888,220 @@ UiInput::UiInput(IPlatform& platform, EventBus* bus, AssetManager& assetManager)
             EndComponentHeader();
 
             }},
+            {
+    typeid(RagdollComponent),
+    [/*&assetManager, &physics*/](entt::registry& , entt::entity , bool& )
+    {
+        /*if (!BeginComponentHeader("Ragdoll", del))
+            return;
+
+        auto& ragdoll = r.get<RagdollComponent>(e);
+
+        auto& bodyInterface =
+            physics.GetSystem().GetBodyInterface();
+
+        const Skeleton* skeleton = nullptr;
+
+        if (auto* skelComp =
+                r.try_get<SkeletonComponent>(e))
+        {
+            skeleton =
+                assetManager.skeletons()
+                    .getSkeleton(skelComp->skeleton);
+        }
+
+        ImGui::Text("Joints: %zu", ragdoll.joints.size());
+
+        if (!skeleton)
+        {
+            ImGui::TextColored(
+                ImVec4(0.9f, 0.4f, 0.4f, 1.f),
+                "No valid skeleton"
+            );
+
+            EndComponentHeader();
+            return;
+        }
+
+        ImGui::Separator();
+
+        for (size_t i = 0; i < ragdoll.joints.size(); ++i)
+        {
+            auto& joint = ragdoll.joints[i];
+
+            ImGui::PushID(static_cast<int>(i));
+
+            std::string boneName =
+                "Bone " + std::to_string(joint.boneId);
+
+            if (joint.boneId < skeleton->bones.size())
+                boneName =
+                    skeleton->bones[joint.boneId].name;
+
+            if (ImGui::TreeNode(boneName.c_str()))
+            {
+                ImGui::Text(
+                    "Bone ID: %u",
+                    joint.boneId
+                );
+
+                ImGui::Separator();
+
+                if (joint.bodyId.IsInvalid())
+                {
+                    ImGui::TextColored(
+                        ImVec4(0.9f, 0.3f, 0.3f, 1.f),
+                        "INVALID BODY"
+                    );
+                }
+                else
+                {
+                    JPH::RVec3 joltPosition;
+                    JPH::Quat joltRotation;
+
+                    bodyInterface.GetPositionAndRotation(
+                        joint.bodyId,
+                        joltPosition,
+                        joltRotation
+                    );
+
+                    Vector3 position(
+                        static_cast<float>(
+                            joltPosition.GetX()),
+                        static_cast<float>(
+                            joltPosition.GetY()),
+                        static_cast<float>(
+                            joltPosition.GetZ())
+                    );
+
+                    Quat rotation(
+                        joltRotation.GetX(),
+                        joltRotation.GetY(),
+                        joltRotation.GetZ(),
+                        joltRotation.GetW()
+                    );
+
+                  
+
+                    ImGui::TextUnformatted("World Position");
+
+                    DragVec3(
+                            "Position",
+                            position,
+                            0.01f);
+                    
+                        bodyInterface.SetPosition(
+                            joint.bodyId,
+                            JPH::RVec3(
+                                position.x,
+                                position.y,
+                                position.z
+                            ),
+                            JPH::EActivation::DontActivate
+                        );
+                    
+
+            
+
+                    ImGui::TextUnformatted("World Rotation");
+
+                    DragQuat(
+                            "Rotation",
+                            rotation);
+                    
+                        rotation =
+                            rotation.normalized();
+
+                        bodyInterface.SetRotation(
+                            joint.bodyId,
+                            JPH::Quat(
+                                rotation.x,
+                                rotation.y,
+                                rotation.z,
+                                rotation.w
+                            ),
+                            JPH::EActivation::DontActivate
+                        );
+                    
+
+                    ImGui::Separator();
+
+                   
+
+                    ImGui::TextColored(
+                        ImVec4(0.55f, 0.85f, 1.f, 1.f),
+                        "Current Jolt Transform"
+                    );
+
+                    ImGui::Text(
+                        "Position: %.6f, %.6f, %.6f",
+                        position.x,
+                        position.y,
+                        position.z
+                    );
+
+                    ImGui::Text(
+                        "Quaternion: %.6f, %.6f, %.6f, %.6f",
+                        rotation.x,
+                        rotation.y,
+                        rotation.z,
+                        rotation.w
+                    );
+
+                  
+
+                    ImGui::Separator();
+
+                    if (ImGui::Button("Zero Velocity"))
+                    {
+                        bodyInterface.SetLinearVelocity(
+                            joint.bodyId,
+                            JPH::Vec3::sZero()
+                        );
+
+                        bodyInterface.SetAngularVelocity(
+                            joint.bodyId,
+                            JPH::Vec3::sZero()
+                        );
+                    }
+                }
+
+               
+                ImGui::Separator();
+
+                switch (joint.driveState)
+                {
+                case JointComponent::DriveState::KinematicFollow:
+                    ImGui::TextColored(
+                        ImVec4(0.4f, 0.7f, 1.f, 1.f),
+                        "Drive: Kinematic"
+                    );
+                    break;
+
+                case RagdollComponent::DriveState::PoweredDynamic:
+                    ImGui::TextColored(
+                        ImVec4(0.4f, 0.9f, 0.4f, 1.f),
+                        "Drive: Powered"
+                    );
+                    break;
+
+                case RagdollComponent::DriveState::FreeDynamic:
+                    ImGui::TextColored(
+                        ImVec4(0.9f, 0.6f, 0.2f, 1.f),
+                        "Drive: Free Dynamic"
+                    );
+                    break;
+                }
+
+                ImGui::TreePop();
+            }
+
+            ImGui::PopID();
+        }
+
+        EndComponentHeader();
+    }*/
+}}
     };
 }
 
@@ -1305,6 +1576,7 @@ void UiInput::buildUI(entt::registry& registry,
     SystemEntry systemEntries[] = {
         { "Model Manager", &modelManagerOpen },
         { "Render Graph",  &renderGraphOpen },
+        { "Ragdoll Shapes", &ragdollShapeEditorOpen }, 
     };
 
     for (auto& entry : systemEntries) {
@@ -1383,7 +1655,8 @@ void UiInput::buildUI(entt::registry& registry,
 
         DrawModelManagerWindow(modelMgr, registry, windowSize);
 
-
+    if (ragdollShapeEditorOpen)
+        DrawRagdollShapeEditorWindow(registry, windowSize);
 
     float gbufH = windowHeight / 2.f;
 

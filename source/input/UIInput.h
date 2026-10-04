@@ -30,14 +30,13 @@
 #include "../ecs/components/physics/CollisionShapeComponent.h"
 #include "../ecs/components/physics/RigidBodyComponent.h"
 #include "../ecs/components/physics/SoftBodyComponent.h"
+#include "ecs/components/physics/RagDollComponent.h"
 #include "ecs/components/graphics/Renderable.h"
 #include "ecs/components/graphics/SkeletonComponent.h"
 #include "animation/AnimationState.h"
 #include "ecs/components/core/SkeletonAnimationTarget.h"
 
-#include "platform/IPlatform.h"
-
-#include "resources/managers/AssetManager.h"
+#include "scene/SceneContext.h"
 
 using ComponentTypes = std::tuple<
     TagComponent,
@@ -54,7 +53,8 @@ using ComponentTypes = std::tuple<
     LightComponent,
     CollisionShapeComponent,
     RigidBodyComponent,
-    SoftBodyComponent
+    SoftBodyComponent,
+    RagdollComponent
 >;
 
 struct DebugWindow
@@ -113,6 +113,42 @@ struct DebugWindow
 [[maybe_unused]] static void EndComponentHeader()
 {
     ImGui::TreePop();
+}
+
+template<typename Tag, typename ForEachFn>
+[[maybe_unused]] static bool ResourcePickerCombo(
+    const char* label,
+    Handle<Tag>& current,
+    const std::string& currentName,
+    ForEachFn&& forEach)
+{
+    bool changed = false;
+    std::string preview = current.isValid()
+        ? (currentName.empty() ? "<unnamed>" : currentName)
+        : "<none>";
+
+    ImGui::PushID(label);
+    if (ImGui::BeginCombo(label, preview.c_str()))
+    {
+        forEach([&](Handle<Tag> h, const std::string& name)
+        {
+            bool selected = (h == current);
+            std::string entryLabel = name.empty() ? "<unnamed>" : name;
+
+            ImGui::PushID((int)h.index);
+            if (ImGui::Selectable(entryLabel.c_str(), selected))
+            {
+                current = h;
+                changed = true;
+            }
+            ImGui::PopID();
+
+            if (selected) ImGui::SetItemDefaultFocus();
+        });
+        ImGui::EndCombo();
+    }
+    ImGui::PopID();
+    return changed;
 }
 
 [[maybe_unused]] static void DragVec3(
@@ -332,7 +368,8 @@ public:
     UiInput(
         IPlatform& platform,
         EventBus* bus,
-        AssetManager& manager
+        AssetManager& manager,
+        PhysicsEngine& engine
     );
 
     ~UiInput();
@@ -398,6 +435,11 @@ public:
     }
 
 private:
+
+    bool ragdollShapeEditorOpen = false;
+    entt::entity selectedRagdollBone = entt::null;   // shared selection state
+
+    void DrawRagdollShapeEditorWindow(entt::registry& registry, Vector2 windowSizes);
     void ApplyEditorStyle();
 
     void createWindow(
@@ -436,6 +478,8 @@ private:
     [[maybe_unused]] EventBus* bus;
 
     IPlatform& platform;
+
+    [[maybe_unused]] PhysicsEngine& physics;
 
     std::vector<DebugWindow> windows;
 

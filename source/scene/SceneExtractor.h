@@ -5,10 +5,11 @@
 #include "resources/managers/MeshManager.h"
 #include "resources/managers/MaterialManager.h"
 #include "resources/managers/TextureManager.h"
-#include "resources/managers/SkeletonManager.h"
 
 #include "scene/IExtractionSystem.h"
 #include "render/data/FrameRenderData.h"
+
+#include "resources/assets/Skeleton/Skeleton.h"
 
 class SceneExtractor : public IExtractionSystem
 {
@@ -17,14 +18,12 @@ public:
         const ModelManager& modelManager,
         const MeshManager& meshManager,
         const MaterialManager& materialManager,
-        const TextureManager& textureManager,
-        const SkeletonManager& skeletonManager
+        const TextureManager& textureManager
     )
         : m_modelManager(modelManager)
         , m_meshManager(meshManager)
         , m_materialManager(materialManager)
         , m_textureManager(textureManager)
-        , m_skeletonManager(skeletonManager)
     {}
 
     void extract(
@@ -39,7 +38,6 @@ private:
     const MeshManager& m_meshManager;
     const MaterialManager& m_materialManager;
     const TextureManager& m_textureManager;
-    const SkeletonManager& m_skeletonManager;
 
     static Mat4 getWorldTransform(entt::entity entity, entt::registry& registry);
 

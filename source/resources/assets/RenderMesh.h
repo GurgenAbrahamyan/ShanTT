@@ -41,6 +41,9 @@ public:
     void setupSkinnedPaletteOffsetVBO(std::size_t instanceCount);
     VBO* getSkinnedPaletteOffsetVBO() const;
 
+    void setupSkinnedEnabledVBO(std::size_t instanceCount);
+    VBO* getSkinnedEnabledVBO() const;
+
 private:
     void setupBuffers();
     void calculateTangents();
@@ -58,6 +61,9 @@ private:
 
     VBO* skinnedPaletteOffsetVBO = nullptr;
     std::size_t skinnedPaletteOffsetVBOCapacity = 0;
+
+    VBO* skinnedEnabledVBO = nullptr;
+    std::size_t skinnedEnabledVBOCapacity = 0;
 
     std::vector<VertexT> vertices;
     std::vector<unsigned int> indices;
@@ -84,6 +90,7 @@ RenderMesh<VertexT>::~RenderMesh()
     delete instanceVBO;
     delete skinnedTransformVBO;
     delete skinnedPaletteOffsetVBO;
+    delete skinnedEnabledVBO;   // NEW
 }
 
 template <typename VertexT>
@@ -384,6 +391,65 @@ void RenderMesh<VertexT>::setupSkinnedPaletteOffsetVBO(
 }
 
 template <typename VertexT>
+void RenderMesh<VertexT>::setupSkinnedEnabledVBO(
+    std::size_t instanceCount)
+{
+    static_assert(
+        std::is_same_v<VertexT, SkinnedVertex>,
+        "setupSkinnedEnabledVBO() requires SkinnedVertex"
+    );
+
+    if (instanceCount <= skinnedEnabledVBOCapacity)
+        return;
+
+    if (!vao)
+        setupBuffers();
+
+    const std::size_t newCapacity =
+        instanceCount + instanceCount / 2;
+
+    if (!skinnedEnabledVBO)
+    {
+        skinnedEnabledVBO = new VBO(
+            nullptr,
+            newCapacity * sizeof(float),
+            true
+        );
+    }
+    else
+    {
+        skinnedEnabledVBO->Bind();
+
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            newCapacity * sizeof(float),
+            nullptr,
+            GL_DYNAMIC_DRAW
+        );
+    }
+
+    vao->Bind();
+    skinnedEnabledVBO->Bind();
+
+    glEnableVertexAttribArray(13);
+
+    glVertexAttribPointer(
+        13,
+        1,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(float),
+        reinterpret_cast<void*>(0)
+    );
+
+    glVertexAttribDivisor(13, 1);
+
+    vao->Unbind();
+
+    skinnedEnabledVBOCapacity = newCapacity;
+}
+
+template <typename VertexT>
 VBO* RenderMesh<VertexT>::getInstanceVBO() const
 {
     return instanceVBO;
@@ -400,6 +466,12 @@ template <typename VertexT>
 VBO* RenderMesh<VertexT>::getSkinnedPaletteOffsetVBO() const
 {
     return skinnedPaletteOffsetVBO;
+}
+
+template <typename VertexT>
+VBO* RenderMesh<VertexT>::getSkinnedEnabledVBO() const
+{
+    return skinnedEnabledVBO;
 }
 
 

@@ -10,6 +10,7 @@
 #include "ecs/components/core/ParentComponent.h"
 #include "ecs/components/graphics/ShadowCasterComponent.h"
 #include "ecs/components/graphics/SkeletonComponent.h"
+#include "ecs/components/graphics/Renderable.h"
 
 #include "../render/data/GPULight.h"
 #include "resources/data/RenderMaterialData.h"
@@ -52,39 +53,14 @@ void SceneExtractor::extract(
     std::unordered_map<entt::entity, uint32_t> paletteOffsetByOwner;
 
     registry.view<SkeletonComponent>().each(
-        [&](entt::entity owner, SkeletonComponent& skelComp)
-        {
-            if (!skelComp.skeleton.isValid())
-                return;
-
-            const Skeleton* skeleton =
-                m_skeletonManager.getSkeleton(skelComp.skeleton);
-
-            if (!skeleton)
-                return;
-
-            const uint32_t paletteOffset =
-                static_cast<uint32_t>(
-                    sceneData.skinMatrices.size()
-                );
-
-            for (uint32_t i = 0; i < skeleton->bones.size(); ++i)
-            {
-                const Bone& bone = skeleton->bones[i];
-                Mat4 global =
-                    boneGlobalMatrix(*skeleton, i);
-
-                Mat4 skinMatrix =
-                    global * bone.invBind;
-
-                sceneData.skinMatrices.push_back(
-                    skinMatrix
-                );
-            }
-
-            paletteOffsetByOwner[owner] = paletteOffset;
-        }
-    );
+    [&](entt::entity owner, SkeletonComponent& skelComp)
+    {
+        if (skelComp.skinMatrices.empty()) return;
+        const uint32_t paletteOffset = static_cast<uint32_t>(sceneData.skinMatrices.size());
+        sceneData.skinMatrices.insert(sceneData.skinMatrices.end(),
+            skelComp.skinMatrices.begin(), skelComp.skinMatrices.end());
+        paletteOffsetByOwner[owner] = paletteOffset;
+    });
 
     auto view =
         registry.view<
@@ -198,6 +174,8 @@ void SceneExtractor::extract(
                     auto* mesh = m_meshManager.getSkinnedMesh(meshID);
                     if (!mesh) return;
 
+
+
                     entt::entity owner = findSkeletonOwner(entity, registry);
                     
                     if (owner == entt::null) return;
@@ -205,14 +183,15 @@ void SceneExtractor::extract(
                     auto offsetIt = paletteOffsetByOwner.find(owner);
                     if (offsetIt == paletteOffsetByOwner.end()) return;
 
-                    //const Mat4 ownerWorld = getWorldTransform(owner, registry);
-                    const Mat4 entityWorld = getWorldTransform(entity, registry);
+                    const Mat4 ownerWorld = getWorldTransform(owner, registry);
+                    //const Mat4 entityWorld = getWorldTransform(entity, registry);
                     auto& batch = sceneData.skinnedBatches[renderer.material][mesh];
 
                     batch.instances.push_back({
-                      //  ownerWorld,        
-                        entityWorld,  
-                        offsetIt->second
+                        ownerWorld,        
+                      //  entityWorld,  
+                        offsetIt->second,
+                        renderer.applySkin
                     });
                 } 
 
@@ -342,6 +321,7 @@ Mat4 SceneExtractor::getWorldTransform(
             Mat4::fromQuat(transform->rotation) *
             Mat4::scale(transform->scale);
     }
+
 
     if (auto* parent =
         registry.try_get<ParentComponent>(entity))
